@@ -12,7 +12,7 @@
     <SelfContained>false</SelfContained>
     <AssemblyName>HuiYi</AssemblyName>
     <RootNamespace>HuiYi.App</RootNamespace>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <!-- Program.Main runs Velopack's install / update hooks before WPF starts. -->
     <StartupObject>HuiYi.App.Program</StartupObject>
     <!-- Regenerate with HuiYi.exe and the export-icon switch (see Icons.SaveIco) when the mark changes. -->

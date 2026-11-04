@@ -105,12 +105,13 @@ public partial class MainWindow : Window
             LineVM.Sync(lines, snap);
             RenderSpeakers(snap, switched);
         }
+        RenderTemplateBox(s);
         var generating = model.Notes.GeneratingId == id;
         NotesBtn.Content = generating ? "整理中…" : s.Notes is { IsEmpty: false } ? "重新整理纪要" : "生成纪要";
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
         NotesState.Text = generating ? "AI 正在通读整场会议…" : s.Notes?.UpdatedAt is { } at ? $"纪要更新于 {at.ToLocalTime():M月d日 HH:mm}" : "";
         NotesHost.Content = s.Notes is { IsEmpty: false } n
-            ? NotesRenderer.Build(n, 14, cards: true)
+            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true)
             : new Border
             {
                 Style = (Style)FindResource("Panel"),
@@ -187,6 +188,52 @@ public partial class MainWindow : Window
         await ((App)Application.Current).ToggleListening();
         Refresh();
     }
+
+    private bool fillingTemplates;
+
+    /// The meeting's template: its own pick, else the default (marked so).
+    private void RenderTemplateBox(Session s)
+    {
+        if (TemplateBox.IsDropDownOpen) return;
+        fillingTemplates = true;
+        TemplateBox.Items.Clear();
+        var chosen = model.TemplateFor(s).Id;
+        foreach (var t in model.Templates)
+        {
+            var item = new ComboBoxItem
+            {
+                Content = t.Id == model.Settings.DefaultTemplateId ? $"{t.Name}（默认）" : t.Name, Tag = t.Id, ToolTip = t.Description,
+            };
+            TemplateBox.Items.Add(item);
+            if (t.Id == chosen) TemplateBox.SelectedItem = item;
+        }
+        fillingTemplates = false;
+    }
+
+    /// A new template for this meeting: rewrite its notes in that shape (a live meeting picks it up
+    /// at its next update).
+    private void Template_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (fillingTemplates || selected == null || TemplateBox.SelectedItem is not ComboBoxItem { Tag: string tid }) return;
+        var s = model.Store.Get(selected);
+        if (s == null || model.TemplateFor(s).Id == tid) return;
+        model.Store.SetTemplate(selected, tid == model.Settings.DefaultTemplateId ? null : tid);
+        if (selected == model.LiveSessionId)
+        {
+            NotesState.Text = "下一次更新起按新模板整理";
+            model.Notes.UpdateNow();
+            return;
+        }
+        if (model.Ai.HasKey && s.Lines.Count > 0)
+        {
+            model.Notes.Generate(selected);
+            ShowDetail(selected, keepTab: true);
+            TabNotes.IsChecked = true;
+        }
+    }
+
+    private void Templates_Click(object sender, RoutedEventArgs e) =>
+        ((App)Application.Current).OpenTemplates(selected is { } id ? model.TemplateFor(model.Store.Get(id)).Id : null);
 
     private void Generate_Click(object sender, RoutedEventArgs e)
     {

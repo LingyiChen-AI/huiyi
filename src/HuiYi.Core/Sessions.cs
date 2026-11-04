@@ -31,6 +31,8 @@ public sealed class Session
     public bool HasAudio { get; set; }
     public MeetingNotes? Notes { get; set; }
     public bool? Renamed { get; set; }
+    /// The notes template picked for this meeting; nil follows the default.
+    public string? TemplateId { get; set; }
     /// Names the user gave voices, keyed by voice id. An empty name means "not the AI's guess": the
     /// voice shows as 发言人 N.
     public Dictionary<string, string>? VoiceNames { get; set; }
@@ -197,6 +199,9 @@ public sealed class SessionStore
 
     public void SetNotes(string id, MeetingNotes notes) => Mutate(id, s => s.Notes = notes);
 
+    /// The notes template for one meeting (nil: the default).
+    public void SetTemplate(string id, string? templateId) => Mutate(id, s => s.TemplateId = templateId);
+
     public void Rename(string id, string title) => Mutate(id, s =>
     {
         s.Title = title.Trim();
@@ -219,7 +224,7 @@ public sealed class SessionStore
             return s == null ? null : new Session
             {
                 Id = s.Id, Title = s.Title, StartedAt = s.StartedAt, EndedAt = s.EndedAt, Lines = s.Lines.ToList(),
-                HasAudio = s.HasAudio, Notes = s.Notes, Renamed = s.Renamed,
+                HasAudio = s.HasAudio, Notes = s.Notes, Renamed = s.Renamed, TemplateId = s.TemplateId,
                 VoiceNames = s.VoiceNames == null ? null : new(s.VoiceNames),
                 VoiceGuesses = s.VoiceGuesses == null ? null : new(s.VoiceGuesses),
             };
@@ -290,44 +295,79 @@ public static class TranscriptExport
     public static string Markdown(Session s)
     {
         var sb = new System.Text.StringBuilder();
+        var start = s.StartedAt.ToLocalTime();
+        // Every time is a real clock time: the meeting's start plus the seconds in.
+        string At(double seconds) => NotesPrompt.ClockAt(start, seconds);
         sb.AppendLine($"# {s.DisplayTitle}");
         sb.AppendLine();
-        sb.AppendLine($"{s.StartedAt.ToLocalTime():yyyy-MM-dd HH:mm} · {Clock(s.Duration.TotalSeconds)}");
+        var end = s.EndedAt?.ToLocalTime();
+        sb.AppendLine($"{NotesPrompt.When(start)}{(end != null ? $" – {end:HH:mm}" : "")} · 时长 {Clock(s.Duration.TotalSeconds)}");
         sb.AppendLine();
         if (s.Notes is { IsEmpty: false } n)
         {
             sb.AppendLine("## 纪要");
             sb.AppendLine();
-            sb.AppendLine(n.Summary);
-            sb.AppendLine();
-            foreach (var t in n.Topics)
+            if (n.Summary.Length > 0)
             {
-                sb.AppendLine($"### {Clock(t.Start)} {t.Title}");
-                if (!string.IsNullOrEmpty(t.Summary)) sb.AppendLine(t.Summary);
-                foreach (var p in t.Points) sb.AppendLine($"- {p}");
+                sb.AppendLine($"> {n.Summary}");
                 sb.AppendLine();
             }
-            if (n.Conclusions.Count > 0)
+            if (n.Topics.Count > 0)
             {
-                sb.AppendLine("### 结论");
-                foreach (var c in n.Conclusions) sb.AppendLine($"- {c.Text}");
+                sb.AppendLine("### 议题");
+                sb.AppendLine();
+                foreach (var t in n.Topics)
+                {
+                    sb.AppendLine($"**{At(t.Start)} {t.Title}**");
+                    if (!string.IsNullOrEmpty(t.Summary)) sb.AppendLine($"{t.Summary}");
+                    for (var i = 0; i < t.Points.Count; i++)
+                        sb.AppendLine($"- {t.Points[i]}{(t.PointTime(i) is { } pt ? $"（{At(pt)}）" : "")}");
+                    if (t.Fishbone is { } f)
+                    {
+                        sb.AppendLine($"- 原因分析：{f.Question}");
+                        foreach (var b in f.Branches) sb.AppendLine($"  - {b.Label}：{b.Detail}");
+                    }
+                    sb.AppendLine();
+                }
+            }
+            foreach (var part in n.Parts().Where(p => p.Items.Count > 0))
+            {
+                sb.AppendLine($"### {part.Title}");
+                sb.AppendLine();
+                if (part.Style == "todo")
+                {
+                    // To-dos read best as a table: what, who, by when.
+                    sb.AppendLine("| 事项 | 负责人 | 截止时间 |");
+                    sb.AppendLine("|---|---|---|");
+                    foreach (var i in part.Items) sb.AppendLine($"| {i.Text} | {i.Owner ?? "—"} | {i.Due ?? "—"} |");
+                }
+                else
+                {
+                    foreach (var i in part.Items)
+                    {
+                        var extra = new[] { i.Owner, i.Due }.Where(x => !string.IsNullOrEmpty(x)).ToList();
+                        sb.AppendLine($"- {i.Text}{(extra.Count > 0 ? $"（{string.Join("，", extra)}）" : "")}");
+                    }
+                }
                 sb.AppendLine();
             }
-            if (n.Todos.Count > 0)
+            if (n.Terms.Count > 0)
             {
-                sb.AppendLine("### 待办");
-                foreach (var c in n.Todos) sb.AppendLine($"- [ ] {c.Text}{(c.Owner != null ? $"（{c.Owner}）" : "")}");
+                sb.AppendLine("### 人名与术语");
+                sb.AppendLine();
+                foreach (var t in NoteTerm.Ordered(n.Terms))
+                    sb.AppendLine($"- **{t.Name}** {t.Note}{(t.Heard.Count > 0 ? $"（识别成 {string.Join("、", t.Heard)}）" : "")}");
                 sb.AppendLine();
             }
         }
-        sb.AppendLine("## 原文");
+        sb.AppendLine("## 逐字稿");
         sb.AppendLine();
         var numbers = SpeakerLabels.Numbers(s.Lines);
         var names = SpeakerLabels.Names(s);
         foreach (var l in s.Lines)
         {
             var who = SpeakerLabels.Who(l, numbers, names);
-            sb.AppendLine($"**{Clock(l.T)} {who}** {l.Src}  ");
+            sb.AppendLine($"**{At(l.T)} {who}** {l.Src}  ");
             if (!string.IsNullOrEmpty(l.Dst)) sb.AppendLine($"> {l.Dst}");
             sb.AppendLine();
         }

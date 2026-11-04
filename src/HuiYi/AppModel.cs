@@ -27,6 +27,25 @@ public sealed class AppModel
     public MeetingController? Meeting { get; private set; }
     public SpeakEngine? Speak { get; private set; }
     public Recognizer? Recognizer { get; private set; }
+    /// The user's own notes templates (built-in ones are in `NoteTemplates.BuiltIn`).
+    public List<NoteTemplate> MyTemplates { get; } = NoteTemplates.LoadMine();
+
+    public IReadOnlyList<NoteTemplate> Templates => NoteTemplates.All(MyTemplates);
+
+    /// The template a meeting's notes follow: its own pick, else the default.
+    public NoteTemplate TemplateFor(Session? s) => NoteTemplates.Find(s?.TemplateId ?? Settings.DefaultTemplateId, MyTemplates);
+
+    public void SaveTemplates()
+    {
+        NoteTemplates.SaveMine(MyTemplates);
+        // A deleted default falls back to the general template.
+        if (Templates.All(t => t.Id != Settings.DefaultTemplateId))
+        {
+            Settings.DefaultTemplateId = NoteTemplates.DefaultId;
+            Settings.Save();
+        }
+        StateChanged?.Invoke();
+    }
 
     public event Action? StateChanged;
     public event Action<MeetingController.Subtitle>? Subtitle;
@@ -54,7 +73,7 @@ public sealed class AppModel
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
-        Notes = new NotesEngine(Ai, Store);
+        Notes = new NotesEngine(Ai, Store) { Template = TemplateFor };
         Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
         Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable

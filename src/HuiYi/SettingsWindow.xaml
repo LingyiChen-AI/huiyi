@@ -120,6 +120,15 @@
                         <StackPanel>
                             <TextBlock Text="纪要" Style="{StaticResource Overline}"/>
                             <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="TemplateDefaultBox" DockPanel.Dock="Right" MinWidth="220" MaxDropDownHeight="420" SelectionChanged="Changed"/>
+                                <TextBlock Text="默认模板" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Content="打开模板中心" Style="{StaticResource GhostBtn}" Click="Templates_Click"/>
+                                <TextBlock Style="{StaticResource Helper}" Margin="0" VerticalAlignment="Center"
+                                           Text="15 个内置模板：项目周会、站会、需求评审、复盘、客户拜访、面试……也可以自己做。"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
                                 <ComboBox x:Name="NotesLangBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
                                 <TextBlock Text="纪要用的语言" VerticalAlignment="Center"/>
                             </DockPanel>

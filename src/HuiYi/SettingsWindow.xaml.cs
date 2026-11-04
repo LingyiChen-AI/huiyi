@@ -27,6 +27,7 @@ public partial class SettingsWindow : Window
         Capturable.IsChecked = s.NotesCapturable;
 
         Fill(PresetBox, ProviderPreset.All.Select(p => (p.Id, p.Name)).ToArray(), "");
+        FillTemplates();
         Fill(NotesLangBox, [("auto", "跟字幕一致"), .. Languages.Target.Select(l => (l.Code, l.Name))], s.NotesLanguage);
 
         SpeakOn.IsChecked = s.SpeakEnabled;
@@ -45,6 +46,8 @@ public partial class SettingsWindow : Window
         // The translation switch also lives in the panel and the tray menu.
         model.StateChanged += () =>
         {
+            // Templates may have changed in the template center.
+            if (!TemplateDefaultBox.IsDropDownOpen) FillTemplates();
             if (TranslateOn.IsChecked == model.Settings.TranslationOn) return;
             loading = true;
             TranslateOn.IsChecked = model.Settings.TranslationOn;
@@ -84,6 +87,7 @@ public partial class SettingsWindow : Window
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.NotesCapturable = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
+        if (TagOf(TemplateDefaultBox) is { Length: > 0 } tid) s.DefaultTemplateId = tid;
         s.SpeakEnabled = SpeakOn.IsChecked == true;
         s.SpeakKey = KeyAlt.IsChecked == true ? SpeakKey.RightAlt : SpeakKey.RightCtrl;
         s.SpeakTarget = TagOf(SpeakTargetBox);
@@ -110,6 +114,18 @@ public partial class SettingsWindow : Window
         model.Settings.SubtitleFontSize = FontSlider.Value;
         model.SaveSettings();
     }
+
+    // MARK: Notes templates
+
+    private void FillTemplates()
+    {
+        var was = loading;
+        loading = true;
+        Fill(TemplateDefaultBox, model.Templates.Select(t => (t.Id, $"{t.Name}　· {t.Category}")).ToArray(), model.Settings.DefaultTemplateId);
+        loading = was;
+    }
+
+    private void Templates_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).OpenTemplates();
 
     // MARK: AI services
 

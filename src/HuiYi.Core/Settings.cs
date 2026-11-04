@@ -26,6 +26,8 @@ public sealed class AppSettings
     /// Tell the other side's voices apart (发言人 1、发言人 2…). On by default.
     public bool SpeakerVoices { get; set; } = true;
     public double SubtitleFontSize { get; set; } = 26;
+    /// The notes template new meetings use (built-in id or one of the user's).
+    public string DefaultTemplateId { get; set; } = NoteTemplates.DefaultId;
     /// "auto": the notes follow the subtitles' target language.
     public string NotesLanguage { get; set; } = "auto";
 

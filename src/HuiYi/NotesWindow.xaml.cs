@@ -201,7 +201,7 @@ public partial class NotesWindow : Window
                 Text = model.Ai.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
                                          : "在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。",
             }
-            : NotesRenderer.Build(n.Notes);
+            : NotesRenderer.Build(n.Notes, (n.ShownId is { } shown ? model.Store.Get(shown)?.StartedAt : null) ?? DateTime.Now);
         NotesState.Text = n.Status switch
         {
             NotesEngine.State.Updating => "纪要整理中…",

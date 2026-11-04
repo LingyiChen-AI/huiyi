@@ -11,10 +11,13 @@ namespace HuiYi.App;
 /// then cards for decisions, to-dos and names. In the dark live panel: the same structure, compact.
 public static class NotesRenderer
 {
-    private sealed class Look(bool cards, double size)
+    private sealed class Look(bool cards, double size, DateTime start)
     {
         public bool Cards = cards;
         public double Size = size;
+        /// The meeting's local start: every time shown is a real clock time.
+        public DateTime Start = start;
+        public string At(double seconds) => NotesPrompt.ClockAt(Start, seconds);
         public Brush Ink = cards ? Theme.Ink : Theme.NightText;
         public Brush Muted = cards ? Theme.Grey : Theme.NightMuted;
         public Brush Faint = cards ? Theme.Grey2 : Frozen(0x6E, 0x74, 0x88);
@@ -24,23 +27,31 @@ public static class NotesRenderer
         public Brush ChipBack = cards ? Frozen(0xF2, 0xF3, 0xF7) : Frozen(0x2A, 0x2E, 0x40);
     }
 
-    public static UIElement Build(MeetingNotes n, double fontSize = 14, bool cards = false)
+    /// `start`: when the meeting began (UTC or local), for real clock times.
+    public static UIElement Build(MeetingNotes n, DateTime start, double fontSize = 14, bool cards = false)
     {
-        var k = new Look(cards, fontSize);
+        var k = new Look(cards, fontSize, start.ToLocalTime());
         var root = new StackPanel();
         if (n.IsEmpty) return root;
 
         Overview(root, n, k);
         if (n.Topics.Count > 0) Timeline(root, n, k);
-        if (n.Conclusions.Count > 0)
-            Section(root, k, "已经定下的", n.Conclusions.Count, panel =>
+        // The template's parts in its order; each style has its own mark.
+        foreach (var part in n.Parts().Where(p => p.Items.Count > 0))
+            Section(root, k, part.Title, part.Items.Count, panel =>
             {
-                foreach (var c in n.Conclusions) panel.Children.Add(Item(k, Check(k), c.Text, null, c.T));
-            });
-        if (n.Todos.Count > 0)
-            Section(root, k, "待办事项", n.Todos.Count, panel =>
-            {
-                foreach (var t in n.Todos) panel.Children.Add(Item(k, Box(k), t.Text, t.Owner, t.T));
+                for (var i = 0; i < part.Items.Count; i++)
+                {
+                    var it = part.Items[i];
+                    var mark = part.Style switch
+                    {
+                        "check" => Check(k),
+                        "todo" => Box(k),
+                        "warn" => Warn(k),
+                        _ => Dot(k),
+                    };
+                    panel.Children.Add(Item(k, mark, it.Text, it.Owner, it.T, top: i == 0 ? 0 : 7, due: it.Due));
+                }
             });
         if (n.Terms.Count > 0)
             Section(root, k, "人名与术语", n.Terms.Count, panel =>
@@ -67,6 +78,8 @@ public static class NotesRenderer
         if (n.Topics.Count > 0) counts.Add($"{n.Topics.Count} 个议题");
         if (n.Conclusions.Count > 0) counts.Add($"{n.Conclusions.Count} 项结论");
         if (n.Todos.Count > 0) counts.Add($"{n.Todos.Count} 项待办");
+        var dated = n.Todos.Count(t => t.Due != null);
+        if (dated > 0) counts.Add($"{dated} 项有截止日期");
         if (counts.Count > 0)
         {
             var row = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
@@ -101,7 +114,7 @@ public static class NotesRenderer
             var rail = new Grid();
             rail.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             rail.RowDefinitions.Add(new RowDefinition());
-            var pill = Chip(k, TranscriptExport.Clock(t.Start), k.Accent, k.Soft, small: !k.Cards);
+            var pill = Chip(k, k.At(t.Start), k.Accent, k.Soft, small: !k.Cards);
             pill.HorizontalAlignment = HorizontalAlignment.Left;
             rail.Children.Add(pill);
             if (!last)
@@ -175,8 +188,8 @@ public static class NotesRenderer
         }
     }
 
-    /// One line of a list: a mark, the text, an owner chip, and when it was said on the right.
-    private static UIElement Item(Look k, UIElement mark, string text, string? owner, double? t, double top = 6)
+    /// One line of a list: a mark, the text, owner and deadline chips, and when it was said on the right.
+    private static UIElement Item(Look k, UIElement mark, string text, string? owner, double? t, double top = 6, string? due = null)
     {
         var g = new Grid { Margin = new Thickness(0, top, 0, 0) };
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
@@ -194,13 +207,19 @@ public static class NotesRenderer
             line.Inlines.Add(new Run("  "));
             line.Inlines.Add(new InlineUIContainer(Chip(k, owner, OwnerBrush(owner, k), k.ChipBack, small: true)) { BaselineAlignment = BaselineAlignment.Center });
         }
+        if (due != null)
+        {
+            line.Inlines.Add(new Run(" "));
+            line.Inlines.Add(new InlineUIContainer(Chip(k, "截止 " + due, Theme.Warn, k.Cards ? Frozen(0xFB, 0xF0, 0xE2) : Frozen(0x3A, 0x2F, 0x22), small: true))
+                { BaselineAlignment = BaselineAlignment.Center });
+        }
         Grid.SetColumn(line, 1);
         g.Children.Add(line);
         if (t is { } time)
         {
             var when = new TextBlock
             {
-                Text = TranscriptExport.Clock(time), FontSize = 11, Foreground = k.Faint,
+                Text = k.At(time), FontSize = 11, Foreground = k.Faint, ToolTip = "会上提到的时间",
                 Margin = new Thickness(12, (k.Size * 1.6 - 14) / 2, 0, 0), VerticalAlignment = VerticalAlignment.Top,
             };
             Grid.SetColumn(when, 2);
@@ -258,6 +277,19 @@ public static class NotesRenderer
         {
             Data = Geometry.Parse("M 4.5 8.2 L 7 10.6 L 11.6 5.6"), Stroke = Brushes.White, StrokeThickness = 1.7,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
+        });
+        return g;
+    }
+
+    /// Risks and open questions: an amber exclamation.
+    private static FrameworkElement Warn(Look k)
+    {
+        var g = new Grid { Width = 16, Height = 16, HorizontalAlignment = HorizontalAlignment.Left };
+        g.Children.Add(new Ellipse { Fill = Theme.Warn });
+        g.Children.Add(new TextBlock
+        {
+            Text = "!", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, -1, 0, 0),
         });
         return g;
     }

@@ -33,10 +33,11 @@ public sealed class LineVM : INotifyPropertyChanged
     }
     public Visibility DstVisibility => string.IsNullOrEmpty(dst) ? Visibility.Collapsed : Visibility.Visible;
 
-    public LineVM(TranscriptLine l)
+    /// `start`: the meeting's start, so the line shows the real time it was said.
+    public LineVM(TranscriptLine l, DateTime start)
     {
         Id = l.Id;
-        Time = TranscriptExport.Clock(l.T);
+        Time = NotesPrompt.ClockAt(start.ToLocalTime(), l.T);
         IsMe = l.Speaker == "me";
         src = l.Src;
         dst = l.Dst;
@@ -71,7 +72,7 @@ public sealed class LineVM : INotifyPropertyChanged
         {
             if (!known.TryGetValue(l.Id, out var vm))
             {
-                vm = new LineVM(l);
+                vm = new LineVM(l, s.StartedAt);
                 list.Add(vm);
             }
             vm.Update(l, SpeakerLabels.Who(l, numbers, names), numbers.TryGetValue(l.Id, out var n) ? n : null, showDst);

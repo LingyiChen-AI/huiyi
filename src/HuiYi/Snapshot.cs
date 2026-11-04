@@ -42,6 +42,24 @@ public static class Snapshot
         }
         settings.Close();
 
+        // The template center: a built-in template, then one of the user's being edited.
+        var templates = new TemplateWindow(model, "weekly");
+        Save(templates, folder, "templates", keepOpen: true);
+        templates.CopyForSnapshot();
+        Save(templates, folder, "templates-mine");
+
+        // Notes in a work template, with owners, deadlines and risks.
+        var weekly = NotesPrompt.Parse(WeeklySample, [0, 65, 300, 420, 610, 900], 0, NoteTemplates.Find("weekly", []))!;
+        var host = new Window
+        {
+            Width = 760, Height = 1400, Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)),
+            Content = new System.Windows.Controls.Border { Padding = new Thickness(24), Child = NotesRenderer.Build(weekly, DateTime.Today.AddHours(14), 14, cards: true) },
+        };
+        Prepare(host);
+        host.SizeToContent = SizeToContent.Height;
+        host.UpdateLayout();
+        Save(host, folder, "notes-weekly");
+
         var panel = new NotesWindow(model);
         if (latest != null)
         {
@@ -96,6 +114,20 @@ public static class Snapshot
         enc.Frames.Add(BitmapFrame.Create(bmp));
         using (var f = File.Create(Path.Combine(folder, name + ".png"))) enc.Save(f);
     }
+
+    private const string WeeklySample = """
+        {"title": "支付项目周会", "summary": "支付网关改造按计划推进，登录模块回归通过；超时问题定位到网关配置，需在周五前修复。上线日期维持 11月10日（周一）。",
+         "topics": [
+           {"start": 0, "title": "本周进展", "summary": "各模块进度回顾。", "points": [{"text": "登录模块回归测试全部通过", "evidence": ["L1"]}, {"text": "支付接口联调完成 80%", "evidence": ["L2"]}]},
+           {"start": 420, "title": "超时问题", "summary": "定位到网关配置。", "points": [{"text": "网关超时阈值配置过低", "evidence": ["L4"]}, {"text": "改完后需要压测一轮", "evidence": ["L5"]}]}],
+         "progress": [{"text": "登录模块回归测试全部通过", "evidence": ["L1"]}, {"text": "支付接口联调完成 80%", "evidence": ["L2"]}],
+         "next": [{"text": "完成支付接口联调", "evidence": ["L3"]}, {"text": "准备上线检查清单", "evidence": ["L5"]}],
+         "risks": [{"text": "测试环境不稳定，可能拖慢压测", "owner": "发言人2", "evidence": ["L4"]}],
+         "conclusions": [{"text": "上线日期维持 11月10日（周一）", "evidence": ["L6"]}],
+         "todos": [{"text": "修改网关超时配置", "owner": "发言人2", "due": "11月6日（周五）", "evidence": ["L4"]},
+                   {"text": "组织一轮压测并出报告", "owner": "你", "due": "11月9日（周日）", "evidence": ["L5"]},
+                   {"text": "同步市场部发布说明", "owner": "发言人1", "evidence": ["L6"]}]}
+        """;
 
     /// Notes for the snapshot meeting, so the notes views have something to show.
     private static MeetingNotes Sample() => new()

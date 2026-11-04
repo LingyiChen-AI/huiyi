@@ -110,6 +110,7 @@ public partial class App : Application
         translate.IsChecked = Model.Settings.TranslationOn;
         menu.Items.Add(new Separator());
         Item("会议记录…", OpenMain);
+        Item("纪要模板…", () => OpenTemplates());
         Item("设置…", OpenSettings);
         menu.Items.Add(new Separator());
         Item($"退出{Brand.Name}", Quit);
@@ -192,6 +193,15 @@ public partial class App : Application
         mainWindow ??= new MainWindow(Model);
         mainWindow.Closed += (_, _) => mainWindow = null;
         Bring(mainWindow);
+    }
+
+    private TemplateWindow? templateWindow;
+
+    public void OpenTemplates(string? select = null)
+    {
+        templateWindow ??= new TemplateWindow(Model, select);
+        templateWindow.Closed += (_, _) => templateWindow = null;
+        Bring(templateWindow);
     }
 
     public void OpenSettings()

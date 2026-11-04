@@ -19,6 +19,7 @@
                         <TextBlock x:Name="AppName" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <Button x:Name="ListenBtn" Content="开始收听" Style="{StaticResource PrimaryBtn}" Margin="0,14,0,0" Padding="0,8" Click="Listen_Click"/>
+                    <Button Content="纪要模板中心" Style="{StaticResource Btn}" Margin="0,8,0,0" Padding="0,6" Click="Templates_Click"/>
                     <Grid Margin="0,12,0,0">
                         <TextBox x:Name="SearchBox" Padding="26,6,6,6" TextChanged="Search_Changed"/>
                         <TextBlock Text="⌕" Foreground="#9AA1B2" FontSize="14" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
@@ -92,6 +93,9 @@
                     <TextBlock x:Name="MetaText" Foreground="#9AA1B2" FontSize="12" Margin="0,4,0,12"/>
                     <WrapPanel x:Name="SpeakersPanel" Margin="0,0,0,10" Visibility="Collapsed"/>
                     <DockPanel Margin="0,0,0,12">
+                        <ComboBox x:Name="TemplateBox" DockPanel.Dock="Right" MinWidth="190" MaxDropDownHeight="420" Margin="12,0,0,0"
+                                  ToolTip="这场会议的纪要模板：换了就按新模板重新整理" SelectionChanged="Template_Changed"/>
+                        <TextBlock DockPanel.Dock="Right" Text="模板" Foreground="#646B80" FontSize="12" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         <TextBlock x:Name="NotesState" DockPanel.Dock="Right" Foreground="#9AA1B2" FontSize="12" VerticalAlignment="Center"/>
                         <Border Background="#E8EBF2" CornerRadius="5" Padding="2" HorizontalAlignment="Left">
                             <StackPanel Orientation="Horizontal">

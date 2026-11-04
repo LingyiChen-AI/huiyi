@@ -28,6 +28,47 @@ public static class Voices
         var all = All;
         return all.FirstOrDefault(v => v.Id == preferredId && Fits(v, code)) ?? all.FirstOrDefault(v => Fits(v, code));
     }
+
+    /// The Windows locale whose voice pack speaks a target language.
+    public static string Locale(string code) => code switch
+    {
+        "en" => "en-US", "ja" => "ja-JP", "ko" => "ko-KR", "de" => "de-DE", "fr" => "fr-FR", "es" => "es-ES",
+        "pt" => "pt-BR", "ru" => "ru-RU", "it" => "it-IT", "vi" => "vi-VN", "th" => "th-TH", "id" => "id-ID",
+        "ar" => "ar-SA", "tr" => "tr-TR", "nl" => "nl-NL", "pl" => "pl-PL", "yue" => "zh-HK",
+        _ => code,
+    };
+
+    public enum InstallResult { Installed, NeedsRestart, Cancelled, Failed }
+
+    /// Adds Windows' own voice pack for a language: the "Text-to-speech" Feature on Demand, the same
+    /// thing Settings › Time & language › Speech › Add voices installs. Needs administrator (UAC).
+    public static async Task<InstallResult> Install(string code)
+    {
+        var capability = $"Language.TextToSpeech~~~{Locale(code)}~0.0.1.0";
+        var script = $"try {{ Add-WindowsCapability -Online -Name '{capability}' -ErrorAction Stop | Out-Null; exit 0 }} catch {{ exit 1 }}";
+        try
+        {
+            using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powershell.exe",
+                $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command \"{script}\"")
+            {
+                UseShellExecute = true, Verb = "runas", WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+            });
+            if (p == null) return InstallResult.Failed;
+            await p.WaitForExitAsync();
+            Log.Debug($"voices: {capability} exit {p.ExitCode}");
+            if (p.ExitCode != 0) return InstallResult.Failed;
+        }
+        catch (System.ComponentModel.Win32Exception e) when (e.NativeErrorCode == 1223)
+        {
+            return InstallResult.Cancelled;
+        }
+        catch (Exception e)
+        {
+            Log.Debug($"voices: install failed {e.Message}");
+            return InstallResult.Failed;
+        }
+        return All.Any(v => Fits(v, code)) ? InstallResult.Installed : InstallResult.NeedsRestart;
+    }
 }
 
 /// 同声传译: hold the key and speak: my real mic → SenseVoice → translation → Ming or a Windows voice → the virtual mic.
@@ -205,7 +246,7 @@ public sealed class SpeakEngine
         var voice = Voices.For(language, settings.Voices.GetValueOrDefault(language));
         if (voice == null)
         {
-            Problem?.Invoke($"系统里没有{Languages.ChineseName(language)}语音：在 Windows 设置 › 时间和语言 › 语音 里添加，或在「设置 › AI 服务」里使用蚂蚁百灵（自带 Ming 语音）");
+            Problem?.Invoke($"系统里没有{Languages.ChineseName(language)}语音，这句没有播报：在「设置 › 同声传译 › 播报声音」里一键安装");
             return;
         }
         using var synth = new SpeechSynthesizer { Voice = voice };

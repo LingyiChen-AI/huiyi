@@ -342,13 +342,48 @@ public partial class SettingsWindow : Window
             if (v.Id == preferred?.Id) VoiceBox.SelectedItem = item;
         }
         loading = was;
+        var name = Languages.ChineseName(lang);
         var ming = model.Ai.HasMingVoices && SpeakEngine.MingVoice(lang) != null;
+        var missing = voices.Count == 0;
+        VoiceRow.Visibility = missing && !ming ? Visibility.Collapsed : Visibility.Visible;
+        VoiceMissing.Visibility = missing && !ming ? Visibility.Visible : Visibility.Collapsed;
+        VoiceSettingsBtn.Visibility = missing ? Visibility.Visible : Visibility.Collapsed;
+        if (!installingVoice)
+        {
+            VoiceMissingText.Text = $"这台电脑还没有{name}语音";
+            VoiceInstallBtn.Content = $"一键安装{name}语音";
+            VoiceInstallBtn.IsEnabled = true;
+        }
         VoiceHelp.Text = ming && !model.Settings.Voices.ContainsKey(lang)
-            ? $"当前使用蚂蚁百灵：{Languages.ChineseName(lang)}默认用 Ming 合成；选一个 Windows 声音则改用它。"
-            : voices.Count == 0
-                ? $"这台电脑没有{Languages.ChineseName(lang)}语音包：可在 Windows 设置 › 时间和语言 › 语音 中添加，或在「AI 服务」里使用蚂蚁百灵（自带 Ming 语音）。"
-                : $"播报{Languages.ChineseName(lang)}时使用的 Windows 语音。";
+            ? $"当前使用蚂蚁百灵：{name}默认用 Ming 合成；选一个 Windows 声音则改用它。"
+            : missing
+                ? $"安装 Windows 自带的{name}语音包（从 Windows 更新下载，约几十 MB，需要管理员权限）。装好后在这里选声音、试听。"
+                : $"播报{name}时使用的 Windows 语音。";
     }
+
+    private bool installingVoice;
+
+    private async void VoiceInstall_Click(object sender, RoutedEventArgs e)
+    {
+        var lang = SpeakLanguage();
+        var name = Languages.ChineseName(lang);
+        installingVoice = true;
+        VoiceInstallBtn.IsEnabled = false;
+        VoiceInstallBtn.Content = "安装中…";
+        VoiceMissingText.Text = $"正在从 Windows 更新下载{name}语音，可能要一两分钟";
+        var result = await Voices.Install(lang);
+        installingVoice = false;
+        RenderVoices();
+        VoiceHelp.Text = result switch
+        {
+            Voices.InstallResult.Installed => $"✓ {name}语音装好了，可以试听。",
+            Voices.InstallResult.NeedsRestart => $"{name}语音已经安装，重启会译后就能在这里选到。",
+            Voices.InstallResult.Cancelled => "安装已取消。",
+            _ => $"没能自动安装（可能是公司电脑限制了 Windows 更新）。可以点下面的按钮，在系统设置 › 语音 › 添加语音 里手动添加{name}。",
+        };
+    }
+
+    private void VoiceSettings_Click(object sender, RoutedEventArgs e) => Native.Open("ms-settings:speech");
 
     private void Voice_Changed(object sender, SelectionChangedEventArgs e)
     {

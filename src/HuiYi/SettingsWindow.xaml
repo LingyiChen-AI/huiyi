@@ -182,12 +182,19 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="播报声音" Style="{StaticResource Overline}"/>
-                            <DockPanel Style="{StaticResource Row}">
+                            <DockPanel x:Name="VoiceRow" Style="{StaticResource Row}">
                                 <Button DockPanel.Dock="Right" Content="▶ 试听" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="TryVoice_Click"/>
                                 <ComboBox x:Name="VoiceBox" DockPanel.Dock="Right" MinWidth="220" SelectionChanged="Voice_Changed"/>
                                 <TextBlock Text="声音" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}"/>
+                            <!-- No Windows voice for the language: offer to add Windows' own voice pack. -->
+                            <DockPanel x:Name="VoiceMissing" Style="{StaticResource Row}" Visibility="Collapsed">
+                                <Button x:Name="VoiceInstallBtn" DockPanel.Dock="Right" Style="{StaticResource PrimaryBtn}" Click="VoiceInstall_Click"/>
+                                <TextBlock x:Name="VoiceMissingText" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </DockPanel>
+                            <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
+                            <Button x:Name="VoiceSettingsBtn" Content="打开系统语音设置 ↗" Style="{StaticResource GhostBtn}" HorizontalAlignment="Left"
+                                    Margin="-6,2,0,0" Visibility="Collapsed" Click="VoiceSettings_Click"/>
                             <CheckBox x:Name="MonitorOn" Style="{StaticResource Switch}" Content="播报时自己的耳机里也放一遍" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
                         </StackPanel>
                     </Border>

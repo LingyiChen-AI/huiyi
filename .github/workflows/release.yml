@@ -45,21 +45,8 @@ jobs:
       - name: Install vpk
         run: dotnet tool install -g vpk --version 1.2.161
 
-      - name: Pack
-        shell: pwsh
-        run: |
-          # No delta packages: with the Chinese title the stub is 会译_ExecutionStub.exe, and the zstd that
-          # vpk runs for deltas can't open non-ASCII paths. Updates download the full package instead.
-          vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
-            --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --delta none `
-            --runtime win-x64 --outputDir releases
-          # The installer people download: lets them pick the folder, then runs the Setup.exe above.
-          dotnet build installer/HuiYi.Setup.csproj -c Release -p:Version=$env:VERSION `
-            -p:VelopackSetup="$PWD/releases/HuiYi.App-win-Setup.exe" -o installer-out
-          New-Item -ItemType Directory -Force portable | Out-Null
-          Copy-Item installer-out/HuiYi-Setup.exe portable/HuiYi-Setup.exe
-
-      # What changed since the previous tag, from the feat: / fix: commit subjects.
+      # What changed since the previous tag, from the feat: / fix: commit subjects. It goes into the
+      # update package too: the 发现新版本 box shows it.
       - name: Release notes
         shell: pwsh
         run: |
@@ -75,6 +62,20 @@ jobs:
           if ($prev) { $notes += "完整改动：$env:REPO_URL/compare/$prev...$tag" }
           $notes -join "`n" | Out-File -Encoding utf8 notes.md
           Get-Content notes.md
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          # No delta packages: with the Chinese title the stub is 会译_ExecutionStub.exe, and the zstd that
+          # vpk runs for deltas can't open non-ASCII paths. Updates download the full package instead.
+          vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
+            --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --delta none `
+            --runtime win-x64 --releaseNotes notes.md --outputDir releases
+          # The installer people download: lets them pick the folder, then runs the Setup.exe above.
+          dotnet build installer/HuiYi.Setup.csproj -c Release -p:Version=$env:VERSION `
+            -p:VelopackSetup="$PWD/releases/HuiYi.App-win-Setup.exe" -o installer-out
+          New-Item -ItemType Directory -Force portable | Out-Null
+          Copy-Item installer-out/HuiYi-Setup.exe portable/HuiYi-Setup.exe
 
       - name: Publish the release
         shell: pwsh

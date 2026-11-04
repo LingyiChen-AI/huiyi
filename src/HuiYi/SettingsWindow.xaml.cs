@@ -466,25 +466,20 @@ public partial class SettingsWindow : Window
     {
         var u = App.Updates;
         VersionText.Text = $"{Brand.Name} {u.Version}";
-        var ready = u.ReadyVersion;
-        UpdateBtn.Content = ready != null ? $"立即更新到 {ready}" : "检查更新";
-        UpdateBtn.Style = (Style)FindResource(ready != null ? "PrimaryBtn" : "Btn");
+        var found = u.AvailableVersion;
+        UpdateBtn.Content = found != null ? $"查看新版本 {found}" : "检查更新";
+        UpdateBtn.Style = (Style)FindResource(found != null ? "PrimaryBtn" : "Btn");
         UpdateText.Text = u.Status.Length > 0 ? u.Status
-            : u.Installed ? "每 6 小时自动从 GitHub 检查一次新版本，下载好后提醒你。" : "当前不是安装版（开发版或解压版），不能自动更新。";
+            : u.Installed ? "每 6 小时自动检查一次新版本，发现后会问你要不要更新。" : "当前不是安装版（开发版），不能自动更新。";
     }
 
-    /// One click: check, download, then restart into the new version (asking first mid-meeting).
+    /// Checks GitHub; a newer version opens the 发现新版本 box, where the user decides.
     private async void Update_Click(object sender, RoutedEventArgs e)
     {
         UpdateBtn.IsEnabled = false;
-        var ready = App.Updates.ReadyVersion != null || await App.Updates.Check();
+        var found = App.Updates.AvailableVersion != null || await App.Updates.Check();
         UpdateBtn.IsEnabled = true;
-        if (!ready || App.Updates.ReadyVersion is not { } next) return;
-        if (model.IsListening && !Dialog.Confirm(this, $"现在更新到 {next}？",
-                $"正在记录会议。更新会先结束本场会议（记录会保存），然后重启{Brand.Name}。", "结束会议并更新"))
-            return;
-        UpdateText.Text = $"正在安装 {next}，{Brand.Name}会自动重新打开…";
-        ((App)Application.Current).RestartToUpdate();
+        if (found) UpdateWindow.ShowFor(model, App.Updates);
     }
 
     // MARK: General

@@ -125,10 +125,11 @@ public partial class App : Application
         updateTimer.Tick += async (_, _) =>
         {
             updateTimer.Interval = TimeSpan.FromHours(6);
-            if (await Updates.Check() && Updates.ReadyVersion != toldAbout)
+            // Found a newer version: ask once per version per run (下次提醒 means "next time I start").
+            if (await Updates.Check() && Updates.AvailableVersion != toldAbout)
             {
-                toldAbout = Updates.ReadyVersion;
-                ShowToast($"新版本 {Updates.ReadyVersion} 已下载好：右键通知区域图标选「重启并更新」，或下次退出时自动安装。");
+                toldAbout = Updates.AvailableVersion;
+                UpdateWindow.ShowFor(Model, Updates);
             }
         };
         updateTimer.Start();
@@ -185,6 +186,7 @@ public partial class App : Application
         Item("设置", OpenSettings);
         menu.Items.Add(new Separator());
         if (Updates.ReadyVersion is { } next) Item($"重启并更新到 {next}", RestartToUpdate);
+        else if (Updates.AvailableVersion is { } found) Item($"发现新版本 {found}", () => UpdateWindow.ShowFor(Model, Updates));
         Item($"退出{Brand.Name}", Quit);
     }
 

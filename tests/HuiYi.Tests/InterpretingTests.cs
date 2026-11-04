@@ -43,6 +43,31 @@ public class InterpretingTests
     }
 
     [Fact]
+    public void ALongLineIsCutWhereTheVoiceChanges()
+    {
+        // 10 s: one voice for the first 6 s, another after. The fake voiceprint of a window is the
+        // share of it that falls in the second voice.
+        const int rate = 16000, change = 6 * rate;
+        var samples = new float[10 * rate];
+        float[]? Embed(float[] w)
+        {
+            // Find the window by content: each window is a slice of `samples`, which we stamp with positions.
+            var start = (int)w[0];
+            var b = Enumerable.Range(start, w.Length).Count(i => i >= change) / (float)w.Length;
+            return [1 - b, b];
+        }
+        for (var i = 0; i < samples.Length; i++) samples[i] = i;   // each sample holds its own index
+        var points = TurnSplitter.Points(samples, Embed);
+        Assert.Single(points);
+        Assert.InRange(points[0], change - rate / 2, change + rate / 2);
+
+        // One voice throughout: left whole.
+        Assert.Empty(TurnSplitter.Points(samples, _ => [1f, 0f]));
+        // Too short to bother.
+        Assert.Empty(TurnSplitter.Points(new float[3 * rate], Embed));
+    }
+
+    [Fact]
     public void ALineBeforeItsVoiceHasANumberReads发言人()
     {
         var line = new TranscriptLine { Id = "l1", Speaker = "them", Src = "我们先看一下这周的进度" };

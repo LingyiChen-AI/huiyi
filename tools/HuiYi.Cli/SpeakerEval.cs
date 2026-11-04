@@ -19,6 +19,11 @@ static class SpeakerEval
         var embModels = args.Skip(5).ToArray();
         var samples = Load(audio, minutes);
         Console.WriteLine($"{samples.Length / 16000.0:F0} s of audio");
+        if (Environment.GetEnvironmentVariable("HUIYI_STITCH") == "1")
+        {
+            Stitch(samples, models);
+            return;
+        }
 
         // Reference: offline diarization with the first (Chinese) voiceprint model.
         var dcfg = new OfflineSpeakerDiarizationConfig();
@@ -37,6 +42,43 @@ static class SpeakerEval
         var lines = VadLines(samples, models);
         var truth = lines.Select(l => RefSpeaker(reference, l.Start, l.End)).ToArray();
         Console.WriteLine($"{lines.Count} lines; reference speaker per line: {string.Join("", truth.Select(t => t < 0 ? "-" : t.ToString()))}");
+
+        // With HUIYI_SPLIT=1: cutting long lines where the speaker changes (TurnSplitter), per threshold —
+        // lines still holding two people, cuts at a real change vs cuts inside one person, and how the
+        // clustering scores on the pieces.
+        if (Environment.GetEnvironmentVariable("HUIYI_SPLIT") == "1")
+        {
+            using var ex = new SpeakerEmbeddingExtractor(new SpeakerEmbeddingExtractorConfig { Model = models.Speaker, NumThreads = 4 });
+            var mixedBefore = lines.Count(l => l.End - l.Start >= 2 && RefSpeaker(reference, l.Start, l.End) < 0);
+            var embBefore = lines.Select(l => Embed(ex, l.Samples)).ToArray();
+            var cb = new Clusterer(VoiceClusterer.Join);
+            var before = lines.Select((l, i) => embBefore[i] == null ? (int?)null : cb.Label(embBefore[i]!, l.Samples.Length / 16000.0)).ToArray();
+            Console.WriteLine($"no split: {lines.Count} lines, {mixedBefore} hold two people; clustering {Score(before, truth)}");
+            foreach (var th in new[] { 0.25f, 0.3f, 0.35f, 0.4f, 0.45f, 0.5f })
+            {
+                var pieces = new List<Line>();
+                int good = 0, bad = 0;
+                foreach (var l in lines)
+                {
+                    var points = TurnSplitter.Points(l.Samples, s => Embed(ex, s), th);
+                    var edges = points.Prepend(0).Append(l.Samples.Length).ToList();
+                    for (var k = 0; k + 1 < edges.Count; k++)
+                        pieces.Add(new Line(l.Start + edges[k] / 16000.0, l.Start + edges[k + 1] / 16000.0, l.Samples[edges[k]..edges[k + 1]]));
+                    foreach (var p in points)
+                    {
+                        var at = l.Start + p / 16000.0;
+                        int left = RefSpeaker(reference, at - 1.2, at), right = RefSpeaker(reference, at, at + 1.2);
+                        if (left >= 0 && right >= 0) { if (left != right) good++; else bad++; }
+                    }
+                }
+                var ptruth = pieces.Select(p => RefSpeaker(reference, p.Start, p.End)).ToArray();
+                var mixed = pieces.Count(p => p.End - p.Start >= 2 && RefSpeaker(reference, p.Start, p.End) < 0);
+                var c = new Clusterer(VoiceClusterer.Join);
+                var labels = pieces.Select(p => Embed(ex, p.Samples) is { } e ? c.Label(e, p.Samples.Length / 16000.0) : null).ToArray();
+                Console.WriteLine($"split <{th:F2}: {pieces.Count} pieces, {mixed} hold two people, cuts at a change {good} / inside one voice {bad}; clustering {Score(labels, ptruth)}");
+            }
+            return;
+        }
 
         // With HUIYI_TEXT=<threshold>: each line's words beside every model's label at that threshold,
         // to judge by content where the speaker really changes.
@@ -140,6 +182,53 @@ static class SpeakerEval
     }
 
     private record Line(double Start, double End, float[] Samples);
+
+    /// Quick exchanges built from real lines: the live clustering finds the two main voices, then
+    /// lines are joined end to end with no pause — A+B (a change at a known point) and A+A (none) —
+    /// and TurnSplitter is scored on finding the joins between people and leaving the others alone.
+    private static void Stitch(float[] samples, ModelStore models)
+    {
+        using var ex = new SpeakerEmbeddingExtractor(new SpeakerEmbeddingExtractorConfig { Model = models.Speaker, NumThreads = 4 });
+        var lines = VadLines(samples, models).Where(l => l.End - l.Start >= 2.5).ToList();
+        var c = new Clusterer(VoiceClusterer.Join);
+        var voice = lines.Select(l => Embed(ex, l.Samples) is { } e ? c.Label(e, l.Samples.Length / 16000.0) : null).ToArray();
+        var top = voice.Where(v => v != null).GroupBy(v => v!.Value).OrderByDescending(g => g.Count()).Take(2).Select(g => g.Key).ToArray();
+        if (top.Length < 2) { Console.WriteLine("only one voice found"); return; }
+        var a = lines.Where((l, i) => voice[i] == top[0]).ToList();
+        var b = lines.Where((l, i) => voice[i] == top[1]).ToList();
+        Console.WriteLine($"voice {top[0]}: {a.Count} lines, voice {top[1]}: {b.Count} lines");
+        static float[] Clip(Line l, int max) => l.Samples.Length > max ? l.Samples[..max] : l.Samples;
+        var rnd = new Random(7);
+        var cross = new List<(float[] S, int Join)>();
+        var same = new List<(float[] S, int Join)>();
+        for (var n = 0; n < 60; n++)
+        {
+            // 2.5–7 s of each side, like a reply cutting in.
+            var x = Clip(a[rnd.Next(a.Count)], rnd.Next(40000, 112000));
+            var y = Clip(b[rnd.Next(b.Count)], rnd.Next(40000, 112000));
+            cross.Add(n % 2 == 0 ? ([.. x, .. y], x.Length) : ([.. y, .. x], y.Length));
+            var p = a[rnd.Next(a.Count)];
+            var q = a[rnd.Next(a.Count)];
+            if (p == q) continue;
+            var px = Clip(p, rnd.Next(40000, 112000));
+            same.Add(([.. px, .. Clip(q, rnd.Next(40000, 112000))], px.Length));
+        }
+        var cache = new Dictionary<(float[], int, int), float[]?>();
+        var win = double.TryParse(Environment.GetEnvironmentVariable("HUIYI_WINDOW"), out var wv) ? wv : TurnSplitter.Window;
+        Console.WriteLine($"window {win} s");
+        foreach (var th in new[] { 0.25f, 0.3f, 0.35f, 0.4f, 0.45f, 0.5f })
+        {
+            int hit = 0, wrongPlace = 0, missed = 0, falseCuts = 0;
+            foreach (var (s, join) in cross)
+            {
+                var pts = TurnSplitter.Points(s, w => Embed(ex, w), th, win);
+                if (pts.Any(p => Math.Abs(p - join) <= 12000)) hit++; else if (pts.Count > 0) wrongPlace++; else missed++;
+                falseCuts += pts.Count(p => Math.Abs(p - join) > 12000);
+            }
+            var sameCut = same.Count(t => TurnSplitter.Points(t.S, w => Embed(ex, w), th, win).Count > 0);
+            Console.WriteLine($"<{th:F2}: A+B found at the join {hit}/{cross.Count} (cut elsewhere {wrongPlace}, missed {missed}, extra cuts {falseCuts}); A+A cut anyway {sameCut}/{same.Count}");
+        }
+    }
 
     private static List<Line> VadLines(float[] samples, ModelStore models)
     {

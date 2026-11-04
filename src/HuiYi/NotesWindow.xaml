@@ -22,7 +22,7 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <Border Background="#F21B1E2B" CornerRadius="10" BorderBrush="#2E3346" BorderThickness="1">
+    <Border Background="#1B1E2B" CornerRadius="10" BorderBrush="#2E3346" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -142,14 +142,59 @@
                 <!-- Opened from the tray before a meeting: nothing records until 开始会议. -->
                 <Border x:Name="ReadyPanel" Background="Transparent" Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,0,24,40">
-                        <Border Width="56" Height="56" CornerRadius="28" Background="#2C3148" HorizontalAlignment="Center">
-                            <TextBlock Text="&#xE720;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="24" Foreground="#AEB6FF"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="准备好了就开始" FontSize="17" FontWeight="SemiBold" Foreground="#F2F3F8" HorizontalAlignment="Center" Margin="0,16,0,0"/>
-                        <TextBlock FontSize="12" Foreground="#8E94A8" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="270" Margin="0,8,0,20" LineHeight="19"
+                        <!-- A soft halo round the mic. -->
+                        <Grid Width="84" Height="84" HorizontalAlignment="Center">
+                            <Ellipse>
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Color="#447C8BFF" Offset="0.55"/>
+                                        <GradientStop Color="#007C8BFF" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Border Width="58" Height="58" CornerRadius="29" BorderBrush="#4A538C" BorderThickness="1">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#363E72" Offset="0"/>
+                                        <GradientStop Color="#272C4A" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="&#xE720;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="24" Foreground="#C9CEFF"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="准备好了就开始" FontSize="18" FontWeight="SemiBold" Foreground="#F4F5FA" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                        <TextBlock FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="270" Margin="0,8,0,22" LineHeight="20"
                                    Text="点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。"/>
-                        <Button Content="●  开始会议" Style="{StaticResource PrimaryBtn}" FontSize="14" Padding="26,9" HorizontalAlignment="Center" Click="Start_Click"/>
+                        <Button Click="Start_Click" HorizontalAlignment="Center" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="b" CornerRadius="9" Padding="30,10">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#7E8BFF" Offset="0"/>
+                                                <GradientStop Color="#5A5FEA" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="#5A5FEA" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="8" Height="8" Fill="#FF6B78" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                            <TextBlock Text="开始会议" FontSize="14.5" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="b" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="b" Property="Opacity" Value="0.8"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </StackPanel>
                 </Border>
             </Grid>

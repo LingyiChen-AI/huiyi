@@ -20,6 +20,10 @@ public sealed class ListenEngine : IDisposable
     public event Action<string>? Failed;
 
     public bool IsRunning { get; private set; }
+    /// Where another person starts talking inside a stretch of speech (sample offsets; empty: one
+    /// voice, or speakers aren't told apart). Each part becomes its own line: in a quick exchange
+    /// with no pause the VAD hands over both people at once.
+    public Func<float[], IReadOnlyList<int>>? Turns { get; set; }
     /// Seconds of audio processed since Start.
     public double FedSeconds => Interlocked.Read(ref total) / (double)Recognizer.SampleRate;
 
@@ -138,17 +142,12 @@ public sealed class ListenEngine : IDisposable
                     var samples = seg.Samples;
                     var start = seg.Start;
                     vad.Pop();
-                    var watch = Stopwatch.StartNew();
-                    var r = recognizer.Recognize(samples);
-                    var text = HeardText.Clean(r.Text);
                     var cut = samples.Length >= (MaxSpeech - 0.5f) * rate;
-                    Log.Debug($"listen: final {samples.Length / (double)rate:F1} s audio, {text.Length} chars, {r.Lang}, decoded in {watch.ElapsedMilliseconds} ms{(cut ? " (cut)" : "")}");
+                    var said = Finish(samples, start, cut);
                     // The live line continues from where this piece ended.
                     speechStart = vad.IsSpeechDetected() ? start + samples.Length : -1;
                     lastPartialText = "";
-                    if (text.Any(char.IsLetter))
-                        Final?.Invoke(new HeardSegment(text, r.Lang, start / (double)rate, (start + samples.Length) / (double)rate, cut, samples));
-                    else if (partialShown)
+                    if (!said && partialShown)
                     {
                         partialShown = false;
                         Partial?.Invoke("", "");
@@ -186,10 +185,7 @@ public sealed class ListenEngine : IDisposable
                 var samples = seg.Samples;
                 var start = seg.Start;
                 vad.Pop();
-                var r = recognizer.Recognize(samples);
-                var text = HeardText.Clean(r.Text);
-                if (text.Any(char.IsLetter))
-                    Final?.Invoke(new HeardSegment(text, r.Lang, start / (double)rate, (start + samples.Length) / (double)rate, false, samples));
+                Finish(samples, start, false);
             }
         }
         catch (Exception e)
@@ -201,6 +197,39 @@ public sealed class ListenEngine : IDisposable
         {
             vad.Dispose();
         }
+    }
+
+    /// Recognizes a stretch of speech, cut where the speaker changes, and hands on each part with
+    /// words in it. True when anything was said.
+    private bool Finish(float[] samples, long start, bool cut)
+    {
+        var rate = Recognizer.SampleRate;
+        IReadOnlyList<int> points = [];
+        var watch = Stopwatch.StartNew();
+        if (Turns != null && samples.Length >= TurnSplitter.MinLine * rate)
+        {
+            try { points = Turns(samples); }
+            catch (Exception e) { Log.Debug($"listen: turn split failed {e.Message}"); }
+        }
+        var edges = new List<int> { 0 };
+        edges.AddRange(points);
+        edges.Add(samples.Length);
+        var said = false;
+        for (var k = 0; k + 1 < edges.Count; k++)
+        {
+            var piece = points.Count == 0 ? samples : samples[edges[k]..edges[k + 1]];
+            var r = recognizer.Recognize(piece);
+            var text = HeardText.Clean(r.Text);
+            var last = k + 2 == edges.Count;
+            Log.Debug($"listen: final {piece.Length / (double)rate:F1} s audio, {text.Length} chars, {r.Lang}" +
+                      (points.Count > 0 ? $", part {k + 1}/{edges.Count - 1} (speaker changed)" : "") +
+                      $", {watch.ElapsedMilliseconds} ms{(cut && last ? " (cut)" : "")}");
+            if (!text.Any(char.IsLetter)) continue;
+            said = true;
+            Final?.Invoke(new HeardSegment(text, r.Lang, (start + edges[k]) / (double)rate, (start + edges[k + 1]) / (double)rate,
+                cut && last, piece));
+        }
+        return said;
     }
 
     public void Dispose() => Stop();

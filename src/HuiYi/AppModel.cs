@@ -102,7 +102,7 @@ public sealed class AppModel
         // Voiceprints load on first use; without the model, lines just stay 对方.
         Voiceprints? prints = null;
         var printsFailed = false;
-        var tagger = new SpeakerTagger(() =>
+        Voiceprints? Prints()
         {
             if (prints != null || printsFailed) return prints;
             try { prints = new Voiceprints(Models); }
@@ -112,7 +112,10 @@ public sealed class AppModel
                 Log.Debug($"voiceprint model failed to load: {e.Message}");
             }
             return prints;
-        });
+        }
+        var tagger = new SpeakerTagger(Prints);
+        // A long stretch holding two people (no pause between them) is cut where the voice changes.
+        listen.Turns = samples => Settings.SpeakerVoices && Prints() is { } p ? TurnSplitter.Points(samples, p.Embed) : [];
         var meeting = new MeetingController(Settings, Store, Translator, Notes, listen, SystemLanguages,
             tagger, new SpeakerNamer(Ai, Store));
         var speak = new SpeakEngine(Settings, rec, Translator, () => meeting.TheirLanguage, SystemLanguages, Ai);

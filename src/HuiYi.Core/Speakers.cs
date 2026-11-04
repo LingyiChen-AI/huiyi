@@ -162,6 +162,58 @@ public sealed class VoiceClusterer
     }
 }
 
+/// Where the speaker changes inside one stretch of speech. Quick exchanges with no pause between
+/// them come out of the VAD as one long line holding both people; its single voiceprint is a blend
+/// that matches neither, so a whole interview could land on one voice. Long lines are scanned with
+/// short windows instead: where the voice on the left stops matching the voice on the right, the
+/// line is cut there, and each part is recognized and labelled on its own.
+public static class TurnSplitter
+{
+    /// Shorter lines are left whole: one person, or too little to tell.
+    public const double MinLine = 4.0;
+    public const double Window = 2.0;
+    public const double Hop = 0.5;
+    /// Neither side of a cut may be shorter than this.
+    public const double MinPiece = 1.5;
+    /// Adjacent 2 s windows of one CAM++ voice score ~0.6–0.8; across a change of speaker, ~0.1–0.35.
+    public const float ChangeBelow = 0.4f;
+
+    /// Sample offsets in `samples` where another person starts talking, in order.
+    public static List<int> Points(float[] samples, Func<float[], float[]?> embed, float changeBelow = ChangeBelow, double window = Window)
+    {
+        var points = new List<int>();
+        Find(samples, 0, samples.Length, embed, changeBelow, window, points);
+        points.Sort();
+        return points;
+    }
+
+    private static void Find(float[] s, int from, int to, Func<float[], float[]?> embed, float below, double window, List<int> points)
+    {
+        var rate = Recognizer.SampleRate;
+        if (to - from < MinLine * rate) return;
+        int w = (int)(window * rate), hop = (int)(Hop * rate), minPiece = (int)(MinPiece * rate);
+        var starts = new List<int>();
+        for (var st = from; st + w <= to; st += hop) starts.Add(st);
+        var embs = starts.Select(st => embed(s[st..(st + w)])).ToArray();
+        var step = w / hop;   // the window right after window i, not overlapping it
+        int best = -1;
+        var bestSim = float.MaxValue;
+        for (var i = 0; i + step < starts.Count; i++)
+        {
+            var cut = starts[i] + w;
+            if (cut - from < minPiece || to - cut < minPiece) continue;
+            if (embs[i] is not { } a || embs[i + step] is not { } b) continue;
+            float dot = 0;
+            for (var k = 0; k < a.Length; k++) dot += a[k] * b[k];
+            if (dot < bestSim) { bestSim = dot; best = cut; }
+        }
+        if (best < 0 || bestSim >= below) return;
+        points.Add(best);
+        Find(s, from, best, embed, below, window, points);
+        Find(s, best, to, embed, below, window, points);
+    }
+}
+
 /// Runs voiceprints and hands back a voice per line, for one meeting at a time.
 public sealed class SpeakerTagger(Func<Voiceprints?> model)
 {

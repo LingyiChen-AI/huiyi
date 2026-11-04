@@ -110,7 +110,7 @@
                             </DockPanel>
                             <DockPanel Margin="0,14,0,0">
                                 <Button DockPanel.Dock="Right" x:Name="SaveBtn" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Click="SaveProvider_Click"/>
-                                <Button x:Name="DeleteBtn" Content="删除这个服务" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2"
+                                <Button x:Name="DeleteBtn" Content="删除这个服务" Style="{StaticResource DeleteBtn}"
                                         HorizontalAlignment="Left" Click="DeleteProvider_Click"/>
                             </DockPanel>
                             <TextBlock Style="{StaticResource Helper}" Text="key 加密保存在这台电脑上，不会出现在日志和导出文件里。"/>

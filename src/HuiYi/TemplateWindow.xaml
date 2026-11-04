@@ -28,7 +28,7 @@
         <DockPanel Grid.Column="1" Margin="28,20,24,16">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,4,0,0">
-                    <Button x:Name="DeleteBtn" Content="删除" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Margin="0,0,6,0" Click="Delete_Click"/>
+                    <Button x:Name="DeleteBtn" Content="删除" Style="{StaticResource DeleteBtn}" Margin="0,0,8,0" Click="Delete_Click"/>
                     <Button x:Name="CopyBtn" Content="复制为我的模板" Style="{StaticResource Btn}" Margin="0,0,8,0" Click="Copy_Click"/>
                     <Button x:Name="DefaultBtn" Content="设为默认" Style="{StaticResource PrimaryBtn}" Click="Default_Click"/>
                     <Button x:Name="SaveBtn" Content="保存" Style="{StaticResource PrimaryBtn}" MinWidth="72" Margin="8,0,0,0" Click="Save_Click"/>

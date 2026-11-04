@@ -166,7 +166,7 @@ public partial class TemplateWindow : Window
         else
         {
             var head = new DockPanel();
-            var del = new Button { Content = "删除", Style = (Style)FindResource("GhostBtn"), Foreground = Theme.Grey2 };
+            var del = new Button { Content = "删除", Style = (Style)FindResource("DeleteBtn"), Padding = new Thickness(8, 3, 10, 3), Margin = new Thickness(6, 0, 0, 0) };
             del.Click += (_, _) => { t.Sections.RemoveAt(index); RenderDetail(); };
             DockPanel.SetDock(del, Dock.Right);
             head.Children.Add(del);
@@ -341,7 +341,7 @@ public partial class TemplateWindow : Window
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (draft == null) return;
-        if (MessageBox.Show(this, $"删除模板「{current.Name}」？", Brand.Name, MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        if (!Dialog.Confirm(this, $"删除模板「{current.Name}」？", "正在用这个模板的会议会改用默认模板，已经写好的纪要不受影响。", "删除", danger: true)) return;
         model.MyTemplates.RemoveAll(t => t.Id == current.Id);
         model.SaveTemplates();
         Show(NoteTemplates.Find(model.Settings.DefaultTemplateId, model.MyTemplates));

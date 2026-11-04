@@ -275,7 +275,8 @@ public partial class MainWindow : Window
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (selected == null || selected == model.LiveSessionId) return;
-        if (MessageBox.Show(this, "确定删除这场会议？逐字稿和纪要会一起删掉，无法恢复。", Brand.Name, MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+        var title = model.Store.Get(selected)?.DisplayTitle ?? "这场会议";
+        if (!Dialog.Confirm(this, $"删除「{title}」？", "逐字稿和纪要会一起删掉，删除后无法恢复。", "删除", danger: true)) return;
         model.Store.Delete(selected);
         selected = null;
         RefreshList();

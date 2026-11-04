@@ -303,8 +303,7 @@ public partial class SettingsWindow : Window
     private void DeleteProvider_Click(object sender, RoutedEventArgs e)
     {
         if (editing == null) return;
-        if (MessageBox.Show(this, $"删除「{editing.Name}」？它的 API key 也会一起删除。", Brand.Name,
-                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        if (!Dialog.Confirm(this, $"删除「{editing.Name}」？", "这个 AI 服务和它的 API key 会一起删除。", "删除", danger: true)) return;
         AIKey.Remove(editing.Id);
         model.Settings.Providers.Remove(editing);
         if (model.Settings.ActiveProviderId == editing.Id) model.Settings.ActiveProviderId = model.Settings.Providers.FirstOrDefault()?.Id;
@@ -479,9 +478,8 @@ public partial class SettingsWindow : Window
         var ready = App.Updates.ReadyVersion != null || await App.Updates.Check();
         UpdateBtn.IsEnabled = true;
         if (!ready || App.Updates.ReadyVersion is not { } next) return;
-        if (model.IsListening && MessageBox.Show(this,
-                $"正在记录会议。现在更新到 {next} 会先结束本场会议（记录会保存），然后重启{Brand.Name}。\n\n现在更新吗？",
-                $"更新{Brand.Name}", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+        if (model.IsListening && !Dialog.Confirm(this, $"现在更新到 {next}？",
+                $"正在记录会议。更新会先结束本场会议（记录会保存），然后重启{Brand.Name}。", "结束会议并更新"))
             return;
         UpdateText.Text = $"正在安装 {next}，{Brand.Name}会自动重新打开…";
         ((App)Application.Current).RestartToUpdate();

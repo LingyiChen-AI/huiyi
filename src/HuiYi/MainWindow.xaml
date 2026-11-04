@@ -102,7 +102,7 @@
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
                             <Button x:Name="NotesBtn" Content="生成纪要" Style="{StaticResource PrimaryBtn}" Click="Generate_Click" Margin="0,0,8,0"/>
                             <Button Content="导出 Markdown" Style="{StaticResource Btn}" Click="Export_Click" Margin="0,0,8,0"/>
-                            <Button Content="删除" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Click="Delete_Click"/>
+                            <Button Content="删除" Style="{StaticResource DeleteBtn}" ToolTip="删除这场会议" Click="Delete_Click"/>
                         </StackPanel>
                         <TextBox x:Name="TitleBox" Style="{StaticResource TitleField}" FontSize="21" Margin="-7,0,16,0"
                                  Foreground="#1E2235" LostFocus="Title_LostFocus" KeyDown="Title_KeyDown" ToolTip="点击修改标题"/>

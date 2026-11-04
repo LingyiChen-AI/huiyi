@@ -81,6 +81,7 @@ public static class Snapshot
             Save(panel, folder, "panel-notes");
         }
         Save(SpeakerNameWindow.ForSnapshot(2, "Daniel"), folder, "speaker-name");
+        Save(Dialog.ForSnapshot("删除「11月4日 支付项目周会」？", "逐字稿和纪要会一起删掉，删除后无法恢复。", "删除", true), folder, "dialog-delete");
 
         var subs = new SubtitleWindow(model);
         subs.Width = 900;

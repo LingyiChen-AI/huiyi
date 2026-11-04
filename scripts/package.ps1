@@ -1,7 +1,8 @@
 ﻿# Windows PowerShell 5.1 reads a script without a BOM as the ANSI code page: keep this file UTF-8 with BOM.
 # Builds a self-contained release (no .NET needed on the user's PC):
 #   powershell -File scripts\package.ps1
-#     -> artifacts\releases\HuiYi.App-win-Setup.exe   the installer (per user, no admin, shortcuts)
+#     -> artifacts\HuiYi-Setup.exe                     the installer people download (pick a folder)
+#     -> artifacts\releases\HuiYi.App-win-Setup.exe   Velopack's own setup, embedded in the one above
 #     -> artifacts\releases\*.nupkg, releases.win.json  what the in-app updater downloads from GitHub
 #     -> artifacts\HuiYi-<version>-win-x64.zip         a portable copy (does not update itself)
 # The speech models are not in the package: the app downloads and checks them on first run.
@@ -35,10 +36,16 @@ New-Item -ItemType Directory -Force $releases | Out-Null
     --outputDir $releases 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
 
+# The installer people download: pick a folder, then it runs Velopack's Setup.exe (embedded).
+$installer = "$root\artifacts\HuiYi-Setup.exe"
+& $dotnet build "$root\installer\HuiYi.Setup.csproj" -c $Configuration -p:Version=$version `
+    -p:VelopackSetup="$releases\HuiYi.App-win-Setup.exe" -o "$root\artifacts\installer" -nologo -v q
+if ($LASTEXITCODE -ne 0) { throw "installer build failed" }
+Copy-Item "$root\artifacts\installer\HuiYi-Setup.exe" $installer -Force
+
 Remove-Item $zip -ErrorAction SilentlyContinue
 Compress-Archive -Path "$out\*" -DestinationPath $zip
-$setup = Get-ChildItem $releases -Filter *Setup.exe | Select-Object -First 1
-foreach ($f in @($setup.FullName, $zip)) {
+foreach ($f in @($installer, $zip)) {
     $hash = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
     "{0}  {1:N0} MB  sha256 {2}" -f $f, ((Get-Item $f).Length / 1MB), $hash
 }

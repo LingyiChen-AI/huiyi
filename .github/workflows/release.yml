@@ -51,7 +51,11 @@ jobs:
           vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
             --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --delta none `
             --runtime win-x64 --outputDir releases
+          # The installer people download: lets them pick the folder, then runs the Setup.exe above.
+          dotnet build installer/HuiYi.Setup.csproj -c Release -p:Version=$env:VERSION `
+            -p:VelopackSetup="$PWD/releases/HuiYi.App-win-Setup.exe" -o installer-out
           New-Item -ItemType Directory -Force portable | Out-Null
+          Copy-Item installer-out/HuiYi-Setup.exe portable/HuiYi-Setup.exe
           Compress-Archive -Path publish/* -DestinationPath "portable/HuiYi-$env:VERSION-win-x64.zip" -Force
 
       - name: Publish the release
@@ -61,4 +65,4 @@ jobs:
         run: |
           vpk upload github --repoUrl $env:REPO_URL --token $env:GH_TOKEN --outputDir releases `
             --tag "${{ github.ref_name }}" --releaseName "会译 $env:VERSION" --publish --merge
-          gh release upload "${{ github.ref_name }}" "portable/HuiYi-$env:VERSION-win-x64.zip" --clobber
+          gh release upload "${{ github.ref_name }}" "portable/HuiYi-Setup.exe" "portable/HuiYi-$env:VERSION-win-x64.zip" --clobber

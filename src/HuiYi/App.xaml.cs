@@ -178,9 +178,9 @@ public partial class App : Application
         translate.IsCheckable = false;
         translate.IsChecked = Model.Settings.TranslationOn;
         menu.Items.Add(new Separator());
-        Item("会议记录…", OpenMain);
-        Item("纪要模板…", () => OpenTemplates());
-        Item("设置…", OpenSettings);
+        Item("会议记录", OpenMain);
+        Item("纪要模板", () => OpenTemplates());
+        Item("设置", OpenSettings);
         menu.Items.Add(new Separator());
         if (Updates.ReadyVersion is { } next) Item($"重启并更新到 {next}", RestartToUpdate);
         Item($"退出{Brand.Name}", Quit);

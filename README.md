@@ -19,7 +19,7 @@ Windows 上的会议实时字幕与纪要工具：把电脑里播放的会议声
 
 ## 使用
 
-1. 从 [Releases](https://github.com/LingyiChen-AI/huiyi/releases/latest) 下载 `HuiYi.App-win-Setup.exe` 双击安装：装在当前用户下，不要管理员权限，自带运行时，不用装 .NET；桌面和开始菜单会有「会译」。之后每 6 小时自动检查新版本，下载好后在托盘菜单「重启并更新」或下次退出时安装。也可以下载 `HuiYi-<版本>-win-x64.zip` 解压即用（这种不会自动更新）。
+1. 从 [Releases](https://github.com/LingyiChen-AI/huiyi/releases/latest) 下载 `HuiYi-Setup.exe` 双击安装，可以自己选安装位置（默认装在当前用户下，不要管理员权限），自带运行时，不用装 .NET；桌面和开始菜单会有「会译」。之后每 6 小时自动检查新版本，下载好后在托盘菜单「重启并更新」或下次退出时安装。也可以下载 `HuiYi-<版本>-win-x64.zip` 解压即用（这种不会自动更新）。
 2. 首次启动会下载约 260 MB 的本机模型（语音识别、断句、发言人声纹；Hugging Face / GitHub，失败自动换镜像，下载后校验 SHA-256）。
 3. 双击桌面的「会译」打开会议记录；单击任务栏右下角通知区域里的图标开始收听；右键菜单里有会议记录和设置。
 4. 可选：在「设置 › AI 服务」里接入一个大模型（选平台、填 API key），打开纪要和更准的翻译。
@@ -44,8 +44,8 @@ dotnet build HuiYi.sln
 dotnet test tests/HuiYi.Tests                      # 单测（含从 Cicada 移植的用例）
 dotnet run --project src/HuiYi -- --show main      # 运行；--listen 启动即收听，--show main|settings|setup
                                                         # --feed <音频> 用文件代替系统声音；--snapshot <目录> 把各窗口渲染成 PNG
-powershell -File scripts/package.ps1                    # 打包：artifacts\releases\HuiYi.App-win-Setup.exe 安装包 + 免安装 zip
-powershell -File scripts/release.ps1 0.2.0              # 发版：改版本号、测试、打包、打 tag 推送、上传到 GitHub Releases
+powershell -File scripts/package.ps1                    # 本地打包：artifacts\HuiYi-Setup.exe 安装向导 + 免安装 zip
+powershell -File scripts/release.ps1 0.2.0              # 发版：改版本号、测试、打 tag 推送；GitHub Actions 打包并发布 Release
 ```
 
 不带界面检查引擎：`tools/HuiYi.Cli`

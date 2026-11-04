@@ -25,6 +25,10 @@ public partial class MainWindow : Window
         Icon = Icons.Mark(64, false);
         Logo.Source = Icons.Mark(52, false);
         AppName.Text = Brand.Name;
+        // Roomy by default, but never bigger than the screen it opens on.
+        var area = SystemParameters.WorkArea;
+        Width = Math.Min(Width, area.Width * 0.92);
+        Height = Math.Min(Height, area.Height * 0.92);
         LinesList.ItemsSource = lines;
         model.Store.Changed += () => Dispatcher.BeginInvoke(RefreshList);
         model.NotesChanged += () =>
@@ -38,8 +42,16 @@ public partial class MainWindow : Window
     {
         ListenBtn.Content = model.IsListening ? "● 收听中 · 点击结束" : "开始收听";
         ListenBtn.Style = (Style)FindResource(model.IsListening ? "OnAirBtn" : "PrimaryBtn");
+        LiveBtn.Visibility = model.IsListening ? Visibility.Visible : Visibility.Collapsed;
+        TranslateOn.IsChecked = model.Settings.TranslationOn;
         RefreshList();
     }
+
+    private void Live_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).ShowLive();
+
+    private void Settings_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).OpenSettings();
+
+    private void Translate_Click(object sender, RoutedEventArgs e) => model.SetTranslation(TranslateOn.IsChecked == true);
 
     /// 今天 / 昨天 / 本周 / 更早, for the sidebar's group headings.
     private static string GroupOf(DateTime startedUtc)

@@ -80,6 +80,7 @@ public static class Snapshot
             panel.Preview(latest.Id, notesTab: true);
             Save(panel, folder, "panel-notes");
         }
+        Save(SpeakerNameWindow.ForSnapshot(2, "Daniel"), folder, "speaker-name");
 
         var subs = new SubtitleWindow(model);
         subs.Width = 900;

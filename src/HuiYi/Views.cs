@@ -19,6 +19,20 @@ public sealed class LineVM : INotifyPropertyChanged
     private string who = "发言人";
     private Brush whoBrush = Theme.Grey2;
 
+    /// The voice behind the line and its speaker number, once it has one: then the name can be changed.
+    public int? Voice { get; private set; }
+    private int? number;
+    public int? Number
+    {
+        get => number;
+        private set
+        {
+            Set(ref number, value);
+            OnPropertyChanged(nameof(Renamable));
+        }
+    }
+    public bool Renamable => !IsMe && Voice != null && number != null;
+
     public string Src { get => src; set => Set(ref src, value); }
     public string Who { get => who; set => Set(ref who, value); }
     public Brush WhoBrush { get => whoBrush; set => Set(ref whoBrush, value); }
@@ -48,6 +62,8 @@ public sealed class LineVM : INotifyPropertyChanged
         Src = l.Src;
         Dst = showDst ? l.Dst : null;
         Who = label;
+        Voice = l.Voice;
+        Number = number;
         WhoBrush = IsMe ? Theme.Primary : number is { } n ? Theme.Speaker(n) : Theme.Grey2;
     }
 

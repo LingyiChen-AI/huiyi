@@ -156,6 +156,24 @@ public partial class NotesWindow : Window
         Tick();
     }
 
+    /// A click on a speaker's name: name them for the whole meeting.
+    private void Who_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: LineVM { Renamable: true } vm } chip || sessionId is not { } id) return;
+        e.Handled = true;
+        var number = vm.Number!.Value;
+        var voice = vm.Voice!.Value;
+        var current = vm.Who == $"发言人 {number}" ? "" : vm.Who;
+        // Screen pixels → DIPs, so the box lands under the name at any display scale.
+        var at = chip.PointToScreen(new Point(0, chip.ActualHeight + 2));
+        if (PresentationSource.FromVisual(this)?.CompositionTarget is { } target) at = target.TransformFromDevice.Transform(at);
+        SpeakerNameWindow.Ask(at, number, current, name =>
+        {
+            model.Store.SetVoiceName(id, voice, name);
+            if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
+        });
+    }
+
     private void OnLine(string id)
     {
         if (sessionId == null) return;

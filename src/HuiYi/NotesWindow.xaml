@@ -93,13 +93,34 @@
                                         <Rectangle Fill="{Binding WhoBrush}" RadiusX="1.5" RadiusY="1.5"/>
                                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Who}" Foreground="{Binding WhoBrush}" FontSize="11" FontWeight="SemiBold"/>
-                                                <TextBlock Text="{Binding Time}" Foreground="#5F6578" FontSize="11" Margin="8,0,0,0"/>
+                                                <!-- Click the speaker to name them (for the whole meeting). -->
+                                                <Border x:Name="whoChip" CornerRadius="4" Padding="4,0,4,1" Margin="-4,0,0,0" Background="Transparent"
+                                                        Cursor="Hand" ToolTip="点击给这位发言人改名" MouseLeftButtonUp="Who_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Who}" Foreground="{Binding WhoBrush}" FontSize="11" FontWeight="SemiBold"/>
+                                                        <TextBlock x:Name="pen" Text="✎" Foreground="{Binding WhoBrush}" FontSize="10" Margin="4,0,0,0" Opacity="0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <TextBlock Text="{Binding Time}" Foreground="#5F6578" FontSize="11" Margin="4,0,0,0"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding Dst}" Visibility="{Binding DstVisibility}" FontSize="15" Foreground="#F2F3F8" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                             <TextBlock Text="{Binding Src}" Foreground="#8E94A8" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Renamable}" Value="False">
+                                            <Setter TargetName="whoChip" Property="Cursor" Value="Arrow"/>
+                                            <Setter TargetName="whoChip" Property="ToolTip" Value="{x:Null}"/>
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Renamable}" Value="True"/>
+                                                <Condition Binding="{Binding IsMouseOver, ElementName=whoChip}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter TargetName="whoChip" Property="Background" Value="#2C3148"/>
+                                            <Setter TargetName="pen" Property="Opacity" Value="0.9"/>
+                                        </MultiDataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

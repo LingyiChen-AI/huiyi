@@ -475,6 +475,45 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- The same field on the dark panels: stays dark while typing, the accent ring shows focus. -->
+        <Style x:Key="NightField" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+            <Setter Property="Foreground" Value="#F2F3F8"/>
+            <Setter Property="Background" Value="#2A2F45"/>
+            <Setter Property="BorderBrush" Value="#3A3F55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CaretBrush" Value="#F2F3F8"/>
+            <Setter Property="SelectionBrush" Value="#7C8BFF"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="ring" CornerRadius="9" BorderThickness="3" BorderBrush="Transparent" Margin="-3">
+                            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                <Grid>
+                                    <TextBlock x:Name="hint" Text="{TemplateBinding Tag}" Foreground="#6B7186" Margin="{TemplateBinding Padding}"
+                                               Padding="2,0,0,0" FontSize="{TemplateBinding FontSize}" IsHitTestVisible="False" Visibility="Collapsed"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False"
+                                                  HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                </Grid>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="#7C8BFF"/>
+                                <Setter TargetName="ring" Property="BorderBrush" Value="#33406A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!-- A heading you can edit in place: reads as text, shows a field only on hover and while typing. -->
         <Style x:Key="TitleField" TargetType="TextBox" BasedOn="{StaticResource Field}">
             <Setter Property="Background" Value="Transparent"/>

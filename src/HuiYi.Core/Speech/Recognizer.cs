@@ -2,7 +2,31 @@ using SherpaOnnx;
 
 namespace HuiYi.Speech;
 
-public sealed record Recognized(string Text, string Lang);
+/// `Tokens` and `Times`: each recognized piece (a character, a word part, punctuation) and when it
+/// starts, in seconds from the clip's start, for cutting a clip at its sentence ends.
+public sealed record Recognized(string Text, string Lang, string[]? Tokens = null, float[]? Times = null)
+{
+    private static readonly char[] Enders = ['。', '？', '！', '?', '!', '.'];
+
+    /// Where each sentence ends, in seconds from the clip's start: half-way between a sentence-ending
+    /// mark and the next piece (a turn usually changes there). Empty without timestamps.
+    public List<double> SentenceEnds()
+    {
+        var ends = new List<double>();
+        if (Tokens == null || Times == null || Tokens.Length != Times.Length) return ends;
+        for (var i = 0; i + 1 < Tokens.Length; i++)
+        {
+            var t = Tokens[i].Trim();
+            if (t.Length == 0 || t.IndexOfAny(Enders) < 0) continue;
+            // The next piece that is a word, not more punctuation.
+            var j = i + 1;
+            while (j < Tokens.Length && Tokens[j].Trim().All(c => char.IsPunctuation(c) || char.IsWhiteSpace(c))) j++;
+            if (j >= Tokens.Length) break;
+            ends.Add((Times[i] + Times[j]) / 2);
+        }
+        return ends;
+    }
+}
 
 /// SenseVoice through sherpa-onnx: one model for Chinese, English, Japanese, Korean and Cantonese,
 /// with the spoken language in the result. Not streaming, but a 10 s clip decodes in ~0.1 s on a
@@ -39,7 +63,7 @@ public sealed class Recognizer : IDisposable
             recognizer.Decode(stream);
             var r = stream.Result;
             var text = r.Text.Trim();
-            return new Recognized(text, Languages.FromRecognizer(LangTag(r), text));
+            return new Recognized(text, Languages.FromRecognizer(LangTag(r), text), r.Tokens, r.Timestamps);
         }
     }
 

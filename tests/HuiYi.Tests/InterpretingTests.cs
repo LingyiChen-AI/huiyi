@@ -68,6 +68,28 @@ public class InterpretingTests
     }
 
     [Fact]
+    public void AReplyAfterASentenceEndIsCutOffAndGivenToItsVoice()
+    {
+        // 6 s: voice 0 asks for 2.5 s, voice 1 answers. The recognizer found sentence ends at 1.2 s
+        // (inside the question) and 2.5 s (the turn). Samples hold their own index, so the fake
+        // voiceprint knows which voice a slice is mostly in.
+        const int rate = 16000, turn = (int)(2.5 * rate);
+        var samples = Enumerable.Range(0, 6 * rate).Select(i => (float)i).ToArray();
+        float[]? Embed(float[] w)
+        {
+            var start = (int)w[0];
+            var b = Enumerable.Range(start, w.Length).Count(i => i >= turn) / (float)w.Length;
+            return [1 - b, b];
+        }
+        int? Nearest(float[] v, float sim, float margin) => v[0] >= 0.8f ? 0 : v[1] >= 0.8f ? 1 : null;
+        var finder = new TurnFinder(Embed, Nearest);
+        Assert.Equal([turn], finder.Points(samples, [1.2, 2.5]));
+        // The same sentence ends within one voice: nothing to cut.
+        var one = new TurnFinder(_ => [1f, 0f], (_, _, _) => 0);
+        Assert.Empty(one.Points(samples, [1.2, 2.5]));
+    }
+
+    [Fact]
     public void ALineBeforeItsVoiceHasANumberReads发言人()
     {
         var line = new TranscriptLine { Id = "l1", Speaker = "them", Src = "我们先看一下这周的进度" };

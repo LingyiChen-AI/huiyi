@@ -227,7 +227,7 @@ public sealed class MeetingController
             lastDraftSent = "";
             partialEpoch++;
             var prev = lastThemId == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastThemId);
-            joined = prev != null && prev.SrcLang == seg.Lang && (voice == null || prev.Voice == null || voice == prev.Voice)
+            joined = prev != null && !seg.NewSpeaker && prev.SrcLang == seg.Lang && (voice == null || prev.Voice == null || voice == prev.Voice)
                      && HeardText.Continues(prev.Src, seg.Text, seg.Start - lastEnd, lastCut);
             lastCut = seg.Cut;
             lastEnd = seg.End;

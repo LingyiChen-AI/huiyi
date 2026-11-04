@@ -183,59 +183,96 @@ static class SpeakerEval
 
     private record Line(double Start, double End, float[] Samples);
 
-    /// Quick exchanges built from real lines: the live clustering finds the two main voices, then
-    /// lines are joined end to end with no pause — A+B (a change at a known point) and A+A (none) —
-    /// and TurnSplitter is scored on finding the joins between people and leaving the others alone.
+    /// Quick exchanges built from real lines: voices are learned from the first half of the audio
+    /// (as a meeting would have by then), then whole lines from the second half are joined end to end
+    /// with no pause — A+B (a change at a known point) and A+A (none). Scores the old splitter
+    /// (neighbouring windows), TurnFinder with the known voices, and TurnFinder before any are known.
     private static void Stitch(float[] samples, ModelStore models)
     {
         using var ex = new SpeakerEmbeddingExtractor(new SpeakerEmbeddingExtractorConfig { Model = models.Speaker, NumThreads = 4 });
-        var lines = VadLines(samples, models).Where(l => l.End - l.Start >= 2.5).ToList();
-        var c = new Clusterer(VoiceClusterer.Join);
-        var voice = lines.Select(l => Embed(ex, l.Samples) is { } e ? c.Label(e, l.Samples.Length / 16000.0) : null).ToArray();
-        var top = voice.Where(v => v != null).GroupBy(v => v!.Value).OrderByDescending(g => g.Count()).Take(2).Select(g => g.Key).ToArray();
+        using var rec = new Recognizer(models);
+        var silence = float.TryParse(Environment.GetEnvironmentVariable("HUIYI_SILENCE"), out var sv) ? sv : 0.3f;
+        var lines = VadLines(samples, models, silence);
+        var half = samples.Length / 2 / 16000.0;
+        var vc = new VoiceClusterer();
+        foreach (var l in lines.Where(l => l.End <= half))
+            if (Embed(ex, l.Samples) is { } e) vc.Label(e, l.Samples.Length / 16000.0);
+        var test = lines.Where(l => l.Start > half && l.End - l.Start is >= 1.5 and <= 8)
+            .Select(l => (Line: l, Voice: Embed(ex, l.Samples) is { } e ? vc.Nearest(e, 0.55f, 0.05f) : null))
+            .Where(t => t.Voice != null).ToList();
+        var top = test.GroupBy(t => t.Voice!.Value).OrderByDescending(g => g.Count()).Take(2).Select(g => g.Key).ToArray();
         if (top.Length < 2) { Console.WriteLine("only one voice found"); return; }
-        var a = lines.Where((l, i) => voice[i] == top[0]).ToList();
-        var b = lines.Where((l, i) => voice[i] == top[1]).ToList();
-        Console.WriteLine($"voice {top[0]}: {a.Count} lines, voice {top[1]}: {b.Count} lines");
-        static float[] Clip(Line l, int max) => l.Samples.Length > max ? l.Samples[..max] : l.Samples;
+        var a = test.Where(t => t.Voice == top[0]).Select(t => t.Line).ToList();
+        var b = test.Where(t => t.Voice == top[1]).Select(t => t.Line).ToList();
+        Console.WriteLine($"{lines.Count} lines at {silence} s silence; test voices {top[0]}: {a.Count} lines, {top[1]}: {b.Count} lines");
         var rnd = new Random(7);
         var cross = new List<(float[] S, int Join)>();
         var same = new List<(float[] S, int Join)>();
-        for (var n = 0; n < 60; n++)
+        for (var n = 0; n < 80; n++)
         {
-            // 2.5–7 s of each side, like a reply cutting in.
-            var x = Clip(a[rnd.Next(a.Count)], rnd.Next(40000, 112000));
-            var y = Clip(b[rnd.Next(b.Count)], rnd.Next(40000, 112000));
+            var x = a[rnd.Next(a.Count)].Samples;
+            var y = b[rnd.Next(b.Count)].Samples;
             cross.Add(n % 2 == 0 ? ([.. x, .. y], x.Length) : ([.. y, .. x], y.Length));
-            var p = a[rnd.Next(a.Count)];
-            var q = a[rnd.Next(a.Count)];
-            if (p == q) continue;
-            var px = Clip(p, rnd.Next(40000, 112000));
-            same.Add(([.. px, .. Clip(q, rnd.Next(40000, 112000))], px.Length));
+            var big = n % 2 == 0 ? a : b;
+            var p = big[rnd.Next(big.Count)];
+            var q = big[rnd.Next(big.Count)];
+            if (p != q) same.Add(([.. p.Samples, .. q.Samples], p.Samples.Length));
         }
-        var cache = new Dictionary<(float[], int, int), float[]?>();
-        var win = double.TryParse(Environment.GetEnvironmentVariable("HUIYI_WINDOW"), out var wv) ? wv : TurnSplitter.Window;
-        Console.WriteLine($"window {win} s");
-        foreach (var th in new[] { 0.25f, 0.3f, 0.35f, 0.4f, 0.45f, 0.5f })
+        var ends = new Dictionary<float[], List<double>>();
+        List<double> Ends(float[] s) => ends.TryGetValue(s, out var e) ? e : ends[s] = rec.Recognize(s).SentenceEnds();
+        float[]? E(float[] w) => Embed(ex, w);
+        var known = new TurnFinder(E, (v, sim, margin) => vc.Known >= 2 ? vc.Nearest(v, sim, margin) : null);
+        var blind = new TurnFinder(E, (_, _, _) => null);
+        var methods = new (string Name, Func<float[], List<int>> Find)[]
         {
-            int hit = 0, wrongPlace = 0, missed = 0, falseCuts = 0;
+            ("old: neighbouring 2 s windows", s => TurnSplitter.Points(s, E)),
+            ("new: sentences + known voices", s => known.Points(s, Ends(s))),
+            ("new: sentences, no voices yet", s => blind.Points(s, Ends(s))),
+        };
+        if (Environment.GetEnvironmentVariable("HUIYI_DEBUG") == "1")
+        {
+            // Why the new way misses: the sentence ends found, how far the nearest is from the join,
+            // and each side's best and second-best similarity to the known voices.
+            float Sim(float[] v, int voice)
+            {
+                var c = vc.Sums[voice];
+                var n = MathF.Sqrt(c.Sum(x => x * x));
+                return Dot(v, c) / n;
+            }
+            var shown = 0;
             foreach (var (s, join) in cross)
             {
-                var pts = TurnSplitter.Points(s, w => Embed(ex, w), th, win);
-                if (pts.Any(p => Math.Abs(p - join) <= 12000)) hit++; else if (pts.Count > 0) wrongPlace++; else missed++;
-                falseCuts += pts.Count(p => Math.Abs(p - join) > 12000);
+                if (known.Points(s, Ends(s)).Any(p => Math.Abs(p - join) <= 9600)) continue;
+                var e = Ends(s);
+                var near = e.Count == 0 ? double.NaN : e.Min(x => Math.Abs(x - join / 16000.0));
+                var left = E(s[..join]);
+                var right = E(s[join..]);
+                string Score(float[]? v) => v == null ? "-" : $"[{Sim(v, top[0]):F2} / {Sim(v, top[1]):F2}]";
+                Console.WriteLine($"miss: {s.Length / 16000.0:F1} s, join {join / 16000.0:F1}, sentence ends [{string.Join(" ", e.Select(x => x.ToString("F1")))}] nearest {near:F2} s off; " +
+                                  $"left {Score(left)} right {Score(right)} left~right {(left != null && right != null ? Dot(left, right) : 0):F2}");
+                if (++shown >= 17) break;
             }
-            var sameCut = same.Count(t => TurnSplitter.Points(t.S, w => Embed(ex, w), th, win).Count > 0);
-            Console.WriteLine($"<{th:F2}: A+B found at the join {hit}/{cross.Count} (cut elsewhere {wrongPlace}, missed {missed}, extra cuts {falseCuts}); A+A cut anyway {sameCut}/{same.Count}");
+        }
+        foreach (var (name, find) in methods)
+        {
+            int hit = 0, missed = 0, extra = 0;
+            foreach (var (s, join) in cross)
+            {
+                var pts = find(s);
+                if (pts.Any(p => Math.Abs(p - join) <= 9600)) hit++; else missed++;
+                extra += pts.Count(p => Math.Abs(p - join) > 9600);
+            }
+            var sameCut = same.Count(t => find(t.S).Count > 0);
+            Console.WriteLine($"{name,-32} A+B found {hit}/{cross.Count} ({100.0 * hit / cross.Count:F0}%), missed {missed}, extra cuts {extra}; A+A cut {sameCut}/{same.Count}");
         }
     }
 
-    private static List<Line> VadLines(float[] samples, ModelStore models)
+    private static List<Line> VadLines(float[] samples, ModelStore models, float minSilence = 0.5f)
     {
         var config = new VadModelConfig();
         config.SileroVad.Model = models.Vad;
         config.SileroVad.Threshold = 0.5f;
-        config.SileroVad.MinSilenceDuration = 0.5f;
+        config.SileroVad.MinSilenceDuration = minSilence;
         config.SileroVad.MinSpeechDuration = 0.25f;
         config.SileroVad.MaxSpeechDuration = 12f;
         config.SileroVad.WindowSize = 512;

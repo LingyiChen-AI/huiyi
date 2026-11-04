@@ -7,8 +7,9 @@ namespace HuiYi.Speech;
 
 /// A finished stretch of speech. `Start`/`End`: seconds of audio since listening began. `Cut`: the
 /// line was ended because it ran long, not at a pause, so the next one may carry it on.
-/// `Samples`: the stretch's audio (16 kHz mono), for telling whose voice it is.
-public sealed record HeardSegment(string Text, string Lang, double Start, double End, bool Cut, float[]? Samples = null);
+/// `Samples`: the stretch's audio (16 kHz mono), for telling whose voice it is. `NewSpeaker`: it was
+/// cut off the stretch before it because the voice changed there, so it never joins that line.
+public sealed record HeardSegment(string Text, string Lang, double Start, double End, bool Cut, float[]? Samples = null, bool NewSpeaker = false);
 
 /// What the PC plays → Silero VAD → SenseVoice. A sentence ends at a pause (or after 12 s of
 /// unbroken speech); while someone is talking, the speech so far is decoded again every ~0.6 s for
@@ -23,7 +24,8 @@ public sealed class ListenEngine : IDisposable
     /// Where another person starts talking inside a stretch of speech (sample offsets; empty: one
     /// voice, or speakers aren't told apart). Each part becomes its own line: in a quick exchange
     /// with no pause the VAD hands over both people at once.
-    public Func<float[], IReadOnlyList<int>>? Turns { get; set; }
+    /// Gets the stretch and its recognition (with sentence ends).
+    public Func<float[], Recognized, IReadOnlyList<int>>? Turns { get; set; }
     /// Seconds of audio processed since Start.
     public double FedSeconds => Interlocked.Read(ref total) / (double)Recognizer.SampleRate;
 
@@ -94,7 +96,8 @@ public sealed class ListenEngine : IDisposable
         var config = new VadModelConfig();
         config.SileroVad.Model = models.Vad;
         config.SileroVad.Threshold = 0.5f;
-        config.SileroVad.MinSilenceDuration = 0.5f;
+        // A reply often follows after only ~0.2–0.3 s: 0.3 s of quiet ends a line, so it starts its own.
+        config.SileroVad.MinSilenceDuration = 0.3f;
         config.SileroVad.MinSpeechDuration = 0.25f;
         config.SileroVad.MaxSpeechDuration = MaxSpeech;
         config.SileroVad.WindowSize = 512;
@@ -204,11 +207,12 @@ public sealed class ListenEngine : IDisposable
     private bool Finish(float[] samples, long start, bool cut)
     {
         var rate = Recognizer.SampleRate;
-        IReadOnlyList<int> points = [];
         var watch = Stopwatch.StartNew();
-        if (Turns != null && samples.Length >= TurnSplitter.MinLine * rate)
+        var whole = recognizer.Recognize(samples);
+        IReadOnlyList<int> points = [];
+        if (Turns != null && samples.Length >= 2 * TurnFinder.MinSentence * rate)
         {
-            try { points = Turns(samples); }
+            try { points = Turns(samples, whole); }
             catch (Exception e) { Log.Debug($"listen: turn split failed {e.Message}"); }
         }
         var edges = new List<int> { 0 };
@@ -218,7 +222,8 @@ public sealed class ListenEngine : IDisposable
         for (var k = 0; k + 1 < edges.Count; k++)
         {
             var piece = points.Count == 0 ? samples : samples[edges[k]..edges[k + 1]];
-            var r = recognizer.Recognize(piece);
+            // One part: the whole decode serves; parts are decoded on their own.
+            var r = points.Count == 0 ? whole : recognizer.Recognize(piece);
             var text = HeardText.Clean(r.Text);
             var last = k + 2 == edges.Count;
             Log.Debug($"listen: final {piece.Length / (double)rate:F1} s audio, {text.Length} chars, {r.Lang}" +
@@ -227,7 +232,7 @@ public sealed class ListenEngine : IDisposable
             if (!text.Any(char.IsLetter)) continue;
             said = true;
             Final?.Invoke(new HeardSegment(text, r.Lang, (start + edges[k]) / (double)rate, (start + edges[k + 1]) / (double)rate,
-                cut && last, piece));
+                cut && last, piece, NewSpeaker: k > 0));
         }
         return said;
     }

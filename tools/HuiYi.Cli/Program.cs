@@ -57,7 +57,11 @@ switch (cmd)
         using var rec = new Recognizer(models);
         var listen = new ListenEngine(rec, models);
         using var prints = new Voiceprints(models);
-        var meeting = new MeetingController(settings, store, translator, notes, listen, () => sys, new SpeakerTagger(() => prints));
+        var tagger = new SpeakerTagger(() => prints);
+        // As the app does; HUIYI_TURNS=0 leaves long stretches whole, for comparing.
+        if (Environment.GetEnvironmentVariable("HUIYI_TURNS") != "0")
+            listen.Turns = (s, heard) => new TurnFinder(prints.Embed, tagger.Nearest).Points(s, heard.SentenceEnds());
+        var meeting = new MeetingController(settings, store, translator, notes, listen, () => sys, tagger);
         var w = Stopwatch.StartNew();
         string lastPartial = "";
         meeting.SubtitleChanged += s =>
@@ -210,6 +214,19 @@ switch (cmd)
         foreach (var (k, v) in MicUsers.InCall()) Console.WriteLine($"{v} ({k})");
         Console.WriteLine("done");
         break;
+    case "tokens":
+    {
+        // huiyi-cli tokens <audio> <from s> <seconds>: one clip, each piece with its time, and the sentence ends.
+        var all = ReadAll(args[1]);
+        var from = (int)(double.Parse(args[2]) * 16000);
+        var clip = all[from..Math.Min(all.Length, from + (int)(double.Parse(args[3]) * 16000))];
+        using var rec = new Recognizer(models);
+        var r = rec.Recognize(clip);
+        Console.WriteLine(r.Text);
+        Console.WriteLine(string.Join(" ", (r.Tokens ?? []).Select((t, i) => $"{t}@{r.Times![i]:F2}")));
+        Console.WriteLine("sentence ends: " + string.Join(", ", r.SentenceEnds().Select(x => x.ToString("F2"))));
+        break;
+    }
     case "mics":
     {
         var current = DefaultDevices.DefaultMicId();

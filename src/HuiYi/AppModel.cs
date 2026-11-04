@@ -115,7 +115,12 @@ public sealed class AppModel
         }
         var tagger = new SpeakerTagger(Prints);
         // A long stretch holding two people (no pause between them) is cut where the voice changes.
-        listen.Turns = samples => Settings.SpeakerVoices && Prints() is { } p ? TurnSplitter.Points(samples, p.Embed) : [];
+        listen.Turns = (samples, heard) =>
+        {
+            if (!Settings.SpeakerVoices || Prints() is not { } p) return [];
+            var finder = new TurnFinder(p.Embed, tagger.Nearest);
+            return finder.Points(samples, heard.SentenceEnds());
+        };
         var meeting = new MeetingController(Settings, Store, Translator, Notes, listen, SystemLanguages,
             tagger, new SpeakerNamer(Ai, Store));
         var speak = new SpeakEngine(Settings, rec, Translator, () => meeting.TheirLanguage, SystemLanguages, Ai);

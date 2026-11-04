@@ -24,7 +24,7 @@ public sealed class Voiceprints : IDisposable
 
     public Voiceprints(ModelStore models)
     {
-        var config = new SpeakerEmbeddingExtractorConfig { Model = models.Speaker, NumThreads = 2, Provider = "cpu", Debug = 0 };
+        var config = new SpeakerEmbeddingExtractorConfig { Model = models.Speaker, NumThreads = 4, Provider = "cpu", Debug = 0 };
         extractor = new SpeakerEmbeddingExtractor(config);
     }
 
@@ -127,6 +127,25 @@ public sealed class VoiceClusterer
         return dot / Math.Max(MathF.Sqrt(na) * MathF.Sqrt(nb), float.Epsilon);
     }
 
+    /// The known voice `v` clearly sounds like, without counting it: one with a few lines behind it,
+    /// at least `minSim` alike, and `margin` ahead of the next best. Null while unsure.
+    public int? Nearest(float[] v, float minSim, float margin)
+    {
+        int best = -1;
+        float bestSim = -1, second = -1;
+        for (var i = 0; i < Sums.Count; i++)
+        {
+            if (counts[i] < 3) continue;
+            var sim = Cosine(v, Sums[i]);
+            if (sim > bestSim) { second = bestSim; bestSim = sim; best = i; }
+            else if (sim > second) second = sim;
+        }
+        return best >= 0 && bestSim >= minSim && bestSim - second >= margin ? best : null;
+    }
+
+    /// Voices with enough lines to compare against.
+    public int Known => counts.Count(c => c >= 3);
+
     public int? Label(float[] v, double seconds)
     {
         lineNo++;
@@ -214,6 +233,143 @@ public static class TurnSplitter
     }
 }
 
+/// Where the speaker changes inside one stretch of speech, using three things at once:
+/// 1. Sentence ends: a reply almost always starts after one ("…第二次了。没错呀"), so the clip is first
+///    cut into sentences by the recognizer's punctuation and timestamps.
+/// 2. Known voices: once the meeting has its voices, each sentence (or short window) is matched to
+///    the voice it sounds like, instead of only comparing it with its neighbour.
+/// 3. Long stretches with no sentence end: 1.5 s windows matched to known voices, where a voice must
+///    hold for 1.5 s to count (a stray window doesn't flip it); with no known voices yet, the
+///    neighbour comparison of TurnSplitter.
+public sealed class TurnFinder(Func<float[], float[]?> embed, Func<float[], float, float, int?> nearest)
+{
+    /// A sentence shorter than this is judged with its neighbour, not alone.
+    public const double MinSentence = 0.7;
+    /// Sentences without a known voice: cut when this unlike each other.
+    public const float SentencesDiffer = 0.4f;
+    public const double Window = 1.5;
+    public const double Hop = 0.5;
+    /// Known voices are checked window by window in any part at least this long…
+    public const double MinPart = 2.5;
+    /// …and a voice counts once it holds this long (a reply cutting in is often just a second).
+    public const double Hold = 1.0;
+    public const double MinPiece = 1.0;
+    /// A cut this close to a sentence end moves onto it, so words aren't split.
+    public const double Snap = 0.8;
+    /// How sure a match to a known voice must be: whole sentences, then short windows.
+    public const float SentenceSim = 0.5f, SentenceMargin = 0.05f;
+    public const float WindowSim = 0.45f, WindowMargin = 0.08f;
+
+    private const int Rate = Recognizer.SampleRate;
+
+    /// Sample offsets where another person starts talking. `sentenceEnds`: seconds into the clip.
+    public List<int> Points(float[] samples, IReadOnlyList<double> sentenceEnds)
+    {
+        // 1–2: sentence by sentence.
+        var edges = new List<int> { 0 };
+        foreach (var e in sentenceEnds)
+        {
+            var at = (int)(e * Rate);
+            if (at - edges[^1] >= MinSentence * Rate && samples.Length - at >= MinSentence * Rate) edges.Add(at);
+        }
+        edges.Add(samples.Length);
+        var cuts = new List<int>();
+        if (edges.Count > 2)
+        {
+            var prints = new float[]?[edges.Count - 1];
+            var voices = new int?[edges.Count - 1];
+            for (var i = 0; i + 1 < edges.Count; i++)
+            {
+                prints[i] = embed(samples[edges[i]..edges[i + 1]]);
+                voices[i] = prints[i] is { } p ? nearest(p, SentenceSim, SentenceMargin) : null;
+            }
+            for (var i = 0; i + 1 < prints.Length; i++)
+            {
+                bool change;
+                if (voices[i] is { } a && voices[i + 1] is { } b) change = a != b;
+                else if (prints[i] is { } x && prints[i + 1] is { } y) change = Dot(x, y) < SentencesDiffer;
+                else change = false;
+                if (change) cuts.Add(edges[i + 1]);
+            }
+        }
+        // 3: inside each part, where the known voice changes (or, before any voice is known, where
+        // neighbouring windows stop sounding alike). A reply often follows with no pause and no
+        // punctuation between, so this finds what the sentence ends miss.
+        var bounds = new List<int> { 0 };
+        bounds.AddRange(cuts);
+        bounds.Add(samples.Length);
+        var all = new List<int>(cuts);
+        var ends = sentenceEnds.Select(e => (int)(e * Rate)).ToList();
+        for (var i = 0; i + 1 < bounds.Count; i++)
+        {
+            int from = bounds[i], to = bounds[i + 1];
+            if (to - from < MinPart * Rate) continue;
+            var inner = ByVoices(samples, from, to);
+            if (inner == null)
+            {
+                if (to - from < TurnSplitter.MinLine * Rate) continue;
+                inner = TurnSplitter.Points(samples[from..to], embed).Select(p => p + from).ToList();
+            }
+            foreach (var cut in inner)
+            {
+                // Onto a nearby sentence end, if one is close and inside this part.
+                var near = ends.Where(e => e > from + MinPiece * Rate && e < to - MinPiece * Rate)
+                               .OrderBy(e => Math.Abs(e - cut)).FirstOrDefault(-1);
+                all.Add(near >= 0 && Math.Abs(near - cut) <= Snap * Rate ? near : cut);
+            }
+        }
+        all = all.Distinct().ToList();
+        all.Sort();
+        return all;
+    }
+
+    /// Windows matched to known voices; null when no window could be matched (no voices known yet).
+    private List<int>? ByVoices(float[] s, int from, int to)
+    {
+        int w = (int)(Window * Rate), hop = (int)(Hop * Rate), hold = (int)(Hold * Rate);
+        var runs = new List<(int Voice, int Start, int End)>();   // sample range each run covers
+        var anyKnown = false;
+        for (var st = from; st + w <= to; st += hop)
+        {
+            if (embed(s[st..(st + w)]) is not { } p || nearest(p, WindowSim, WindowMargin) is not { } v) continue;
+            anyKnown = true;
+            if (runs.Count > 0 && runs[^1].Voice == v) runs[^1] = (v, runs[^1].Start, st + w);
+            else runs.Add((v, st, st + w));
+        }
+        if (!anyKnown) return null;
+        // A voice that doesn't hold for long enough is noise: it joins the run before it.
+        for (var i = runs.Count - 1; i >= 0 && runs.Count > 1; i--)
+        {
+            if (runs[i].End - runs[i].Start >= hold) continue;
+            var j = i > 0 ? i - 1 : i + 1;
+            runs[j] = (runs[j].Voice, Math.Min(runs[i].Start, runs[j].Start), Math.Max(runs[i].End, runs[j].End));
+            runs.RemoveAt(i);
+        }
+        for (var i = runs.Count - 1; i > 0; i--)
+            if (runs[i].Voice == runs[i - 1].Voice)
+            {
+                runs[i - 1] = (runs[i].Voice, runs[i - 1].Start, runs[i].End);
+                runs.RemoveAt(i);
+            }
+        var points = new List<int>();
+        int minPiece = (int)(MinPiece * Rate);
+        for (var i = 1; i < runs.Count; i++)
+        {
+            // The windows overlap: the change is in the middle of where the two runs meet.
+            var cut = (runs[i - 1].End + runs[i].Start) / 2;
+            if (cut - from >= minPiece && to - cut >= minPiece) points.Add(cut);
+        }
+        return points;
+    }
+
+    private static float Dot(float[] a, float[] b)
+    {
+        float d = 0;
+        for (var k = 0; k < a.Length; k++) d += a[k] * b[k];
+        return d;
+    }
+}
+
 /// Runs voiceprints and hands back a voice per line, for one meeting at a time.
 public sealed class SpeakerTagger(Func<Voiceprints?> model)
 {
@@ -232,6 +388,13 @@ public sealed class SpeakerTagger(Func<Voiceprints?> model)
     public void Merge(int from, int into)
     {
         lock (gate) clusterer.Merge(from, into);
+    }
+
+    /// Which known voice a stretch of audio sounds like, without counting it (for finding where the
+    /// speaker changes inside a line). Null with fewer than two known voices or when unsure.
+    public int? Nearest(float[] voiceprint, float minSim, float margin)
+    {
+        lock (gate) return clusterer.Known >= 2 ? clusterer.Nearest(voiceprint, minSim, margin) : null;
     }
 
     /// The voice of a line; nil when unsure. It counts towards that voice.

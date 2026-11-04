@@ -42,6 +42,7 @@ public partial class SettingsWindow : Window
         Fill(SilenceBox, [("Prompt", "先提醒再结束"), ("End", "直接结束"), ("Off", "不处理")], s.SilenceEnd.ToString());
         Fill(SilenceMinBox, new[] { 5, 10, 15, 30 }.Select(m => (m.ToString(), $"{m} 分钟")).ToArray(), s.SilenceMinutes.ToString());
         LoginOn.IsChecked = s.LaunchAtLogin;
+        TrayStartOn.IsChecked = s.TrayClickStarts;
         AboutText.Text = "语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。";
         App.Updates.Changed += () => Dispatcher.BeginInvoke(RenderUpdates);
         RenderUpdates();
@@ -101,6 +102,7 @@ public partial class SettingsWindow : Window
         s.FollowMeetingApps = FollowApps.IsChecked == true;
         s.SilenceEnd = Enum.TryParse<MeetingEndWatch.Silence>(TagOf(SilenceBox), out var sil) ? sil : MeetingEndWatch.Silence.Prompt;
         s.SilenceMinutes = int.TryParse(TagOf(SilenceMinBox), out var m) ? m : 10;
+        s.TrayClickStarts = TrayStartOn.IsChecked == true;
         if (s.LaunchAtLogin != (LoginOn.IsChecked == true))
         {
             s.LaunchAtLogin = LoginOn.IsChecked == true;

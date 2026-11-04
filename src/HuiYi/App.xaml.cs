@@ -202,7 +202,16 @@ public partial class App : Application
             ShowLive();
             return;
         }
-        await ToggleListening();
+        if (Model.Settings.TrayClickStarts || !Model.Models.Ready) await ToggleListening();
+        else ShowReady();
+    }
+
+    /// The live panel, waiting for 开始会议.
+    public void ShowReady()
+    {
+        subtitles?.Hide();
+        notesWindow ??= new NotesWindow(Model);
+        notesWindow.ShowReady();
     }
 
     public async Task ToggleListening()
@@ -251,7 +260,8 @@ public partial class App : Application
         if (tray == null) return;
         var live = Model.IsListening;
         tray.Icon = Icons.Tray(live);
-        tray.ToolTipText = live ? $"{Brand.Name} · 收听中（单击打开面板，右键结束会议）" : $"{Brand.Name} · 单击开始收听";
+        tray.ToolTipText = live ? $"{Brand.Name} · 收听中（单击打开面板，右键结束会议）"
+            : Model.Settings.TrayClickStarts ? $"{Brand.Name} · 单击开始收听" : $"{Brand.Name} · 单击打开面板";
         if (!live)
         {
             subtitles?.Hide();

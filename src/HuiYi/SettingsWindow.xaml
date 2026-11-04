@@ -232,6 +232,10 @@
                         <StackPanel>
                             <TextBlock Text="启动" Style="{StaticResource Overline}"/>
                             <CheckBox x:Name="LoginOn" Style="{StaticResource Switch}" Content="登录 Windows 后自动启动" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="TrayStartOn" Style="{StaticResource Switch}" Content="单击通知区域图标时直接开始收听" Margin="0,10,0,0"
+                                      Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
+                                       Text="关闭时，单击图标只打开实时面板，点面板上的「开始会议」才开始录制，避免误点就录。"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">

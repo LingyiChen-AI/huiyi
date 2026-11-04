@@ -70,8 +70,45 @@ public partial class NotesWindow : Window
         Top = area.Top + 24;
     }
 
+    /// Opened from the tray with no meeting going: the panel waits, and nothing records until
+    /// 开始会议 (unless the user chose 单击直接开始收听 in settings).
+    public void ShowReady()
+    {
+        var first = !placed;
+        if (first)
+        {
+            PlaceTopRight();
+            placed = true;
+        }
+        ReadyPanel.Visibility = Visibility.Visible;
+        // Nothing behind the button: not the last meeting's transcript, not its notes.
+        LinesScroll.Visibility = Visibility.Hidden;
+        NotesScroll.Visibility = Visibility.Hidden;
+        LiveDot.Visibility = Visibility.Collapsed;
+        StateText.Text = "未开始";
+        StateText.Foreground = Theme.NightMuted;
+        OnAirPill.Background = Theme.NightRaised;
+        ClockText.Text = DateTime.Now.ToString("HH:mm");
+        clock.Stop();
+        StopBtn.Visibility = Visibility.Collapsed;
+        StartBtn.Visibility = Visibility.Collapsed;
+        EndBanner.Visibility = Visibility.Collapsed;
+        Show();
+        if (first) PlaceTopRight();
+    }
+
+    private async void Start_Click(object sender, RoutedEventArgs e)
+    {
+        if (model.IsListening) return;
+        await ((App)Application.Current).ToggleListening();
+    }
+
     public void ShowNoFocus()
     {
+        ReadyPanel.Visibility = Visibility.Collapsed;
+        StartBtn.Visibility = Visibility.Collapsed;
+        LinesScroll.Visibility = TabNotes.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        NotesScroll.Visibility = TabNotes.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         var first = !placed;
         if (first)
         {
@@ -132,6 +169,7 @@ public partial class NotesWindow : Window
         StateText.Foreground = Theme.NightMuted;
         OnAirPill.Background = Theme.NightRaised;
         StopBtn.Visibility = Visibility.Collapsed;
+        StartBtn.Visibility = Visibility.Visible;
         LivePanel.Visibility = Visibility.Collapsed;
         EndBanner.Visibility = Visibility.Collapsed;
         // The notes are being rewritten over the whole meeting: show them.
@@ -251,7 +289,8 @@ public partial class NotesWindow : Window
 
     private void Tab_Checked(object sender, RoutedEventArgs e)
     {
-        if (LinesScroll == null) return;
+        // Waiting for 开始会议: the tabs don't uncover the last meeting behind the button.
+        if (LinesScroll == null || ReadyPanel.Visibility == Visibility.Visible) return;
         var notes = TabNotes.IsChecked == true;
         LinesScroll.Visibility = notes ? Visibility.Collapsed : Visibility.Visible;
         NotesScroll.Visibility = notes ? Visibility.Visible : Visibility.Collapsed;

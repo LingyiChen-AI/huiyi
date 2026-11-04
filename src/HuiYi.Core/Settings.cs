@@ -52,6 +52,9 @@ public sealed class AppSettings
     public int SilenceMinutes { get; set; } = 10;
 
     public bool LaunchAtLogin { get; set; }
+    /// A click on the tray icon starts recording at once. Off by default: the click opens the live
+    /// panel, and recording starts with its 开始会议 button, so nothing is recorded by accident.
+    public bool TrayClickStarts { get; set; }
     public bool OnboardingDone { get; set; }
 
     private static string File => Path.Combine(Paths.Roaming, "settings.json");

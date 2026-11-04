@@ -34,7 +34,9 @@ public partial class App : Application
             // and they can run beside the real app.
             var copy = Path.Combine(Path.GetTempPath(), "HuiYi-snapshot");
             if (Directory.Exists(copy)) Directory.Delete(copy, true);
-            CopyFolder(Path.Combine(Paths.Roaming, "Sessions"), Path.Combine(copy, "Sessions"));
+            // --demo: made-up meetings (for the README's screenshots) instead of a copy of the real ones.
+            if (e.Args.Contains("--demo")) Demo.Write(Path.Combine(copy, "Sessions"));
+            else CopyFolder(Path.Combine(Paths.Roaming, "Sessions"), Path.Combine(copy, "Sessions"));
             Paths.Roaming = copy;
         }
         single = new Mutex(true, e.Args.Contains("--snapshot") ? @"Local\HuiYi.snapshot" : @"Local\HuiYi.single", out var first);

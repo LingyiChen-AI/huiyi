@@ -12,6 +12,9 @@ public static class Snapshot
     public static async Task Run(AppModel model, string folder)
     {
         Directory.CreateDirectory(folder);
+        // Show what the app looks like set up: translation on, past the first-run wizard.
+        model.Settings.TranslationOn = true;
+        model.Settings.OnboardingDone = true;
         var latest = model.Store.All.FirstOrDefault(s => s.Lines.Count > 0);
         if (latest != null && latest.Notes == null) model.Store.SetNotes(latest.Id, Sample());
 
@@ -54,16 +57,20 @@ public static class Snapshot
         Save(templates, folder, "templates-mine");
 
         // Notes in a work template, with owners, deadlines and risks.
-        var weekly = NotesPrompt.Parse(WeeklySample, [0, 65, 300, 420, 610, 900], 0, NoteTemplates.Find("weekly", []))!;
-        var host = new Window
+        // The open meeting's own notes when they use sections (the --demo one does), else a sample.
+        var weekly = latest?.Notes is { Sections.Count: > 0 } own ? own
+            : NotesPrompt.Parse(WeeklySample, [0, 65, 300, 420, 610, 900], 0, NoteTemplates.Find("weekly", []))!;
+        var notesStart = latest?.Notes is { Sections.Count: > 0 } ? latest.StartedAt.ToLocalTime() : DateTime.Today.AddHours(14);
+        // Laid out on its own, not in a window: a window can't be taller than the screen.
+        var sheet = new System.Windows.Controls.Border
         {
-            Width = 760, Height = 1400, Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)),
-            Content = new System.Windows.Controls.Border { Padding = new Thickness(24), Child = NotesRenderer.Build(weekly, DateTime.Today.AddHours(14), 14, cards: true) },
+            Width = 760, Padding = new Thickness(24), Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)),
+            Child = NotesRenderer.Build(weekly, notesStart, 14, cards: true),
         };
-        Prepare(host);
-        host.SizeToContent = SizeToContent.Height;
-        host.UpdateLayout();
-        Save(host, folder, "notes-weekly");
+        sheet.Measure(new Size(760, double.PositiveInfinity));
+        sheet.Arrange(new Rect(sheet.DesiredSize));
+        sheet.UpdateLayout();
+        SaveElement(sheet, folder, "notes-weekly", sheet.Background);
 
         var panel = new NotesWindow(model);
         if (latest != null)

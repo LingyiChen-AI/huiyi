@@ -42,7 +42,9 @@ public partial class SettingsWindow : Window
         Fill(SilenceBox, [("Prompt", "先提醒再结束"), ("End", "直接结束"), ("Off", "不处理")], s.SilenceEnd.ToString());
         Fill(SilenceMinBox, new[] { 5, 10, 15, 30 }.Select(m => (m.ToString(), $"{m} 分钟")).ToArray(), s.SilenceMinutes.ToString());
         LoginOn.IsChecked = s.LaunchAtLogin;
-        AboutText.Text = $"{Brand.Name} {typeof(App).Assembly.GetName().Version?.ToString(3)} · 语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。";
+        AboutText.Text = "语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。";
+        App.Updates.Changed += () => Dispatcher.BeginInvoke(RenderUpdates);
+        RenderUpdates();
 
         model.Ai.Changed += () => Dispatcher.BeginInvoke(RenderKey);
         // The translation switch also lives in the panel and the tray menu.
@@ -455,6 +457,31 @@ public partial class SettingsWindow : Window
         installing = false;
         RenderCable();
         if (message != null) CableHelp.Text = message;
+    }
+
+    // MARK: Updates
+
+    private void RenderUpdates()
+    {
+        var u = App.Updates;
+        VersionText.Text = $"{Brand.Name} {u.Version}";
+        var ready = u.ReadyVersion;
+        UpdateBtn.Content = ready != null ? $"重启并更新到 {ready}" : "检查更新";
+        UpdateBtn.Style = (Style)FindResource(ready != null ? "PrimaryBtn" : "Btn");
+        UpdateText.Text = u.Status.Length > 0 ? u.Status
+            : u.Installed ? "每 6 小时自动从 GitHub 检查一次新版本，下载好后提醒你。" : "当前不是安装版（开发版或解压版），不能自动更新。";
+    }
+
+    private async void Update_Click(object sender, RoutedEventArgs e)
+    {
+        if (App.Updates.ReadyVersion != null)
+        {
+            ((App)Application.Current).RestartToUpdate();
+            return;
+        }
+        UpdateBtn.IsEnabled = false;
+        await App.Updates.Check();
+        UpdateBtn.IsEnabled = true;
     }
 
     // MARK: General

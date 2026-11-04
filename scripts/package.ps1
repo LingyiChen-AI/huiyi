@@ -1,16 +1,26 @@
-# Builds a self-contained release (no .NET needed on the user's PC) and zips it:
-#   powershell -File scripts\package.ps1            -> artifacts\HuiYi-<version>-win-x64.zip
+﻿# Windows PowerShell 5.1 reads a script without a BOM as the ANSI code page: keep this file UTF-8 with BOM.
+# Builds a self-contained release (no .NET needed on the user's PC):
+#   powershell -File scripts\package.ps1
+#     -> artifacts\releases\HuiYi.App-win-Setup.exe   the installer (per user, no admin, shortcuts)
+#     -> artifacts\releases\*.nupkg, releases.win.json  what the in-app updater downloads from GitHub
+#     -> artifacts\HuiYi-<version>-win-x64.zip         a portable copy (does not update itself)
 # The speech models are not in the package: the app downloads and checks them on first run.
-param([string]$Configuration = "Release")
+# Needs the vpk tool: dotnet tool install -g vpk (same version as the Velopack package in HuiYi.csproj).
+param([string]$Configuration = "Release", [switch]$NoDelta)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
 if (-not $dotnet) { $dotnet = "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe" }
+if (-not $env:DOTNET_ROOT) { $env:DOTNET_ROOT = Split-Path -Parent $dotnet }
+$vpk = (Get-Command vpk -ErrorAction SilentlyContinue).Source
+if (-not $vpk) { $vpk = "$env:USERPROFILE\.dotnet\tools\vpk.exe" }
 
 [xml]$proj = Get-Content "$root\src\HuiYi\HuiYi.csproj"
 $version = ($proj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
 $out = "$root\artifacts\publish"
+$releases = "$root\artifacts\releases"
 $zip = "$root\artifacts\HuiYi-$version-win-x64.zip"
+$repo = "https://github.com/LingyiChen-AI/huiyi"
 
 Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
 & $dotnet publish "$root\src\HuiYi\HuiYi.csproj" -c $Configuration -r win-x64 --self-contained true `
@@ -18,8 +28,21 @@ Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
 if ($LASTEXITCODE -ne 0) { throw "publish failed" }
 Copy-Item "$root\LICENSE", "$root\NOTICE" $out
 
+# The previous release from GitHub, so vpk can make a small delta package next to the full one.
+New-Item -ItemType Directory -Force $releases | Out-Null
+if (-not $NoDelta) {
+    & $vpk download github --repoUrl $repo --outputDir $releases 2>&1 | Out-Host
+}
+
+& $vpk pack --packId HuiYi.App --packVersion $version --packDir $out --mainExe HuiYi.exe `
+    --packTitle "会译" --packAuthors "HuiYi" --icon "$root\assets\HuiYi.ico" `
+    --outputDir $releases 2>&1 | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
+
 Remove-Item $zip -ErrorAction SilentlyContinue
 Compress-Archive -Path "$out\*" -DestinationPath $zip
-$hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-"$hash  $(Split-Path -Leaf $zip)" | Out-File -Encoding ascii "$zip.sha256"
-"{0}  {1:N0} MB  sha256 {2}" -f $zip, ((Get-Item $zip).Length / 1MB), $hash
+$setup = Get-ChildItem $releases -Filter *Setup.exe | Select-Object -First 1
+foreach ($f in @($setup.FullName, $zip)) {
+    $hash = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+    "{0}  {1:N0} MB  sha256 {2}" -f $f, ((Get-Item $f).Length / 1MB), $hash
+}

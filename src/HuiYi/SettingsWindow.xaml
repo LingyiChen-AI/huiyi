@@ -244,7 +244,17 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <TextBlock x:Name="AboutText" Style="{StaticResource Helper}" Margin="2,4,0,0"/>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="版本与更新" Style="{StaticResource Overline}"/>
+                            <DockPanel>
+                                <Button x:Name="UpdateBtn" DockPanel.Dock="Right" Content="检查更新" Style="{StaticResource Btn}" Click="Update_Click"/>
+                                <TextBlock x:Name="VersionText" FontSize="13" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock x:Name="UpdateText" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock x:Name="AboutText" Style="{StaticResource Helper}" Margin="2,4,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </ScrollViewer>
         </TabItem>

@@ -10,6 +10,7 @@ namespace HuiYi.App;
 public partial class App : Application
 {
     public static AppModel Model { get; private set; } = null!;
+    public static Updates Updates { get; } = new();
     private TaskbarIcon? tray;
     private Mutex? single;
     private SubtitleWindow? subtitles;
@@ -21,6 +22,12 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (Array.IndexOf(e.Args, "--export-icon") is var at and >= 0 && at + 1 < e.Args.Length)
+        {
+            Icons.SaveIco(e.Args[at + 1]);
+            Shutdown();
+            return;
+        }
         if (e.Args.Contains("--snapshot"))
         {
             // Snapshots work on a copy of the meetings: they must never touch the user's records,
@@ -33,10 +40,18 @@ public partial class App : Application
         single = new Mutex(true, e.Args.Contains("--snapshot") ? @"Local\HuiYi.snapshot" : @"Local\HuiYi.single", out var first);
         if (!first)
         {
-            MessageBox.Show($"{Brand.Name} 已在运行，图标在任务栏右下角的通知区域。", Brand.Name);
+            // Already running (the desktop shortcut double-clicked again): ask that one to show the
+            // meeting records, and leave quietly.
+            if (!e.Args.Contains("--background") && EventWaitHandle.TryOpenExisting(OpenSignal, out var signal))
+            {
+                AllowSetForegroundWindow(-1); // let the running copy bring its window to the front
+                signal.Set();
+                signal.Dispose();
+            }
             Shutdown();
             return;
         }
+        if (!e.Args.Contains("--snapshot")) ListenForOpen();
         DispatcherUnhandledException += (_, ex) =>
         {
             Log.Debug($"app: unhandled {ex.Exception}");
@@ -70,8 +85,62 @@ public partial class App : Application
         if (show == "main") OpenMain();
         else if (show == "settings") OpenSettings();
         else if (show == "setup" || !Model.Settings.OnboardingDone || !Model.Models.Ready) OpenSetup();
-        else if (!background) ShowToast($"{Brand.Name} 已就绪：单击通知区域的图标即可开始收听");
+        // Opened from the shortcut: show the meeting records. Started with Windows: stay in the tray.
+        else if (!background) OpenMain();
         if (e.Args.Contains("--listen")) _ = ToggleListening();
+        StartUpdateChecks();
+    }
+
+    private const string OpenSignal = @"Local\HuiYi.open";
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool AllowSetForegroundWindow(int processId);
+
+    /// A second launch sets this signal instead of starting another copy.
+    private void ListenForOpen()
+    {
+        var signal = new EventWaitHandle(false, EventResetMode.AutoReset, OpenSignal);
+        var thread = new Thread(() =>
+        {
+            while (signal.WaitOne())
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (!Model.Settings.OnboardingDone || !Model.Models.Ready) OpenSetup();
+                    else OpenMain();
+                });
+        }) { IsBackground = true, Name = "open-signal" };
+        thread.Start();
+    }
+
+    private System.Windows.Threading.DispatcherTimer? updateTimer;
+    private string? toldAbout;
+
+    /// Half a minute after start, then every six hours: check GitHub, download quietly, say so once.
+    private void StartUpdateChecks()
+    {
+        if (!Updates.Installed) return;
+        updateTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        updateTimer.Tick += async (_, _) =>
+        {
+            updateTimer.Interval = TimeSpan.FromHours(6);
+            if (await Updates.Check() && Updates.ReadyVersion != toldAbout)
+            {
+                toldAbout = Updates.ReadyVersion;
+                ShowToast($"新版本 {Updates.ReadyVersion} 已下载好：右键通知区域图标选「重启并更新」，或下次退出时自动安装。");
+            }
+        };
+        updateTimer.Start();
+    }
+
+    /// Stops everything cleanly, then lets Velopack swap in the new version and start it.
+    public void RestartToUpdate()
+    {
+        if (Updates.ReadyVersion == null) return;
+        Model.Shutdown();
+        tray?.Dispose();
+        single?.ReleaseMutex();
+        single = null;
+        Updates.ApplyAndRestart();
     }
 
     private void CreateTray()
@@ -113,6 +182,7 @@ public partial class App : Application
         Item("纪要模板…", () => OpenTemplates());
         Item("设置…", OpenSettings);
         menu.Items.Add(new Separator());
+        if (Updates.ReadyVersion is { } next) Item($"重启并更新到 {next}", RestartToUpdate);
         Item($"退出{Brand.Name}", Quit);
     }
 
@@ -264,6 +334,7 @@ public partial class App : Application
     public void Quit()
     {
         Model.Shutdown();
+        Updates.ApplyOnExit();
         tray?.Dispose();
         single?.ReleaseMutex();
         Shutdown();

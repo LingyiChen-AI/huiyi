@@ -1,5 +1,5 @@
 # Pushing a tag like v0.2.0 builds and publishes that version: tests, a self-contained publish, the
-# Velopack installer and update packages (with a delta from the previous release), and a portable zip,
+# Velopack installer and update package, and a portable zip,
 # all attached to the GitHub release that installed copies check for updates.
 name: release
 
@@ -43,15 +43,14 @@ jobs:
       - name: Install vpk
         run: dotnet tool install -g vpk --version 1.2.161
 
-      - name: Previous release, for the delta package
-        continue-on-error: true
-        run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir releases
-
       - name: Pack
         shell: pwsh
         run: |
+          # No delta packages: with the Chinese title the stub is 会译_ExecutionStub.exe, and the zstd that
+          # vpk runs for deltas can't open non-ASCII paths. Updates download the full package instead.
           vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
-            --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --outputDir releases
+            --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --delta none `
+            --runtime win-x64 --outputDir releases
           New-Item -ItemType Directory -Force portable | Out-Null
           Compress-Archive -Path publish/* -DestinationPath "portable/HuiYi-$env:VERSION-win-x64.zip" -Force
 

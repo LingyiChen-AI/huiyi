@@ -6,7 +6,7 @@
 #     -> artifacts\HuiYi-<version>-win-x64.zip         a portable copy (does not update itself)
 # The speech models are not in the package: the app downloads and checks them on first run.
 # Needs the vpk tool: dotnet tool install -g vpk (same version as the Velopack package in HuiYi.csproj).
-param([string]$Configuration = "Release", [switch]$NoDelta)
+param([string]$Configuration = "Release")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
@@ -28,14 +28,10 @@ Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
 if ($LASTEXITCODE -ne 0) { throw "publish failed" }
 Copy-Item "$root\LICENSE", "$root\NOTICE" $out
 
-# The previous release from GitHub, so vpk can make a small delta package next to the full one.
 New-Item -ItemType Directory -Force $releases | Out-Null
-if (-not $NoDelta) {
-    & $vpk download github --repoUrl $repo --outputDir $releases 2>&1 | Out-Host
-}
 
 & $vpk pack --packId HuiYi.App --packVersion $version --packDir $out --mainExe HuiYi.exe `
-    --packTitle "会译" --packAuthors "HuiYi" --icon "$root\assets\HuiYi.ico" `
+    --packTitle "会译" --packAuthors "HuiYi" --icon "$root\assets\HuiYi.ico" --delta none --runtime win-x64 `
     --outputDir $releases 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
 

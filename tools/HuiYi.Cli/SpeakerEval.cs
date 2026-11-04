@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using HuiYi;
 using HuiYi.Audio;
 using HuiYi.Speech;
@@ -223,12 +224,44 @@ static class SpeakerEval
         float[]? E(float[] w) => Embed(ex, w);
         var known = new TurnFinder(E, (v, sim, margin) => vc.Known >= 2 ? vc.Nearest(v, sim, margin) : null);
         var blind = new TurnFinder(E, (_, _, _) => null);
-        var methods = new (string Name, Func<float[], List<int>> Find)[]
+        var methods = new List<(string Name, Func<float[], List<int>> Find)>
         {
             ("old: neighbouring 2 s windows", s => TurnSplitter.Points(s, E)),
             ("new: sentences + known voices", s => known.Points(s, Ends(s))),
             ("new: sentences, no voices yet", s => blind.Points(s, Ends(s))),
         };
+        // HUIYI_SEG=<pyannote segmentation model>: point 4, pyannote's diarization run on each clip
+        // on its own; a cut wherever two consecutive turns belong to different speakers.
+        var diarizers = new List<OfflineSpeakerDiarization>();
+        if (Environment.GetEnvironmentVariable("HUIYI_SEG") is { Length: > 0 } seg)
+        {
+            // Thresholds, and -2: told there are two people.
+            foreach (var th in new[] { 0.1f, 0.2f, 0.3f, -2f })
+            {
+                var cfg = new OfflineSpeakerDiarizationConfig();
+                cfg.Segmentation.Pyannote.Model = seg;
+                cfg.Segmentation.NumThreads = 4;
+                cfg.Embedding.Model = models.Speaker;
+                cfg.Embedding.NumThreads = 4;
+                if (th < 0) cfg.Clustering.NumClusters = 2; else cfg.Clustering.Threshold = th;
+                cfg.MinDurationOn = 0.3f;
+                cfg.MinDurationOff = 0.3f;
+                var d = new OfflineSpeakerDiarization(cfg);
+                diarizers.Add(d);
+                methods.Add((th < 0 ? "pyannote per clip, told 2 people" : $"pyannote per clip, threshold {th}", s =>
+                {
+                    var turns = d.Process(s).OrderBy(t => t.Start).ToArray();
+                    var cuts = new List<int>();
+                    for (var i = 1; i < turns.Length; i++)
+                        if (turns[i].Speaker != turns[i - 1].Speaker)
+                            cuts.Add((int)((turns[i - 1].End + turns[i].Start) / 2 * 16000));
+                    return cuts;
+                }));
+            }
+        }
+        // Sentence ends ahead of the timing, so each method is timed on its own work.
+        foreach (var (s, _) in cross) Ends(s);
+        foreach (var (s, _) in same) Ends(s);
         if (Environment.GetEnvironmentVariable("HUIYI_DEBUG") == "1")
         {
             // Why the new way misses: the sentence ends found, how far the nearest is from the join,
@@ -255,6 +288,7 @@ static class SpeakerEval
         }
         foreach (var (name, find) in methods)
         {
+            var timer = Stopwatch.StartNew();
             int hit = 0, missed = 0, extra = 0;
             foreach (var (s, join) in cross)
             {
@@ -263,7 +297,9 @@ static class SpeakerEval
                 extra += pts.Count(p => Math.Abs(p - join) > 9600);
             }
             var sameCut = same.Count(t => find(t.S).Count > 0);
-            Console.WriteLine($"{name,-32} A+B found {hit}/{cross.Count} ({100.0 * hit / cross.Count:F0}%), missed {missed}, extra cuts {extra}; A+A cut {sameCut}/{same.Count}");
+            var perClip = timer.Elapsed.TotalMilliseconds / (cross.Count + same.Count);
+            var seconds = (cross.Sum(c => c.S.Length) + same.Sum(c => c.S.Length)) / 16000.0 / (cross.Count + same.Count);
+            Console.WriteLine($"{name,-36} A+B found {hit}/{cross.Count} ({100.0 * hit / cross.Count:F0}%), missed {missed}, extra cuts {extra}; A+A cut {sameCut}/{same.Count}; {perClip:F0} ms per {seconds:F1} s clip");
         }
     }
 

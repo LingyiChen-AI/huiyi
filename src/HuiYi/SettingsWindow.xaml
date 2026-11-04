@@ -1,0 +1,190 @@
+<Window x:Class="HuiYi.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Foreground="#1E2235" FontFamily="Microsoft YaHei UI, Segoe UI"
+        Title="设置" Width="640" Height="620" MinWidth="560" MinHeight="460" Background="#F5F6FA" WindowStartupLocation="CenterScreen">
+    <TabControl x:Name="Pages" Background="Transparent" BorderThickness="0" Padding="0" Margin="24,12,24,16">
+        <TabControl.Resources>
+            <Style TargetType="TabItem" BasedOn="{StaticResource PageTab}"/>
+        </TabControl.Resources>
+
+        <!-- 字幕 -->
+        <TabItem Header="字幕">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="翻译" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="TargetBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
+                                <TextBlock Text="字幕译成" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Helper}" Text="自动：外语译成你的系统语言；对方说你的语言时，译成你的第二语言。"/>
+                            <CheckBox x:Name="TranslateOn" Content="显示译文" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="显示" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="ModeNotes" Content="实时面板" GroupName="mode" Style="{StaticResource Seg}" Checked="Changed"/>
+                                        <RadioButton x:Name="ModeSubs" Content="悬浮字幕" GroupName="mode" Style="{StaticResource Seg}" Checked="Changed"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="收听时打开" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <Slider x:Name="FontSlider" DockPanel.Dock="Right" Width="190" Minimum="16" Maximum="44" TickFrequency="2"
+                                        IsSnapToTickEnabled="True" ValueChanged="Font_Changed"/>
+                                <TextBlock x:Name="FontText" Text="悬浮字幕字号" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <CheckBox x:Name="Capturable" Content="在屏幕共享和录屏中显示字幕窗口" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="关闭时只有你自己看得到；打开后窗口上会标「共享中可见」。"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="发言人" Style="{StaticResource Overline}"/>
+                            <CheckBox x:Name="VoicesOn" Content="按声音区分不同发言人（发言人 1、发言人 2…）" Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="同一个声音说过两句后开始编号（之前的句子会一起补上）；太短的话（如“嗯”“好的”）不计入。"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- AI 纪要 -->
+        <TabItem Header="AI 纪要">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="LING API KEY" Style="{StaticResource Overline}"/>
+                            <TextBlock x:Name="KeyState" FontSize="13" Margin="0,0,0,8"/>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" x:Name="SaveKeyBtn" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Click="SaveKey_Click"/>
+                                <PasswordBox x:Name="KeyBox"/>
+                            </DockPanel>
+                            <StackPanel Orientation="Horizontal" Margin="-6,6,0,0">
+                                <Button Content="去申请 key ↗" Style="{StaticResource GhostBtn}" Click="GetKey_Click"/>
+                                <Button x:Name="RemoveKeyBtn" Content="移除 key" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Click="RemoveKey_Click"/>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Helper}" Text="key 加密保存在这台电脑上，不会出现在日志和导出文件里。不填也能用，只是没有 AI 纪要，整句翻译改用 Google。"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="纪要" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="NotesLangBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
+                                <TextBlock Text="纪要用的语言" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="ModelBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
+                                <TextBlock Text="模型" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- 同传发言 -->
+        <TabItem Header="同传发言">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="按键说话" Style="{StaticResource Overline}"/>
+                            <CheckBox x:Name="SpeakOn" Content="启用同传发言：按住按键说中文，松开后译成对方的语言播报进会议" Checked="Changed" Unchecked="Changed"/>
+                            <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
+                                <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="KeyCtrl" Content="右 Ctrl" GroupName="key" Style="{StaticResource Seg}" Checked="Changed"/>
+                                        <RadioButton x:Name="KeyAlt" Content="右 Alt" GroupName="key" Style="{StaticResource Seg}" Checked="Changed"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="按住的键" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="SpeakTargetBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
+                                <TextBlock Text="译成" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="播报声音" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <Button DockPanel.Dock="Right" Content="▶ 试听" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="TryVoice_Click"/>
+                                <ComboBox x:Name="VoiceBox" DockPanel.Dock="Right" MinWidth="220" SelectionChanged="Voice_Changed"/>
+                                <TextBlock Text="声音" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}"/>
+                            <CheckBox x:Name="MonitorOn" Content="播报时自己的耳机里也放一遍" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="虚拟麦克风" Style="{StaticResource Overline}"/>
+                            <DockPanel>
+                                <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="下载 VB-CABLE ↗" Style="{StaticResource Btn}" Click="Cable_Click"/>
+                                <TextBlock x:Name="CableText" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Helper}" Text="装好免费的 VB-CABLE 后，在会议软件的麦克风里选「CABLE Output」，对方就能听到播报。"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- 会议 -->
+        <TabItem Header="会议">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="自动结束" Style="{StaticResource Overline}"/>
+                            <CheckBox x:Name="FollowApps" Content="会议软件挂断后，自动结束本场记录" Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="识别 Zoom、Teams、腾讯会议、飞书、钉钉、Webex 等：它们不再占用麦克风，就当作会议结束。"/>
+                            <DockPanel Style="{StaticResource Row}" Margin="0,12,0,0">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <ComboBox x:Name="SilenceMinBox" MinWidth="90" SelectionChanged="Changed"/>
+                                    <ComboBox x:Name="SilenceBox" MinWidth="130" Margin="8,0,0,0" SelectionChanged="Changed"/>
+                                </StackPanel>
+                                <TextBlock Text="没人说话超过" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- 通用 -->
+        <TabItem Header="通用">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="启动" Style="{StaticResource Overline}"/>
+                            <CheckBox x:Name="LoginOn" Content="登录 Windows 后自动启动" Checked="Changed" Unchecked="Changed"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="本机模型与数据" Style="{StaticResource Overline}"/>
+                            <TextBlock x:Name="ModelState" FontSize="13"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="打开数据文件夹" Style="{StaticResource Btn}" Click="OpenData_Click" Margin="0,0,8,0"/>
+                                <Button Content="查看运行日志" Style="{StaticResource GhostBtn}" Click="OpenLog_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock x:Name="AboutText" Style="{StaticResource Helper}" Margin="2,4,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
+</Window>

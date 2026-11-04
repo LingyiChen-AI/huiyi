@@ -1,0 +1,245 @@
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Threading;
+using HuiYi.Speak;
+
+namespace HuiYi.App;
+
+/// The live notes window: subtitles as a running transcript, and the notes Ling keeps. A panel
+/// that never takes focus from the meeting app and stays out of screen captures unless the user
+/// lets it show (then it wears a badge).
+public partial class NotesWindow : Window
+{
+    private readonly AppModel model;
+    private readonly ObservableCollection<LineVM> lines = [];
+    private readonly DispatcherTimer clock = new() { Interval = TimeSpan.FromSeconds(1) };
+    private string? sessionId;
+    private DateTime startedAt;
+    private MeetingEndWatch.Pending? pending;
+    private bool placed;
+
+    public NotesWindow(AppModel model)
+    {
+        this.model = model;
+        InitializeComponent();
+        LinesList.ItemsSource = lines;
+        SourceInitialized += (_, _) =>
+        {
+            Native.MakeNonActivating(this);
+            ApplyCapturable();
+        };
+        Header.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+        };
+        model.LineChanged += OnLine;
+        // Speaker names (the user's or Ling's) change labels on lines already shown.
+        model.Store.Changed += () => Dispatcher.BeginInvoke(() => OnLine(""));
+        model.Subtitle += OnSubtitle;
+        model.NotesChanged += RenderNotes;
+        model.SpeakChanged += RenderSpeak;
+        model.StateChanged += RenderSpeak;
+        clock.Tick += (_, _) => Tick();
+    }
+
+    public void ApplyCapturable()
+    {
+        Native.SetCapturable(this, model.Settings.NotesCapturable);
+        Shared.Visibility = model.Settings.NotesCapturable ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// Top right of the work area, fully on screen (shorter than the screen when it must be).
+    private void PlaceTopRight()
+    {
+        var area = SystemParameters.WorkArea;
+        Height = Math.Min(Height, area.Height - 48);
+        Left = area.Right - Width - 24;
+        Top = area.Top + 24;
+    }
+
+    public void ShowNoFocus()
+    {
+        var first = !placed;
+        if (first)
+        {
+            PlaceTopRight();
+            placed = true;
+        }
+        if (model.LiveSessionId != sessionId)
+        {
+            // A new meeting: start from an empty page.
+            sessionId = model.LiveSessionId;
+            startedAt = DateTime.Now;
+            lines.Clear();
+            LivePanel.Visibility = Visibility.Collapsed;
+            EndBanner.Visibility = Visibility.Collapsed;
+            TabLines.IsChecked = true;
+        }
+        LiveDot.Visibility = Visibility.Visible;
+        StateText.Text = "收听中";
+        StateText.Foreground = OnAirText;
+        OnAirPill.Background = OnAirFill;
+        StopBtn.Visibility = Visibility.Visible;
+        clock.Start();
+        RenderNotes();
+        RenderSpeak();
+        Show();
+        // Windows may place a tool window on its own the first time it appears: put it back.
+        if (first) PlaceTopRight();
+    }
+
+    /// Developer snapshot: show a stored meeting's lines and notes as the live panel would.
+    public void Preview(string id, bool notesTab)
+    {
+        sessionId = id;
+        if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s);
+        EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        model.Notes.Show(id);
+        RenderNotes();
+        TabNotes.IsChecked = notesTab;
+        TabLines.IsChecked = !notesTab;
+        ClockText.Text = "12:34";
+    }
+
+    private static readonly System.Windows.Media.Brush OnAirFill = Frozen(0x1F, 0x3B, 0x33);
+    private static readonly System.Windows.Media.Brush OnAirText = Frozen(0x7F, 0xE0, 0xBC);
+
+    private static System.Windows.Media.Brush Frozen(byte r, byte g, byte b)
+    {
+        var x = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(r, g, b));
+        x.Freeze();
+        return x;
+    }
+
+    public void OnStopped()
+    {
+        clock.Stop();
+        LiveDot.Visibility = Visibility.Collapsed;
+        StateText.Text = model.Ling.HasKey ? "已结束 · 正在整理纪要" : "已结束";
+        StateText.Foreground = Theme.NightMuted;
+        OnAirPill.Background = Theme.NightRaised;
+        StopBtn.Visibility = Visibility.Collapsed;
+        LivePanel.Visibility = Visibility.Collapsed;
+        EndBanner.Visibility = Visibility.Collapsed;
+        // The notes are being rewritten over the whole meeting: show them.
+        if (IsVisible && model.Ling.HasKey) TabNotes.IsChecked = true;
+    }
+
+    private void Tick()
+    {
+        ClockText.Text = TranscriptExport.Clock((DateTime.Now - startedAt).TotalSeconds);
+        if (pending != null)
+        {
+            var left = Math.Max(0, (int)(pending.Deadline - DateTime.Now).TotalSeconds);
+            var why = pending.Reason is MeetingEndWatch.Reason.AppLeft a ? $"看起来 {a.Name} 的会议已经结束" : "已经有一阵没人说话了";
+            EndText.Text = $"{why}，{left} 秒后自动结束本场记录。";
+        }
+    }
+
+    public void ShowEndPending(MeetingEndWatch.Pending? p)
+    {
+        pending = p;
+        EndBanner.Visibility = p == null ? Visibility.Collapsed : Visibility.Visible;
+        Tick();
+    }
+
+    private void OnLine(string id)
+    {
+        if (sessionId == null) return;
+        var atBottom = LinesScroll.VerticalOffset >= LinesScroll.ScrollableHeight - 30;
+        if (model.Store.Snapshot(sessionId) is { } s) LineVM.Sync(lines, s);
+        EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (atBottom) LinesScroll.ScrollToEnd();
+    }
+
+    private void OnSubtitle(MeetingController.Subtitle s)
+    {
+        if (!IsVisible) return;
+        // Only the line being said shows here; finished lines are in the list.
+        if (s.Live)
+        {
+            var atBottom = LinesScroll.VerticalOffset >= LinesScroll.ScrollableHeight - 30;
+            LivePanel.Visibility = Visibility.Visible;
+            EmptyHint.Visibility = Visibility.Collapsed;
+            var last = lines.LastOrDefault(l => !l.IsMe);
+            var src = s.Source;
+            if (last != null && src.StartsWith(last.Src)) src = src[last.Src.Length..].TrimStart();
+            LiveSrc.Text = src;
+            var dst = s.Translation;
+            if (last?.Dst is { } d && dst.StartsWith(d)) dst = dst[d.Length..].TrimStart();
+            LiveDst.Text = model.Settings.TranslationOn ? dst : "";
+            LiveDst.Visibility = LiveDst.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            LiveWho.Text = "正在说…";
+            if (atBottom) LinesScroll.ScrollToEnd();
+        }
+        else
+        {
+            LivePanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void RenderNotes()
+    {
+        var n = model.Notes;
+        NotesHost.Content = n.Notes.IsEmpty
+            ? new System.Windows.Controls.TextBlock
+            {
+                FontSize = 13, Foreground = Theme.NightMuted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
+                Text = model.Ling.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
+                                         : "在「设置 › AI 纪要」里填入 Ling key，开会时就会自动整理纪要。",
+            }
+            : NotesRenderer.Build(n.Notes);
+        NotesState.Text = n.Status switch
+        {
+            NotesEngine.State.Updating => "纪要整理中…",
+            NotesEngine.State.RateLimited => "请求太多，稍后再试",
+            NotesEngine.State.InvalidKey => "Ling key 不可用",
+            NotesEngine.State.Failed => "纪要这次没刷新",
+            _ => "",
+        };
+    }
+
+    private void RenderSpeak()
+    {
+        var on = model.Settings.SpeakEnabled;
+        SpeakBar.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        if (!on) return;
+        var key = model.Settings.SpeakKey == SpeakKey.RightAlt ? "右 Alt" : "右 Ctrl";
+        var state = model.Speak?.Status ?? SpeakEngine.State.Idle;
+        SpeakDot.Fill = state == SpeakEngine.State.Idle ? Theme.NightMuted : Theme.OnAir;
+        SpeakText.Text = state switch
+        {
+            SpeakEngine.State.Recording => "录音中 · 松开按键后翻译",
+            SpeakEngine.State.Working => "正在翻译…",
+            SpeakEngine.State.Speaking => "正在播报给对方",
+            _ => !VirtualCable.Installed ? "同传发言：需要先安装虚拟麦克风（设置 › 同传发言）"
+                : $"同传发言：按住 {key} 说，松开后译成{Languages.ChineseName(model.Speak?.Target() ?? "en")}播报",
+        };
+    }
+
+    private void Tab_Checked(object sender, RoutedEventArgs e)
+    {
+        if (LinesScroll == null) return;
+        var notes = TabNotes.IsChecked == true;
+        LinesScroll.Visibility = notes ? Visibility.Collapsed : Visibility.Visible;
+        NotesScroll.Visibility = notes ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void Stop_Click(object sender, RoutedEventArgs e)
+    {
+        if (model.IsListening) await ((App)Application.Current).ToggleListening();
+    }
+
+    private void Hide_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        if (model.IsListening) ((App)Application.Current).PanelHidden();
+    }
+
+    private void KeepGoing_Click(object sender, RoutedEventArgs e)
+    {
+        model.KeepGoing();
+        ShowEndPending(null);
+    }
+}

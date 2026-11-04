@@ -1,0 +1,68 @@
+using System.Text.Json;
+
+namespace HuiYi;
+
+public enum DisplayMode { Notes, Subtitles }
+public enum SpeakKey { RightCtrl, RightAlt }
+
+/// Every setting, saved as %APPDATA%\HuiYi\settings.json. Never holds the Ling key.
+public sealed class AppSettings
+{
+    /// "auto" follows the system languages; otherwise a target code ("zh-CN", "en"…).
+    public string Target { get; set; } = "auto";
+    public DisplayMode Display { get; set; } = DisplayMode.Notes;
+    /// The notes window shows in screen shares (with a badge); off by default.
+    public bool NotesCapturable { get; set; }
+    public bool TranslationOn { get; set; } = true;
+    /// Tell the other side's voices apart (说话人 1、说话人 2…). On by default.
+    public bool SpeakerVoices { get; set; } = true;
+    public double SubtitleFontSize { get; set; } = 26;
+    public string LingModel { get; set; } = "Ling-3.1-flash";
+    /// "auto": the notes follow the subtitles' target language.
+    public string NotesLanguage { get; set; } = "auto";
+
+    public bool SpeakEnabled { get; set; }
+    public SpeakKey SpeakKey { get; set; } = SpeakKey.RightCtrl;
+    /// What I speak into the room: "auto" is the language the other side last spoke.
+    public string SpeakTarget { get; set; } = "auto";
+    /// The Windows voice for speak-back, per language code; empty picks the first that fits.
+    public Dictionary<string, string> Voices { get; set; } = new();
+    /// Also play what is spoken into the room on my own speakers.
+    public bool SpeakMonitor { get; set; }
+
+    public bool FollowMeetingApps { get; set; } = true;
+    public MeetingEndWatch.Silence SilenceEnd { get; set; } = MeetingEndWatch.Silence.Prompt;
+    public int SilenceMinutes { get; set; } = 10;
+
+    public bool LaunchAtLogin { get; set; }
+    public bool OnboardingDone { get; set; }
+
+    private static string File => Path.Combine(Paths.Roaming, "settings.json");
+
+    public static AppSettings Load()
+    {
+        try
+        {
+            if (System.IO.File.Exists(File))
+                return JsonSerializer.Deserialize<AppSettings>(System.IO.File.ReadAllText(File), Json.Options) ?? new();
+        }
+        catch
+        {
+            Log.Debug("settings: unreadable, using defaults");
+        }
+        return new();
+    }
+
+    public void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(Paths.Roaming);
+            System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this, Json.Options));
+        }
+        catch
+        {
+            Log.Debug("settings: save failed");
+        }
+    }
+}

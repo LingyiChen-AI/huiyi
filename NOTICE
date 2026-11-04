@@ -1,0 +1,18 @@
+会译 (HuiYi)
+===========
+
+Parts of this software are ported from Cicada (知了), https://github.com/wquguru/cicada,
+licensed under the Apache License, Version 2.0. Ported logic (rewritten in C#): the Ling client
+conventions, meeting notes prompt and parser, heard-text cleanup and joining, meeting-end
+detection, translation chain, speaker clustering and labelling rules, speaker name guessing, and the
+session record format, together with their unit tests. The user interface is this project's own design.
+"Cicada" and "知了" are names of that project; this software is not affiliated with it.
+
+Third-party components, downloaded or referenced, not bundled in source:
+- sherpa-onnx (k2-fsa), Apache-2.0
+- SenseVoice small model (FunAudioLLM), via sherpa-onnx model releases
+- Silero VAD, MIT
+- 3D-Speaker CAM++ speaker model (zh-cn, 16k common), Apache-2.0, via sherpa-onnx model releases
+- NAudio, MIT
+- H.NotifyIcon, MIT
+- VB-Audio Virtual Cable: installed by the user from vb-audio.com, never redistributed

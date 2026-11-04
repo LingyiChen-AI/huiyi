@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Run on whatever newer .NET the machine has; releases are self-contained anyway. -->
+    <RollForward>Major</RollForward>
+    <LangVersion>latest</LangVersion>
+    <Authors>HuiYi contributors</Authors>
+  </PropertyGroup>
+</Project>

@@ -1,6 +1,6 @@
 # Pushing a tag like v0.2.0 builds and publishes that version: tests, a self-contained publish, the
-# Velopack installer and update package, and a portable zip,
-# all attached to the GitHub release that installed copies check for updates.
+# installer (HuiYi-Setup.exe), the portable zip, and the update package and feed that installed
+# copies check, all on the GitHub release, with notes from the feat: / fix: commits since the last tag.
 name: release
 
 on:
@@ -17,6 +17,8 @@ jobs:
       REPO_URL: ${{ github.server_url }}/${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # all tags, for the release notes since the last version
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -56,13 +58,34 @@ jobs:
             -p:VelopackSetup="$PWD/releases/HuiYi.App-win-Setup.exe" -o installer-out
           New-Item -ItemType Directory -Force portable | Out-Null
           Copy-Item installer-out/HuiYi-Setup.exe portable/HuiYi-Setup.exe
-          Compress-Archive -Path publish/* -DestinationPath "portable/HuiYi-$env:VERSION-win-x64.zip" -Force
+
+      # What changed since the previous tag, from the feat: / fix: commit subjects.
+      - name: Release notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $prev = git describe --tags --abbrev=0 "$tag^" 2>$null
+          $range = if ($prev) { "$prev..$tag" } else { $tag }
+          $subjects = git log $range --no-merges --format=%s
+          $feat = $subjects | Where-Object { $_ -match '^feat(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^feat(\(.+\))?: ', '') }
+          $fix = $subjects | Where-Object { $_ -match '^fix(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^fix(\(.+\))?: ', '') }
+          $notes = @("## 下载", "", "- **HuiYi-Setup.exe**：安装包，可以选安装位置，之后会自动更新", "- **HuiYi.App-win-Portable.zip**：免安装版，解压即用，也会自动更新", "")
+          if ($feat) { $notes += @("## 新功能", "") + $feat + "" }
+          if ($fix) { $notes += @("## 修复", "") + $fix + "" }
+          if ($prev) { $notes += "完整改动：$env:REPO_URL/compare/$prev...$tag" }
+          $notes -join "`n" | Out-File -Encoding utf8 notes.md
+          Get-Content notes.md
 
       - name: Publish the release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          $tag = "${{ github.ref_name }}"
           vpk upload github --repoUrl $env:REPO_URL --token $env:GH_TOKEN --outputDir releases `
-            --tag "${{ github.ref_name }}" --releaseName "会译 $env:VERSION" --publish --merge
-          gh release upload "${{ github.ref_name }}" "portable/HuiYi-Setup.exe" "portable/HuiYi-$env:VERSION-win-x64.zip" --clobber
+            --tag $tag --releaseName "会译 $env:VERSION" --publish --merge
+          gh release upload $tag "portable/HuiYi-Setup.exe" --clobber
+          # Only what people or the updater use: Velopack's own Setup.exe is inside HuiYi-Setup.exe, and
+          # RELEASES is the old Squirrel feed (installed copies read releases.win.json).
+          foreach ($extra in "HuiYi.App-win-Setup.exe", "RELEASES") { gh release delete-asset $tag $extra -y }
+          gh release edit $tag --notes-file notes.md

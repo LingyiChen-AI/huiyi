@@ -81,6 +81,18 @@ public static class Snapshot
             Save(panel, folder, "panel-notes");
         }
         Save(SpeakerNameWindow.ForSnapshot(2, "Daniel"), folder, "speaker-name");
+        // The tray menu's look: its items in a window (a real context menu needs the tray to open).
+        var items = new System.Windows.Controls.StackPanel();
+        foreach (var (text, on, enabled) in new[] { ("开始收听", false, true), ("打开实时面板", false, false), ("翻译字幕", true, true), ("-", false, true),
+                     ("会议记录", false, true), ("纪要模板", false, true), ("设置", false, true), ("-", false, true), ("退出会译", false, true) })
+            items.Children.Add(text == "-" ? new System.Windows.Controls.Separator()
+                : new System.Windows.Controls.MenuItem { Header = text, IsChecked = on, IsEnabled = enabled });
+        var menuHost = new Window
+        {
+            SizeToContent = SizeToContent.WidthAndHeight, Background = Brushes.White,
+            Content = new System.Windows.Controls.Border { Padding = new Thickness(4), Width = 160, Child = items },
+        };
+        Save(menuHost, folder, "tray-menu");
         var ready = new NotesWindow(model);
         Prepare(ready);
         ready.ShowReady();

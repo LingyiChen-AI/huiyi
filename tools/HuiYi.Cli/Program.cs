@@ -115,9 +115,70 @@ switch (cmd)
             Console.WriteLine($"{TranscriptExport.Clock(l.T)} {SpeakerLabels.Who(l, numbers, names),-6} (voice {l.Voice?.ToString() ?? "-"}) {l.Src}"
                               + (l.Dst != null ? $"\n          {l.Dst}" : ""));
         Console.WriteLine($"speakers on show: {SpeakerLabels.ShownCount(snap.Lines)}");
+        // HUIYI_REDO=1: the after-meeting check over the whole file, line by line beside the live voice.
+        if (Environment.GetEnvironmentVariable("HUIYI_REDO") == "1" && cmd == "listen")
+        {
+            var whole = ReadAll(args[1]);
+            var rw = Stopwatch.StartNew();
+            var plan = MeetingRedo.Run(whole, snap.Lines, prints.Embed, rec.Recognize);
+            Console.WriteLine($"\n=== after the meeting ({rw.Elapsed.TotalSeconds:F0} s for {whole.Length / 16000.0:F0} s of audio): {plan.Relabelled} lines relabelled, {plan.Split} split ===");
+            foreach (var l in snap.Lines)
+            {
+                if (!plan.Lines.TryGetValue(l.Id, out var ps)) continue;
+                Console.WriteLine($"{TranscriptExport.Clock(l.T)} live {l.Voice?.ToString() ?? "-"}  {l.Src}");
+                foreach (var p in ps) Console.WriteLine($"        -> {p.Voice?.ToString() ?? "-"}  {p.Text}");
+            }
+        }
         meeting.Stop();
         player?.Dispose();
         try { Directory.Delete(tmp, true); } catch { }
+        break;
+    }
+    case "redo":
+    {
+        // huiyi-cli redo <audio>: a meeting over the file the way the app runs one, recording kept,
+        // then the after-meeting check applied to the record; prints the lines before and after.
+        var settings = new AppSettings { Target = "zh-CN", TranslationOn = false };
+        var store = new SessionStore(Path.Combine(Path.GetTempPath(), "huiyi-cli-redo"));
+        Paths.Local = Path.Combine(Path.GetTempPath(), "huiyi-cli-redo-local");
+        var ai = new AiClient();
+        var notes = new NotesEngine(ai, store);
+        using var rec = new Recognizer(models);
+        var listen = new ListenEngine(rec, models);
+        using var prints = new Voiceprints(models);
+        var tagger = new SpeakerTagger(() => prints);
+        listen.Turns = (s, heard) => new TurnFinder(prints.Embed, tagger.Nearest).Points(s, heard.SentenceEnds());
+        var meeting = new MeetingController(settings, store, new TranslationService(ai), notes, listen, () => sys, tagger)
+        {
+            Redo = (audio, lines) => MeetingRedo.Run(audio, lines, prints.Embed, rec.Recognize),
+        };
+        var redone = new TaskCompletionSource<(int, int)>();
+        meeting.Redone += (_, r, s) => redone.TrySetResult((r, s));
+        var fs = new FileSource(args[1], realTime: false);
+        var finished = new TaskCompletionSource();
+        fs.Finished += () => finished.TrySetResult();
+        meeting.Start(fs);
+        var id = meeting.SessionId!;
+        await finished.Task;
+        double fed;
+        do { fed = listen.FedSeconds; await Task.Delay(1500); } while (listen.FedSeconds > fed);
+        void Print(string title)
+        {
+            var snap = store.Snapshot(id)!;
+            Console.WriteLine($"\n=== {title}: {snap.Lines.Count} lines ===");
+            foreach (var l in snap.Lines) Console.WriteLine($"{TranscriptExport.Clock(l.T)} voice {l.Voice?.ToString() ?? "-",-2} {l.Src}");
+        }
+        Print("live");
+        var recording = Path.Combine(Paths.Recordings, id + ".wav");
+        Console.WriteLine($"recording kept: {File.Exists(recording)} ({(File.Exists(recording) ? new FileInfo(recording).Length / 1024 : 0)} KB)");
+        var w = Stopwatch.StartNew();
+        meeting.Stop();
+        var done = await Task.WhenAny(redone.Task, Task.Delay(TimeSpan.FromMinutes(10)));
+        if (done != redone.Task) Console.WriteLine("\n(no change from the after-meeting check)");
+        else Console.WriteLine($"\nafter-meeting check: {redone.Task.Result.Item1} relabelled, {redone.Task.Result.Item2} split, {w.Elapsed.TotalSeconds:F0} s");
+        await Task.Delay(500);
+        Print("after the meeting");
+        Console.WriteLine($"recording deleted: {!File.Exists(recording)}");
         break;
     }
     case "translate":

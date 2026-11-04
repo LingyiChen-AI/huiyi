@@ -19,6 +19,8 @@ public sealed class ListenEngine : IDisposable
     public event Action<string, string>? Partial;   // text, lang ("" clears)
     public event Action<HeardSegment>? Final;
     public event Action<string>? Failed;
+    /// Every chunk heard, 16 kHz mono, on the worker thread (for keeping the meeting's recording).
+    public event Action<float[]>? Audio;
 
     public bool IsRunning { get; private set; }
     /// Where another person starts talking inside a stretch of speech (sample offsets; empty: one
@@ -134,6 +136,7 @@ public sealed class ListenEngine : IDisposable
         {
             foreach (var chunk in q.GetConsumingEnumerable())
             {
+                Audio?.Invoke(chunk);
                 for (var i = 0; i < chunk.Length; i++) history[(fed + i) % history.Length] = chunk[i];
                 fed += chunk.Length;
                 Interlocked.Exchange(ref total, fed);

@@ -73,6 +73,8 @@ public sealed class AppModel
     public AppModel()
     {
         Routing = new MicRouting(Settings);
+        // A recording kept for the after-meeting check outlives the app only if it crashed: drop it.
+        try { if (System.IO.Directory.Exists(Paths.Recordings)) System.IO.Directory.Delete(Paths.Recordings, true); } catch { }
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
@@ -129,6 +131,9 @@ public sealed class AppModel
         meeting.StateChanged += () => Ui(() => StateChanged?.Invoke());
         meeting.Error += m => Ui(() => Toast?.Invoke(m));
         meeting.EndPending += p => Ui(() => EndPending?.Invoke(p));
+        meeting.Redo = (audio, lines) => Prints() is { } vp ? MeetingRedo.Run(audio, lines, vp.Embed, rec.Recognize) : null;
+        meeting.Redone += (id, relabelled, split) => Ui(() => Toast?.Invoke(
+            $"已用整场录音重新校对了发言人：{relabelled + split} 句有调整{(split > 0 ? $"（其中 {split} 句拆成了两个人）" : "")}，纪要会随之更新。"));
         speak.MyMic = Routing.MyMicId;
         speak.StateChanged += () => Ui(() => SpeakChanged?.Invoke());
         speak.Problem += m => Ui(() => Toast?.Invoke(m));

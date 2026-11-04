@@ -24,6 +24,7 @@ public partial class SettingsWindow : Window
         FontText.Text = $"悬浮字幕字号  {s.SubtitleFontSize:0}";
         TranslateOn.IsChecked = s.TranslationOn;
         VoicesOn.IsChecked = s.SpeakerVoices;
+        RedoOn.IsChecked = s.RedoSpeakers;
         Capturable.IsChecked = s.HideFromCaptures;
 
         Fill(PresetBox, ProviderPreset.All.Select(p => (p.Id, p.Name)).ToArray(), "");
@@ -90,6 +91,7 @@ public partial class SettingsWindow : Window
         s.Target = TagOf(TargetBox);
         s.Display = ModeSubs.IsChecked == true ? DisplayMode.Subtitles : DisplayMode.Notes;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
+        s.RedoSpeakers = RedoOn.IsChecked == true;
         s.HideFromCaptures = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
         if (TagOf(TemplateDefaultBox) is { Length: > 0 } tid) s.DefaultTemplateId = tid;

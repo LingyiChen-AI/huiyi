@@ -1,5 +1,6 @@
 using HuiYi.Audio;
 using HuiYi.Speech;
+using NAudio.Wave;
 
 namespace HuiYi;
 
@@ -15,6 +16,14 @@ public sealed class MeetingController
     public event Action? StateChanged;
     public event Action<string>? Error;
     public event Action<MeetingEndWatch.Pending?>? EndPending;
+    /// The after-meeting check changed the record: session id, lines relabelled, lines split.
+    public event Action<string, int, int>? Redone;
+
+    /// Runs the after-meeting check (MeetingRedo with the app's models); null leaves records as heard.
+    public Func<float[], IReadOnlyList<TranscriptLine>, MeetingRedo.Plan?>? Redo { get; set; }
+    private NAudio.Wave.WaveFileWriter? recording;
+    private string? recordingPath;
+    private readonly object recordingGate = new();
 
     public string? SessionId { get; private set; }
     public bool IsListening => SessionId != null;
@@ -60,6 +69,7 @@ public sealed class MeetingController
         listen.Partial += OnPartial;
         listen.Final += OnFinal;
         listen.Failed += m => Error?.Invoke(m);
+        listen.Audio += Record;
         translator.Glossary = () => notes.Glossary;
     }
 
@@ -84,6 +94,7 @@ public sealed class MeetingController
             partial = partialTranslation = "";
         }
         speakers?.Reset();
+        StartRecording(s.Id);
         notes.Language = NotesLanguage;
         notes.Begin(s.Id);
         listen.Start(source);
@@ -103,15 +114,137 @@ public sealed class MeetingController
         var id = SessionId;
         lock (gate) SessionId = null;
         store.End(at);
+        var audio = StopRecording();
         if (id != null && store.Get(id) != null)
         {
             notes.Finish();
             namer?.Guess(id, force: true);
         }
         Log.Debug($"meeting: ended {id}");
+        if (id != null && audio != null) _ = Task.Run(() => RedoSpeakers(id, audio));
         SubtitleChanged?.Invoke(new Subtitle("", "", false));
         StateChanged?.Invoke();
         EndPending?.Invoke(null);
+    }
+
+    // MARK: The recording for the after-meeting check
+
+    private void StartRecording(string id)
+    {
+        if (Redo == null || !settings.RedoSpeakers || !settings.SpeakerVoices) return;
+        try
+        {
+            Directory.CreateDirectory(Paths.Recordings);
+            lock (recordingGate)
+            {
+                recordingPath = Path.Combine(Paths.Recordings, id + ".wav");
+                recording = new NAudio.Wave.WaveFileWriter(recordingPath, new NAudio.Wave.WaveFormat(Recognizer.SampleRate, 16, 1));
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Debug($"meeting: can't keep the recording {e.Message}");
+            recording = null;
+        }
+    }
+
+    private void Record(float[] chunk)
+    {
+        lock (recordingGate)
+        {
+            if (recording == null) return;
+            var bytes = new byte[chunk.Length * 2];
+            for (var i = 0; i < chunk.Length; i++)
+            {
+                var v = (short)Math.Clamp(chunk[i] * 32767f, short.MinValue, short.MaxValue);
+                bytes[2 * i] = (byte)v;
+                bytes[2 * i + 1] = (byte)(v >> 8);
+            }
+            recording.Write(bytes, 0, bytes.Length);
+        }
+    }
+
+    /// Closes the recording; its path, or null when none was kept.
+    private string? StopRecording()
+    {
+        lock (recordingGate)
+        {
+            if (recording == null) return null;
+            recording.Dispose();
+            recording = null;
+            return recordingPath;
+        }
+    }
+
+    /// Who said what, checked again over the whole meeting; then the recording is deleted.
+    private void RedoSpeakers(string id, string path)
+    {
+        try
+        {
+            var snap = store.Snapshot(id);
+            if (snap == null || Redo == null || snap.Lines.Count(l => l.Speaker == "them") < 4) return;
+            float[] audio;
+            using (var reader = new NAudio.Wave.WaveFileReader(path))
+            {
+                var provider = reader.ToSampleProvider();
+                var all = new List<float>((int)(reader.SampleCount));
+                var buffer = new float[16000];
+                int n;
+                while ((n = provider.Read(buffer, 0, buffer.Length)) > 0) all.AddRange(buffer.AsSpan(0, n).ToArray());
+                audio = [.. all];
+            }
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var plan = Redo(audio, snap.Lines);
+            Log.Debug($"redo: {audio.Length / (double)Recognizer.SampleRate:F0} s checked in {watch.ElapsedMilliseconds} ms, " +
+                      $"{plan?.Relabelled ?? 0} relabelled, {plan?.Split ?? 0} split");
+            if (plan == null || plan.Lines.Count == 0) return;
+            var added = new List<string>();
+            store.Mutate(id, s =>
+            {
+                var rebuilt = new List<TranscriptLine>();
+                foreach (var l in s.Lines)
+                {
+                    if (!plan.Lines.TryGetValue(l.Id, out var pieces) || pieces.Count == 0)
+                    {
+                        rebuilt.Add(l);
+                        continue;
+                    }
+                    if (pieces.Count == 1)
+                    {
+                        l.Voice = pieces[0].Voice;
+                        rebuilt.Add(l);
+                        continue;
+                    }
+                    // The line held two people: one line each, translated again.
+                    for (var k = 0; k < pieces.Count; k++)
+                    {
+                        var p = pieces[k];
+                        var line = k == 0 ? l : new TranscriptLine { Id = Guid.NewGuid().ToString("N")[..12], Speaker = "them" };
+                        line.T = p.Start;
+                        line.End = p.End;
+                        line.Src = p.Text;
+                        line.SrcLang = p.Lang;
+                        line.DstLang = TargetFor(p.Lang);
+                        line.Dst = null;
+                        line.Voice = p.Voice;
+                        rebuilt.Add(line);
+                        added.Add(line.Id);
+                    }
+                }
+                s.Lines = rebuilt;
+            });
+            if (settings.TranslationOn) foreach (var lineId in added) TranslateLine(id, lineId);
+            notes.Generate(id);
+            Redone?.Invoke(id, plan.Relabelled, plan.Split);
+        }
+        catch (Exception e)
+        {
+            Log.Debug($"redo: failed {e.Message}");
+        }
+        finally
+        {
+            try { File.Delete(path); } catch { }
+        }
     }
 
     private MeetingEndWatch.Config EndConfig() => new()

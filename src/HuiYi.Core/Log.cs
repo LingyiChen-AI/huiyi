@@ -12,6 +12,8 @@ public static class Paths
     public static string Sessions => Path.Combine(Roaming, "Sessions");
     public static string Models => Path.Combine(Local, "models");
     public static string DebugLog => Path.Combine(Local, "debug.log");
+    /// A meeting's audio, kept only until the after-meeting check of who said what has run.
+    public static string Recordings => Path.Combine(Local, "recordings");
 }
 
 /// Debug log: timings, states and failures. Never transcript text, translations or the key.

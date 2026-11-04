@@ -39,7 +39,9 @@
                 <!-- What the tray menu offers, here too: the translation switch and settings. -->
                 <Border DockPanel.Dock="Bottom" BorderBrush="#EEF0F5" BorderThickness="0,1,0,0" Margin="4,8,6,0" Padding="0,12,0,0">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="设置" Style="{StaticResource Btn}" Padding="16,5" Click="Settings_Click"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostBtn}" Padding="7" ToolTip="设置" Click="Settings_Click">
+                            <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="17" Foreground="#5A5F6B"/>
+                        </Button>
                         <CheckBox x:Name="TranslateOn" Style="{StaticResource Switch}" Content="翻译字幕" VerticalAlignment="Center"
                                   ToolTip="把对方说的话实时翻译成你的语言" Click="Translate_Click"/>
                     </DockPanel>

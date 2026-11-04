@@ -123,7 +123,7 @@ public partial class MainWindow : Window
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
         NotesState.Text = generating ? "AI 正在通读整场会议…" : s.Notes?.UpdatedAt is { } at ? $"纪要更新于 {at.ToLocalTime():M月d日 HH:mm}" : "";
         NotesHost.Content = s.Notes is { IsEmpty: false } n
-            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true)
+            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s))
             : new Border
             {
                 Style = (Style)FindResource("Panel"),
@@ -166,7 +166,7 @@ public partial class MainWindow : Window
             void Save()
             {
                 var t = box.Text.Trim();
-                if (t != names.GetValueOrDefault(number, "")) model.Store.SetVoiceName(s.Id, voice, t);
+                if (t != names.GetValueOrDefault(number, "")) model.RenameVoice(s.Id, voice, t);
             }
             box.LostFocus += (_, _) => Save();
             box.KeyDown += (_, e) =>

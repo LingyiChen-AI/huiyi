@@ -276,6 +276,55 @@ public static class SpeakerLabels
     public static string Label(int number, IReadOnlyDictionary<int, string> names) =>
         names.TryGetValue(number, out var n) ? n : $"发言人 {number}";
 
+    private static readonly System.Text.RegularExpressions.Regex NumberedSpeaker = new(@"发言人\s?(\d+)");
+
+    /// "发言人1 说…" with the name given since: "测试 说…". Unnamed speakers stay as they are.
+    public static string WithNames(string text, IReadOnlyDictionary<int, string> names) =>
+        names.Count == 0 || text.Length == 0 ? text
+            : NumberedSpeaker.Replace(text, m => int.TryParse(m.Groups[1].Value, out var n) && names.TryGetValue(n, out var name) && name.Length > 0 ? name : m.Value);
+
+    /// The notes as they should read now. The AI writes them with the labels of the moment ("发言人1"),
+    /// and a speaker named afterwards should be called by that name everywhere, without rewriting
+    /// the notes. Returns a copy; the stored notes are left alone.
+    public static MeetingNotes WithNames(MeetingNotes notes, IReadOnlyDictionary<int, string> names)
+    {
+        if (names.Count == 0) return notes;
+        var c = System.Text.Json.JsonSerializer.Deserialize<MeetingNotes>(System.Text.Json.JsonSerializer.Serialize(notes, Json.Options), Json.Options)!;
+        string R(string s) => WithNames(s, names);
+        string? Rn(string? s) => s == null ? null : WithNames(s, names);
+        void Items(List<NoteItem>? items)
+        {
+            if (items == null) return;
+            foreach (var i in items)
+            {
+                i.Text = R(i.Text);
+                i.Owner = Rn(i.Owner);
+            }
+        }
+        c.Title = Rn(c.Title);
+        c.Summary = R(c.Summary);
+        foreach (var t in c.Topics)
+        {
+            t.Title = R(t.Title);
+            t.Summary = R(t.Summary);
+            t.Points = t.Points.Select(R).ToList();
+            if (t.Fishbone is { } f)
+            {
+                f.Question = R(f.Question);
+                foreach (var b in f.Branches)
+                {
+                    b.Label = R(b.Label);
+                    b.Detail = R(b.Detail);
+                }
+            }
+        }
+        Items(c.Conclusions);
+        Items(c.Todos);
+        if (c.Sections != null) foreach (var s in c.Sections) Items(s.Items);
+        foreach (var term in c.Terms) term.Note = R(term.Note);
+        return c;
+    }
+
     /// What a line shows as its speaker: 我, a speaker's name or number, or 发言人 while the voice has no number yet.
     public static string Who(TranscriptLine l, IReadOnlyDictionary<string, int> numbers, IReadOnlyDictionary<int, string> names) =>
         l.Speaker == "me" ? "我" : numbers.TryGetValue(l.Id, out var n) ? Label(n, names) : "发言人";

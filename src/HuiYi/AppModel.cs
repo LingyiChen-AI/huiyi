@@ -190,6 +190,13 @@ public sealed class AppModel
         return (SpeakerLabels.Who(line, numbers, SpeakerLabels.Names(s)), numbers.TryGetValue(lineId, out var n) ? n : null);
     }
 
+    /// Names a voice in a meeting; every view of its notes redraws with the name.
+    public void RenameVoice(string sessionId, int voice, string name)
+    {
+        Store.SetVoiceName(sessionId, voice, name);
+        NotesChanged?.Invoke();
+    }
+
     public void SaveSettings()
     {
         Settings.Save();

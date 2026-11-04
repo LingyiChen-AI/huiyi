@@ -47,6 +47,10 @@
   <img src="docs/images/panel-notes.png" width="380" alt="实时面板：实时纪要">
 </p>
 
+<p align="center">
+  <img src="docs/images/speaker-name.png" width="340" alt="在实时面板里点发言人的名字改名">
+</p>
+
 不想要面板的话，也可以换成屏幕底部的悬浮字幕：
 
 <p align="center">

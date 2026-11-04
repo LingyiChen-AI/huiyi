@@ -11,9 +11,11 @@ namespace HuiYi.App;
 /// then cards for decisions, to-dos and names. In the dark live panel: the same structure, compact.
 public static class NotesRenderer
 {
-    private sealed class Look(bool cards, double size, DateTime start)
+    private sealed class Look(bool cards, double size, DateTime start, IReadOnlyDictionary<int, string>? names)
     {
         public bool Cards = cards;
+        /// Speaker number → the name given to it, so a named owner keeps their voice's colour.
+        public IReadOnlyDictionary<int, string> Names = names ?? new Dictionary<int, string>();
         public double Size = size;
         /// The meeting's local start: every time shown is a real clock time.
         public DateTime Start = start;
@@ -28,9 +30,13 @@ public static class NotesRenderer
     }
 
     /// `start`: when the meeting began (UTC or local), for real clock times.
-    public static UIElement Build(MeetingNotes n, DateTime start, double fontSize = 14, bool cards = false)
+    /// `names`: the meeting's speaker names (SpeakerLabels.Names): "发言人1" in the notes reads as the
+    /// name given since, and owners keep their voice's colour.
+    public static UIElement Build(MeetingNotes n, DateTime start, double fontSize = 14, bool cards = false,
+        IReadOnlyDictionary<int, string>? names = null)
     {
-        var k = new Look(cards, fontSize, start.ToLocalTime());
+        if (names is { Count: > 0 }) n = SpeakerLabels.WithNames(n, names);
+        var k = new Look(cards, fontSize, start.ToLocalTime(), names);
         var root = new StackPanel();
         if (n.IsEmpty) return root;
 
@@ -305,6 +311,8 @@ public static class NotesRenderer
     {
         var m = Regex.Match(owner, @"(?:发言人|说话人)\s*(\d+)");
         if (m.Success) return Theme.Speaker(int.Parse(m.Groups[1].Value));
+        foreach (var (number, name) in k.Names)
+            if (name.Length > 0 && name == owner) return Theme.Speaker(number);
         return owner is "你" or "我" ? Theme.OnAir : k.Accent;
     }
 

@@ -169,7 +169,7 @@ public partial class NotesWindow : Window
         if (PresentationSource.FromVisual(this)?.CompositionTarget is { } target) at = target.TransformFromDevice.Transform(at);
         SpeakerNameWindow.Ask(at, number, current, name =>
         {
-            model.Store.SetVoiceName(id, voice, name);
+            model.RenameVoice(id, voice, name);
             if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
         });
     }
@@ -219,7 +219,8 @@ public partial class NotesWindow : Window
                 Text = model.Ai.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
                                          : "在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。",
             }
-            : NotesRenderer.Build(n.Notes, (n.ShownId is { } shown ? model.Store.Get(shown)?.StartedAt : null) ?? DateTime.Now);
+            : NotesRenderer.Build(n.Notes, (n.ShownId is { } shown ? model.Store.Get(shown)?.StartedAt : null) ?? DateTime.Now,
+                names: n.ShownId is { } named && model.Store.Snapshot(named) is { } s ? SpeakerLabels.Names(s) : null);
         NotesState.Text = n.Status switch
         {
             NotesEngine.State.Updating => "纪要整理中…",

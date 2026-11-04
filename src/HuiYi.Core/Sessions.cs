@@ -304,8 +304,9 @@ public static class TranscriptExport
         var end = s.EndedAt?.ToLocalTime();
         sb.AppendLine($"{NotesPrompt.When(start)}{(end != null ? $" – {end:HH:mm}" : "")} · 时长 {Clock(s.Duration.TotalSeconds)}");
         sb.AppendLine();
-        if (s.Notes is { IsEmpty: false } n)
+        if (s.Notes is { IsEmpty: false } written)
         {
+            var n = SpeakerLabels.WithNames(written, SpeakerLabels.Names(s));
             sb.AppendLine("## 纪要");
             sb.AppendLine();
             if (n.Summary.Length > 0)

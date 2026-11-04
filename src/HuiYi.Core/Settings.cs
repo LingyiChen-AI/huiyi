@@ -39,6 +39,13 @@ public sealed class AppSettings
     public Dictionary<string, string> Voices { get; set; } = new();
     /// Also play what is spoken into the room on my own speakers.
     public bool SpeakMonitor { get; set; }
+    /// While interpreting is on, make "CABLE Output" the system's default microphone, so meeting apps on
+    /// "default" hear the interpreted voice with no setup; switched back when it goes off or the app quits.
+    public bool SpeakRouteMic { get; set; } = true;
+    /// The microphone I speak into (an endpoint id); null: the system default from before the switch.
+    public string? SpeakMicId { get; set; }
+    /// The default microphone the switch replaced, kept on disk so a crash still gets it back next start.
+    public string? SpeakSavedMicId { get; set; }
 
     public bool FollowMeetingApps { get; set; } = true;
     public MeetingEndWatch.Silence SilenceEnd { get; set; } = MeetingEndWatch.Silence.Prompt;

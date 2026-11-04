@@ -160,8 +160,8 @@ public sealed class LoopbackSource : IAudioSource
     }
 }
 
-/// The microphone (default capture device, or one chosen by name).
-public sealed class MicSource(string? deviceName = null) : IAudioSource
+/// The microphone (default capture device, or one chosen by endpoint id).
+public sealed class MicSource(string? deviceId = null) : IAudioSource
 {
     public event Action<float[]>? Samples;
     public event Action<string>? Failed;
@@ -172,8 +172,8 @@ public sealed class MicSource(string? deviceName = null) : IAudioSource
         try
         {
             var en = new MMDeviceEnumerator();
-            var device = deviceName == null ? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications)
-                : en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).FirstOrDefault(d => d.FriendlyName == deviceName)
+            var device = deviceId == null ? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications)
+                : en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).FirstOrDefault(d => d.ID == deviceId)
                   ?? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
             capture = new WasapiCapture(device, true, 20);
             var format = capture.WaveFormat;

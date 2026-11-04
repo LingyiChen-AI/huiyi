@@ -103,7 +103,7 @@ public class TemplateTests
         Assert.Contains("- 登录模块（14:01）", md);
         Assert.Contains("### 风险与问题", md);
         Assert.Contains("| 修完登录 | 你 | 11月6日（周五） |", md);
-        Assert.Contains("**14:01 对方** 登录模块周五前修完", md);
+        Assert.Contains("**14:01 发言人** 登录模块周五前修完", md);
     }
 
     [Fact]

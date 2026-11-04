@@ -225,8 +225,8 @@ public partial class NotesWindow : Window
             SpeakEngine.State.Recording => "录音中 · 松开按键后翻译",
             SpeakEngine.State.Working => "正在翻译…",
             SpeakEngine.State.Speaking => "正在播报给对方",
-            _ => !VirtualCable.Installed ? "同传发言：需要先安装虚拟麦克风（设置 › 同传发言）"
-                : $"同传发言：按住 {key} 说，松开后译成{Languages.ChineseName(model.Speak?.Target() ?? "en")}播报",
+            _ => !VirtualCable.Installed ? "同声传译：需要先安装虚拟麦克风（设置 › 同声传译）"
+                : $"同声传译：按住 {key} 说，松开后译成{Languages.ChineseName(model.Speak?.Target() ?? "en")}播报",
         };
     }
 

@@ -210,6 +210,20 @@ switch (cmd)
         foreach (var (k, v) in MicUsers.InCall()) Console.WriteLine($"{v} ({k})");
         Console.WriteLine("done");
         break;
+    case "mics":
+    {
+        var current = DefaultDevices.DefaultMicId();
+        foreach (var (id, name) in DefaultDevices.Mics()) Console.WriteLine($"{(id == current ? "*" : " ")} {name}  {id}");
+        Console.WriteLine($"cable: {(VirtualCable.Installed ? VirtualCable.Output()?.FriendlyName : "none")}");
+        var speaker = new NAudio.CoreAudioApi.MMDeviceEnumerator().GetDefaultAudioEndpoint(NAudio.CoreAudioApi.DataFlow.Render, NAudio.CoreAudioApi.Role.Console);
+        Console.WriteLine($"speaker: {speaker.FriendlyName}  {speaker.ID}");
+        break;
+    }
+    case "setmic":
+        // Switches the default mic and reports what Windows says afterwards.
+        Console.WriteLine(DefaultDevices.SetDefault(args[1]) ? "set" : "failed");
+        Console.WriteLine($"default now: {DefaultDevices.DefaultMicId()}");
+        break;
     default:
         Console.WriteLine("usage: models | transcribe <f> | listen <f> [target] | loopback <f> [target] | translate <text> <src> <dst> | voices | say <text> <lang> | micusers");
         break;

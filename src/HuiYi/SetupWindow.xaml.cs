@@ -9,7 +9,7 @@ namespace HuiYi.App;
 /// Ling key (optional), and speaking into the meeting (optional, needs the virtual mic).
 public partial class SetupWindow : Window
 {
-    private static readonly string[] StepNames = ["本机模型", "试听", "AI 服务", "同传发言"];
+    private static readonly string[] StepNames = ["本机模型", "试听", "AI 服务", "同声传译"];
     private readonly AppModel model;
     private readonly StackPanel[] pages;
     private CancellationTokenSource? download;
@@ -40,6 +40,9 @@ public partial class SetupWindow : Window
         Go(0);
         if (!model.Models.Ready) _ = Download();
     }
+
+    /// Developer snapshot: open on a given step.
+    public void ShowStep(int step) => Go(step);
 
     private void Go(int to)
     {
@@ -193,12 +196,32 @@ public partial class SetupWindow : Window
 
     private void RenderCable()
     {
+        if (installing) return;
         var ok = VirtualCable.Installed;
-        CableText.Text = ok ? "✓ 已检测到 VB-CABLE" : "未检测到虚拟麦克风（装好后回到这里）";
+        CableText.Text = ok ? "✓ 已安装 VB-CABLE 虚拟麦克风" : "还没有虚拟麦克风";
+        CableHelp.Text = ok ? "" : "从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。";
+        CableHelp.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
         CableBtn.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
+        CableBtn.IsEnabled = true;
+        CableBtn.Content = "一键安装";
     }
 
-    private void Cable_Click(object sender, RoutedEventArgs e) => Native.Open(VirtualCable.Download);
+    private bool installing;
+
+    private async void Cable_Click(object sender, RoutedEventArgs e)
+    {
+        installing = true;
+        CableBtn.IsEnabled = false;
+        CableBtn.Content = "安装中…";
+        var message = await model.InstallCable(new Progress<string>(m => CableHelp.Text = m));
+        installing = false;
+        RenderCable();
+        if (message != null)
+        {
+            CableHelp.Visibility = Visibility.Visible;
+            CableHelp.Text = message;
+        }
+    }
 
     private void Speak_Changed(object sender, RoutedEventArgs e)
     {

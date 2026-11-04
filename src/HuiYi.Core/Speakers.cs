@@ -276,9 +276,9 @@ public static class SpeakerLabels
     public static string Label(int number, IReadOnlyDictionary<int, string> names) =>
         names.TryGetValue(number, out var n) ? n : $"发言人 {number}";
 
-    /// What a line shows as its speaker: 我, a speaker's name or number, or 对方.
+    /// What a line shows as its speaker: 我, a speaker's name or number, or 发言人 while the voice has no number yet.
     public static string Who(TranscriptLine l, IReadOnlyDictionary<string, int> numbers, IReadOnlyDictionary<int, string> names) =>
-        l.Speaker == "me" ? "我" : numbers.TryGetValue(l.Id, out var n) ? Label(n, names) : "对方";
+        l.Speaker == "me" ? "我" : numbers.TryGetValue(l.Id, out var n) ? Label(n, names) : "发言人";
 
     public static int ShownCount(IReadOnlyList<TranscriptLine> lines) => Numbers(lines).Values.Distinct().Count();
 }

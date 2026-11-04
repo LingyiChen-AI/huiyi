@@ -43,7 +43,7 @@ public sealed record ProviderPreset(
     [
         new("ling", "蚂蚁百灵 Ling", "https://api.ant-ling.com/v1", ["Ling-3.1-flash", "Ling-3.0-flash"],
             "https://chat.ant-ling.com/platform/api", ThinkingOff, Spacing: 0.6,
-            Hint: "额外支持 Ming 自然语音（同传发言播报）"),
+            Hint: "额外支持 Ming 自然语音（同声传译播报）"),
         new("bailian", "阿里云百炼（通义千问）", "https://dashscope.aliyuncs.com/compatible-mode/v1",
             ["qwen-flash", "qwen-plus", "qwen3.7-plus", "qwen3.8-max"],
             "https://bailian.console.aliyun.com/",

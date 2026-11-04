@@ -138,14 +138,14 @@
             </ScrollViewer>
         </TabItem>
 
-        <!-- 同传发言 -->
-        <TabItem Header="同传发言">
+        <!-- 同声传译 -->
+        <TabItem Header="同声传译">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
                 <StackPanel>
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="按键说话" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="SpeakOn" Style="{StaticResource Switch}" Content="启用同传发言：按住按键说中文，松开后译成对方的语言播报进会议" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="SpeakOn" Style="{StaticResource Switch}" Content="打开同声传译：按住按键说话，松开后译成对方的语言，播报进会议" Checked="Changed" Unchecked="Changed"/>
                             <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
                                 <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
                                     <StackPanel Orientation="Horizontal">
@@ -156,9 +156,27 @@
                                 <TextBlock Text="按住的键" VerticalAlignment="Center"/>
                             </DockPanel>
                             <DockPanel Style="{StaticResource Row}">
-                                <ComboBox x:Name="SpeakTargetBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
+                                <ComboBox x:Name="SpeakTargetBox" DockPanel.Dock="Right" MinWidth="220" SelectionChanged="Changed"/>
                                 <TextBlock Text="译成" VerticalAlignment="Center"/>
                             </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="MicBox" DockPanel.Dock="Right" MinWidth="220" MaxWidth="300" SelectionChanged="Changed"/>
+                                <TextBlock Text="我的麦克风" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="虚拟麦克风" Style="{StaticResource Overline}"/>
+                            <DockPanel>
+                                <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="一键安装" Style="{StaticResource PrimaryBtn}" Click="Cable_Click"/>
+                                <TextBlock x:Name="CableText" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </DockPanel>
+                            <TextBlock x:Name="CableHelp" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
+                            <CheckBox x:Name="RouteOn" Style="{StaticResource Switch}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"
+                                      Content="打开同声传译时，自动把系统麦克风切到 CABLE Output"/>
+                            <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
+                                       Text="会议软件的麦克风用「默认」就行，对方只听得到翻译后的声音，听不到你的原声。关掉同声传译或退出会译时自动切回原来的麦克风。"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
@@ -171,16 +189,6 @@
                             </DockPanel>
                             <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}"/>
                             <CheckBox x:Name="MonitorOn" Style="{StaticResource Switch}" Content="播报时自己的耳机里也放一遍" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource Panel}">
-                        <StackPanel>
-                            <TextBlock Text="虚拟麦克风" Style="{StaticResource Overline}"/>
-                            <DockPanel>
-                                <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="下载 VB-CABLE ↗" Style="{StaticResource Btn}" Click="Cable_Click"/>
-                                <TextBlock x:Name="CableText" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                            </DockPanel>
-                            <TextBlock Style="{StaticResource Helper}" Text="装好免费的 VB-CABLE 后，在会议软件的麦克风里选「CABLE Output」，对方就能听到播报。"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

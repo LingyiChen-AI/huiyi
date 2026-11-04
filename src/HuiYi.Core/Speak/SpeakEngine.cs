@@ -6,26 +6,6 @@ using Windows.Media.SpeechSynthesis;
 
 namespace HuiYi.Speak;
 
-/// The virtual microphone: VB-Audio Virtual Cable. What we play into "CABLE Input" comes out of
-/// "CABLE Output", which the user picks as the microphone in Zoom / Teams / 腾讯会议. Never bundled
-/// (it is someone else's driver): the user installs it from vb-audio.com.
-public static class VirtualCable
-{
-    public const string Download = "https://vb-audio.com/Cable/";
-
-    public static MMDevice? Input()
-    {
-        try
-        {
-            return new MMDeviceEnumerator().EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
-                .FirstOrDefault(d => d.FriendlyName.Contains("CABLE Input", StringComparison.OrdinalIgnoreCase));
-        }
-        catch { return null; }
-    }
-
-    public static bool Installed => Input() != null;
-}
-
 /// Windows' own voices (Settings › Time & language › Speech). Picks one for a language code.
 public static class Voices
 {
@@ -50,7 +30,7 @@ public static class Voices
     }
 }
 
-/// Hold the key and speak: mic → SenseVoice → translation → a Windows voice → the virtual mic.
+/// 同声传译: hold the key and speak: my real mic → SenseVoice → translation → Ming or a Windows voice → the virtual mic.
 /// Never speaks untranslated text into the room.
 public sealed class SpeakEngine
 {
@@ -74,6 +54,8 @@ public sealed class SpeakEngine
     private DateTime pressedAt;
 
     private readonly AiClient? ai;
+    /// The microphone I speak into (never the cable, which may be the system default while interpreting).
+    public Func<string?> MyMic { get; set; } = () => null;
 
     public SpeakEngine(AppSettings settings, Recognizer recognizer, TranslationService translator,
         Func<string?> theirLanguage, Func<IReadOnlyList<string>> systemLanguages, AiClient? ai = null)
@@ -112,7 +94,7 @@ public sealed class SpeakEngine
         }
         lock (gate) recorded.Clear();
         pressedAt = DateTime.Now;
-        mic = new MicSource();
+        mic = new MicSource(MyMic());
         mic.Samples += s => { lock (gate) recorded.AddRange(s); };
         mic.Failed += m => Problem?.Invoke(m);
         mic.Start();

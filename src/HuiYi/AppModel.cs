@@ -26,6 +26,8 @@ public sealed class AppModel
     public NotesEngine Notes { get; }
     public MeetingController? Meeting { get; private set; }
     public SpeakEngine? Speak { get; private set; }
+    /// 同声传译's microphone switch: CABLE Output as the system mic while it is on.
+    public MicRouting Routing { get; }
     public Recognizer? Recognizer { get; private set; }
     /// The user's own notes templates (built-in ones are in `NoteTemplates.BuiltIn`).
     public List<NoteTemplate> MyTemplates { get; } = NoteTemplates.LoadMine();
@@ -70,6 +72,7 @@ public sealed class AppModel
 
     public AppModel()
     {
+        Routing = new MicRouting(Settings);
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
@@ -118,6 +121,7 @@ public sealed class AppModel
         meeting.StateChanged += () => Ui(() => StateChanged?.Invoke());
         meeting.Error += m => Ui(() => Toast?.Invoke(m));
         meeting.EndPending += p => Ui(() => EndPending?.Invoke(p));
+        speak.MyMic = Routing.MyMicId;
         speak.StateChanged += () => Ui(() => SpeakChanged?.Invoke());
         speak.Problem += m => Ui(() => Toast?.Invoke(m));
         speak.Spoke += (src, sl, dst, dl) => meeting.AddMine(src, sl, dst, dl);
@@ -174,12 +178,12 @@ public sealed class AppModel
         StateChanged?.Invoke();
     }
 
-    /// Who said a line of the live meeting ("发言人 2", a name, or 对方) and their number, if shown.
+    /// Who said a line of the live meeting ("发言人 2", a name, or 发言人) and their number, if shown.
     public (string Who, int? Number) SpeakerOf(string? lineId)
     {
-        if (lineId == null || LiveSessionId is not { } id || Store.Snapshot(id) is not { } s) return ("对方", null);
+        if (lineId == null || LiveSessionId is not { } id || Store.Snapshot(id) is not { } s) return ("发言人", null);
         var line = s.Lines.FirstOrDefault(l => l.Id == lineId);
-        if (line == null) return ("对方", null);
+        if (line == null) return ("发言人", null);
         var numbers = SpeakerLabels.Numbers(s.Lines);
         return (SpeakerLabels.Who(line, numbers, SpeakerLabels.Names(s)), numbers.TryGetValue(lineId, out var n) ? n : null);
     }
@@ -191,9 +195,11 @@ public sealed class AppModel
         StateChanged?.Invoke();
     }
 
-    /// The push-to-talk key is watched only while speaking is on.
-    private void ApplySpeakKey()
+    /// 同声传译 on or off: the push-to-talk key is watched, and the system mic switched, only while it is on.
+    public void ApplySpeakKey()
     {
+        try { Routing.Apply(); }
+        catch (Exception e) { Log.Debug($"routing: {e.Message}"); }
         var key = Settings.SpeakKey == SpeakKey.RightAlt ? Native.VK_RMENU : Native.VK_RCONTROL;
         if (!Settings.SpeakEnabled)
         {
@@ -216,9 +222,26 @@ public sealed class AppModel
         Speak?.Press();
     }
 
+    /// One-click VB-CABLE (settings and setup share it). Returns what to tell the user, null when it just worked.
+    public async Task<string?> InstallCable(IProgress<string>? progress = null)
+    {
+        var (result, error) = await VirtualCable.Install(progress);
+        if (result == VirtualCable.InstallResult.Installed) ApplySpeakKey();
+        StateChanged?.Invoke();
+        return result switch
+        {
+            VirtualCable.InstallResult.Installed => null,
+            VirtualCable.InstallResult.NeedsRestart => "安装程序已经运行完。如果这里还显示没装上，重启电脑后就能用了。",
+            VirtualCable.InstallResult.Cancelled => "安装已取消。",
+            _ => "安装没成功：" + error + "。也可以去 vb-audio.com/Cable 手动下载安装。",
+        };
+    }
+
     public void Shutdown()
     {
         keyWatch?.Dispose();
+        try { Routing.Restore(); }
+        catch (Exception e) { Log.Debug($"routing: restore failed {e.Message}"); }
         if (IsListening) Meeting!.Stop();
         Store.Flush();
     }

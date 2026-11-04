@@ -16,7 +16,7 @@ public sealed class LineVM : INotifyPropertyChanged
     public bool IsMe { get; }
     private string src = "";
     private string? dst;
-    private string who = "对方";
+    private string who = "发言人";
     private Brush whoBrush = Theme.Grey2;
 
     public string Src { get => src; set => Set(ref src, value); }

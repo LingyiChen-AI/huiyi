@@ -77,17 +77,18 @@
                 </StackPanel>
                 <!-- 4 -->
                 <StackPanel x:Name="Page3" Visibility="Collapsed">
-                    <TextBlock Text="第 4 步 · 同传发言（可跳过）" Style="{StaticResource Overline}"/>
+                    <TextBlock Text="第 4 步 · 同声传译（可跳过）" Style="{StaticResource Overline}"/>
                     <TextBlock Text="让对方听懂你说的话" FontSize="22" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Helper}" FontSize="13" Margin="0,8,0,0"
-                               Text="按住右 Ctrl 说中文，松开后自动译成对方的语言，通过虚拟麦克风播报进会议。需要先安装免费的 VB-CABLE，再在会议软件里把麦克风选成「CABLE Output」。"/>
+                    <TextBlock Style="{StaticResource Helper}" FontSize="13" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="按住右 Ctrl 说话，松开后自动译成对方的语言，通过虚拟麦克风播报进会议。打开后会译会把系统麦克风切到虚拟麦克风，会议软件的麦克风用「默认」即可。"/>
                     <Border Style="{StaticResource Panel}" Background="#F5F6FA" BorderThickness="0" Margin="0,22,0,0">
                         <StackPanel>
                             <DockPanel>
-                                <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="下载 VB-CABLE ↗" Style="{StaticResource Btn}" Click="Cable_Click"/>
-                                <TextBlock x:Name="CableText" FontSize="13" VerticalAlignment="Center"/>
+                                <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="一键安装" Style="{StaticResource PrimaryBtn}" Click="Cable_Click"/>
+                                <TextBlock x:Name="CableText" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap"/>
                             </DockPanel>
-                            <CheckBox x:Name="SpeakOn" Content="启用同传发言" Style="{StaticResource Switch}" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
+                            <TextBlock x:Name="CableHelp" Style="{StaticResource Helper}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <CheckBox x:Name="SpeakOn" Content="打开同声传译" Style="{StaticResource Switch}" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -35,6 +35,8 @@ public partial class SettingsWindow : Window
         KeyAlt.IsChecked = s.SpeakKey == SpeakKey.RightAlt;
         Fill(SpeakTargetBox, [("auto", "自动（对方用的语言）"), .. Languages.Target.Select(l => (l.Code, l.Name))], s.SpeakTarget);
         MonitorOn.IsChecked = s.SpeakMonitor;
+        RouteOn.IsChecked = s.SpeakRouteMic;
+        FillMics();
 
         FollowApps.IsChecked = s.FollowMeetingApps;
         Fill(SilenceBox, [("Prompt", "先提醒再结束"), ("End", "直接结束"), ("Off", "不处理")], s.SilenceEnd.ToString());
@@ -53,7 +55,7 @@ public partial class SettingsWindow : Window
             TranslateOn.IsChecked = model.Settings.TranslationOn;
             loading = false;
         };
-        Activated += (_, _) => { RenderCable(); RenderVoices(); RenderModels(); };
+        Activated += (_, _) => { if (!installing) RenderCable(); RenderVoices(); RenderModels(); };
         RenderProviders();
         RenderKey();
         RenderCable();
@@ -92,6 +94,8 @@ public partial class SettingsWindow : Window
         s.SpeakKey = KeyAlt.IsChecked == true ? SpeakKey.RightAlt : SpeakKey.RightCtrl;
         s.SpeakTarget = TagOf(SpeakTargetBox);
         s.SpeakMonitor = MonitorOn.IsChecked == true;
+        s.SpeakRouteMic = RouteOn.IsChecked == true;
+        s.SpeakMicId = TagOf(MicBox) is { Length: > 0 } mic ? mic : null;
         s.FollowMeetingApps = FollowApps.IsChecked == true;
         s.SilenceEnd = Enum.TryParse<MeetingEndWatch.Silence>(TagOf(SilenceBox), out var sil) ? sil : MeetingEndWatch.Silence.Prompt;
         s.SilenceMinutes = int.TryParse(TagOf(SilenceMinBox), out var m) ? m : 10;
@@ -372,14 +376,40 @@ public partial class SettingsWindow : Window
         await model.Speak!.SayIntoRoom(sample, lang, intoRoom: false);
     }
 
+    private bool installing;
+
+    private void FillMics()
+    {
+        var was = loading;
+        loading = true;
+        Fill(MicBox, [("", "自动（系统原来的麦克风）"), .. DefaultDevices.Mics().Select(m => (m.Id, m.Name))], model.Settings.SpeakMicId ?? "");
+        loading = was;
+    }
+
     private void RenderCable()
     {
         var ok = VirtualCable.Installed;
-        CableText.Text = ok ? "✓ 已检测到 VB-CABLE" : "未检测到虚拟麦克风";
+        CableText.Text = ok ? "✓ 已安装 VB-CABLE 虚拟麦克风" : "还没有虚拟麦克风";
+        CableHelp.Text = ok
+            ? model.Routing.Routed ? "系统麦克风现在是 CABLE Output，播报会送进会议。" : "同声传译打开后，播报会从 CABLE Output 送进会议。"
+            : "同声传译要靠它把译好的声音送进会议。点「一键安装」会从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。";
         CableBtn.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
+        CableBtn.IsEnabled = true;
+        CableBtn.Content = "一键安装";
+        RouteOn.IsEnabled = ok;
+        FillMics();
     }
 
-    private void Cable_Click(object sender, RoutedEventArgs e) => Native.Open(VirtualCable.Download);
+    private async void Cable_Click(object sender, RoutedEventArgs e)
+    {
+        installing = true;
+        CableBtn.IsEnabled = false;
+        CableBtn.Content = "安装中…";
+        var message = await model.InstallCable(new Progress<string>(m => CableHelp.Text = m));
+        installing = false;
+        RenderCable();
+        if (message != null) CableHelp.Text = message;
+    }
 
     // MARK: General
 

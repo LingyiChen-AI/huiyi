@@ -40,7 +40,12 @@ public static class Snapshot
                 SaveElement(list, folder, name, new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)));
             box.IsDropDownOpen = false;
         }
+        settings.Pages.SelectedIndex = 2;
+        Save(settings, folder, "settings-speak", keepOpen: true);
         settings.Close();
+        var setup = new SetupWindow(model);
+        setup.ShowStep(3);
+        Save(setup, folder, "setup-speak");
 
         // The template center: a built-in template, then one of the user's being edited.
         var templates = new TemplateWindow(model, "weekly");

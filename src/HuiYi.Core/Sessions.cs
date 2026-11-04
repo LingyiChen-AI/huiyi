@@ -39,7 +39,8 @@ public sealed class Session
     /// Names the AI read from the conversation, keyed by voice id; shown until the user says otherwise.
     public Dictionary<string, VoiceGuess>? VoiceGuesses { get; set; }
 
-    [JsonIgnore] public TimeSpan Duration => (EndedAt ?? DateTime.Now) - StartedAt;
+    /// Times are stored in UTC: a live meeting is measured against UtcNow (against local Now it ran 8 h long in China).
+    [JsonIgnore] public TimeSpan Duration => (EndedAt ?? DateTime.UtcNow).ToUniversalTime() - StartedAt.ToUniversalTime();
 
     /// The user's own title, else the date and the name the notes gave the meeting, else "会议 11月1日 14:30".
     [JsonIgnore]

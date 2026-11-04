@@ -45,8 +45,8 @@ public partial class SubtitleWindow : Window
 
     public void ApplyCapturable()
     {
-        Native.SetCapturable(this, model.Settings.NotesCapturable);
-        Shared.Visibility = model.Settings.NotesCapturable ? Visibility.Visible : Visibility.Collapsed;
+        Native.SetCapturable(this, !model.Settings.HideFromCaptures);
+        Shared.Visibility = model.Settings.HideFromCaptures ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public void ShowNoFocus()

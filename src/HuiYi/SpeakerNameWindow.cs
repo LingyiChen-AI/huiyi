@@ -101,11 +101,16 @@ public sealed class SpeakerNameWindow : Window
             box.Focus();
             box.SelectAll();
         };
-        Deactivated += (_, _) => { if (!done) Close(); };
+        // Closing deactivates the window, and a second Close() during closing throws: close once.
+        Closing += (_, _) => closing = true;
+        Deactivated += (_, _) => { if (!done && !closing) Close(); };
     }
+
+    private bool closing;
 
     private void Commit(string name)
     {
+        if (closing) return;
         done = true;
         save(name);
         Close();

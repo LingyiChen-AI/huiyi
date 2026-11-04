@@ -18,8 +18,10 @@ public sealed class AppSettings
     /// "auto" follows the system languages; otherwise a target code ("zh-CN", "en"…).
     public string Target { get; set; } = "auto";
     public DisplayMode Display { get; set; } = DisplayMode.Notes;
-    /// The notes window shows in screen shares (with a badge); off by default.
-    public bool NotesCapturable { get; set; }
+    /// Keep the live panel and subtitles out of screenshots, recordings and screen shares (with a
+    /// badge). Off by default: people screenshot the panel. (Replaces NotesCapturable, whose saved
+    /// "false" would otherwise keep hiding it.)
+    public bool HideFromCaptures { get; set; }
     /// Translate the subtitles. Off by default: many meetings only need the words and the notes,
     /// and with it off nothing is sent to a translator.
     public bool TranslationOn { get; set; }

@@ -44,8 +44,8 @@
                                         IsSnapToTickEnabled="True" ValueChanged="Font_Changed"/>
                                 <TextBlock x:Name="FontText" Text="悬浮字幕字号" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <CheckBox x:Name="Capturable" Style="{StaticResource Switch}" Content="在屏幕共享和录屏中显示字幕窗口" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
-                            <TextBlock Style="{StaticResource Helper}" Text="关闭时只有你自己看得到；打开后窗口上会标「共享中可见」。"/>
+                            <CheckBox x:Name="Capturable" Style="{StaticResource Switch}" Content="共享屏幕时，对对方隐藏实时面板和字幕" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap" Text="打开后截图、录屏和屏幕共享里都看不到它们，只有你自己看得到（窗口上会标「对方看不到」）。默认关闭，可以正常截图。"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">

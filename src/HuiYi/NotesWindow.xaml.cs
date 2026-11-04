@@ -57,8 +57,8 @@ public partial class NotesWindow : Window
 
     public void ApplyCapturable()
     {
-        Native.SetCapturable(this, model.Settings.NotesCapturable);
-        Shared.Visibility = model.Settings.NotesCapturable ? Visibility.Visible : Visibility.Collapsed;
+        Native.SetCapturable(this, !model.Settings.HideFromCaptures);
+        Shared.Visibility = model.Settings.HideFromCaptures ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// Top right of the work area, fully on screen (shorter than the screen when it must be).
@@ -151,8 +151,9 @@ public partial class NotesWindow : Window
         ClockText.Text = "12:34";
     }
 
-    private static readonly System.Windows.Media.Brush OnAirFill = Frozen(0x1F, 0x3B, 0x33);
-    private static readonly System.Windows.Media.Brush OnAirText = Frozen(0x7F, 0xE0, 0xBC);
+    // Listening: a red recording dot on the panel's own indigo, not the app's green.
+    private static readonly System.Windows.Media.Brush OnAirFill = Frozen(0x2C, 0x31, 0x48);
+    private static readonly System.Windows.Media.Brush OnAirText = Frozen(0xE8, 0xEA, 0xF2);
 
     private static System.Windows.Media.Brush Frozen(byte r, byte g, byte b)
     {
@@ -276,7 +277,7 @@ public partial class NotesWindow : Window
         if (!on) return;
         var key = model.Settings.SpeakKey == SpeakKey.RightAlt ? "右 Alt" : "右 Ctrl";
         var state = model.Speak?.Status ?? SpeakEngine.State.Idle;
-        SpeakDot.Fill = state == SpeakEngine.State.Idle ? Theme.NightMuted : Theme.OnAir;
+        SpeakDot.Fill = state == SpeakEngine.State.Idle ? Theme.NightMuted : Theme.Primary;
         SpeakText.Text = state switch
         {
             SpeakEngine.State.Recording => "录音中 · 松开按键后翻译",

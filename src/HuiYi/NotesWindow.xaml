@@ -35,20 +35,20 @@
             <!-- Header: drag to move -->
             <Grid x:Name="Header" Grid.Row="0" Background="Transparent" Margin="16,12,10,10" Cursor="SizeAll">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border x:Name="OnAirPill" Background="#1F3B33" CornerRadius="9" Padding="8,2">
+                    <Border x:Name="OnAirPill" Background="#2C3148" CornerRadius="9" Padding="8,2">
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="LiveDot" Width="7" Height="7" Fill="#22B07D" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock x:Name="StateText" Text="收听中" Foreground="#7FE0BC" FontSize="12"/>
+                            <Ellipse x:Name="LiveDot" Width="7" Height="7" Fill="#FF5C6C" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="StateText" Text="收听中" Foreground="#E8EAF2" FontSize="12"/>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="ClockText" Text="00:00" Foreground="#8E94A8" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     <Border x:Name="Shared" Background="#3A3F55" CornerRadius="3" Padding="6,1" Margin="10,0,0,0" Visibility="Collapsed"
-                            ToolTip="屏幕共享和录屏里能看到这个面板" VerticalAlignment="Center">
-                        <TextBlock Text="共享中可见" Foreground="#E8EAF2" FontSize="11"/>
+                            ToolTip="截图、录屏和屏幕共享里看不到这个窗口（设置 › 字幕里可以改）" VerticalAlignment="Center">
+                        <TextBlock Text="对方看不到" Foreground="#E8EAF2" FontSize="11"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="StartBtn" Content="开始新会议" Style="{StaticResource OnAirBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
+                    <Button x:Name="StartBtn" Content="开始新会议" Style="{StaticResource PrimaryBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
                     <Button x:Name="StopBtn" Content="结束会议" Style="{StaticResource NightBtn}" Click="Stop_Click"/>
                     <Button Content="收起" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"
                             Foreground="#8E94A8" ToolTip="收起面板，继续在后台收听" Click="Hide_Click" Margin="4,0,0,0"/>
@@ -142,14 +142,14 @@
                 <!-- Opened from the tray before a meeting: nothing records until 开始会议. -->
                 <Border x:Name="ReadyPanel" Background="Transparent" Visibility="Collapsed">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,0,24,40">
-                        <Border Width="56" Height="56" CornerRadius="28" Background="#1F3B33" HorizontalAlignment="Center">
-                            <TextBlock Text="&#xE720;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="24" Foreground="#7FE0BC"
+                        <Border Width="56" Height="56" CornerRadius="28" Background="#2C3148" HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE720;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="24" Foreground="#AEB6FF"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="准备好了就开始" FontSize="17" FontWeight="SemiBold" Foreground="#F2F3F8" HorizontalAlignment="Center" Margin="0,16,0,0"/>
                         <TextBlock FontSize="12" Foreground="#8E94A8" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="270" Margin="0,8,0,20" LineHeight="19"
                                    Text="点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。"/>
-                        <Button Content="●  开始会议" Style="{StaticResource OnAirBtn}" FontSize="14" Padding="26,9" HorizontalAlignment="Center" Click="Start_Click"/>
+                        <Button Content="●  开始会议" Style="{StaticResource PrimaryBtn}" FontSize="14" Padding="26,9" HorizontalAlignment="Center" Click="Start_Click"/>
                     </StackPanel>
                 </Border>
             </Grid>

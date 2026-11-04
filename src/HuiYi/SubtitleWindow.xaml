@@ -16,7 +16,7 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,4">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
                         <Border x:Name="Shared" Background="#3A3F55" CornerRadius="3" Padding="6,1" Margin="0,0,8,0" Visibility="Collapsed">
-                            <TextBlock Text="共享中可见" Foreground="#E8EAF2" FontSize="11"/>
+                            <TextBlock Text="对方看不到" Foreground="#E8EAF2" FontSize="11"/>
                         </Border>
                         <Button x:Name="CloseBtn" Content="结束" FontSize="11" Padding="8,1" Foreground="#8E94A8" Background="Transparent"
                                 BorderBrush="#3A3F55" Cursor="Hand" ToolTip="结束这场会议的收听" Click="Stop_Click"/>

@@ -24,7 +24,7 @@ public partial class SettingsWindow : Window
         FontText.Text = $"悬浮字幕字号  {s.SubtitleFontSize:0}";
         TranslateOn.IsChecked = s.TranslationOn;
         VoicesOn.IsChecked = s.SpeakerVoices;
-        Capturable.IsChecked = s.NotesCapturable;
+        Capturable.IsChecked = s.HideFromCaptures;
 
         Fill(PresetBox, ProviderPreset.All.Select(p => (p.Id, p.Name)).ToArray(), "");
         FillTemplates();
@@ -86,11 +86,11 @@ public partial class SettingsWindow : Window
         if (loading) return;
         var s = model.Settings;
         var oldDisplay = s.Display;
-        var oldCapturable = s.NotesCapturable;
+        var oldCapturable = s.HideFromCaptures;
         s.Target = TagOf(TargetBox);
         s.Display = ModeSubs.IsChecked == true ? DisplayMode.Subtitles : DisplayMode.Notes;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
-        s.NotesCapturable = Capturable.IsChecked == true;
+        s.HideFromCaptures = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
         if (TagOf(TemplateDefaultBox) is { Length: > 0 } tid) s.DefaultTemplateId = tid;
         s.SpeakEnabled = SpeakOn.IsChecked == true;
@@ -110,7 +110,7 @@ public partial class SettingsWindow : Window
         }
         model.SaveSettings();
         model.SetTranslation(TranslateOn.IsChecked == true);
-        if (oldDisplay != s.Display || oldCapturable != s.NotesCapturable) ((App)Application.Current).SwitchDisplay();
+        if (oldDisplay != s.Display || oldCapturable != s.HideFromCaptures) ((App)Application.Current).SwitchDisplay();
         if (sender == SpeakTargetBox) RenderVoices();
     }
 

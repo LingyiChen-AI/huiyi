@@ -55,6 +55,40 @@ public static class DefaultDevices
         }
     }
 
+    public static (string Id, string Name)? DefaultSpeaker()
+    {
+        try
+        {
+            var d = new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            return (d.ID, d.FriendlyName);
+        }
+        catch { return null; }
+    }
+
+    /// Active speakers, the virtual cable left out.
+    public static List<(string Id, string Name)> Speakers()
+    {
+        try
+        {
+            return new MMDeviceEnumerator().EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
+                .Where(d => !VirtualCable.IsCable(d.FriendlyName))
+                .Select(d => (d.ID, d.FriendlyName)).ToList();
+        }
+        catch { return []; }
+    }
+
+    /// VB-CABLE's setup makes "CABLE Input" the default speaker: the user then hears nothing, and the
+    /// meeting's sound never reaches our loopback. Puts a real speaker back (`preferred` if still there).
+    public static void KeepRealSpeaker(string? preferred = null)
+    {
+        if (DefaultSpeaker() is not { } current || !VirtualCable.IsCable(current.Name)) return;
+        var real = Speakers();
+        var back = real.FirstOrDefault(s => s.Id == preferred).Id ?? real.FirstOrDefault().Id;
+        if (back == null) return;
+        var ok = SetDefault(back);
+        Log.Debug($"devices: default speaker was the cable, moved back ({(ok ? "ok" : "failed")})");
+    }
+
     /// Active microphones, the virtual cable left out.
     public static List<(string Id, string Name)> Mics()
     {
@@ -128,6 +162,7 @@ public static class VirtualCable
             var setup = Path.Combine(unpacked, "VBCABLE_Setup_x64.exe");
             if (!File.Exists(setup)) return (InstallResult.Failed, "安装包里没有找到安装程序");
 
+            var speakerBefore = DefaultDevices.DefaultSpeaker()?.Id;
             progress?.Report("请在弹出的窗口里点「Install Driver」…");
             Process? p;
             try
@@ -143,6 +178,12 @@ public static class VirtualCable
 
             // The endpoints can take a moment to appear after the driver loads.
             for (var i = 0; i < 10 && !Installed; i++) await Task.Delay(500, ct);
+            // Windows may switch the default speaker to the new cable a moment after it appears.
+            for (var i = 0; i < 6; i++)
+            {
+                DefaultDevices.KeepRealSpeaker(speakerBefore);
+                await Task.Delay(500, ct);
+            }
             Log.Debug($"vbcable: setup exited, installed={Installed}");
             return Installed ? (InstallResult.Installed, null) : (InstallResult.NeedsRestart, null);
         }
@@ -181,6 +222,7 @@ public sealed class MicRouting(AppSettings settings)
     /// Puts the default mic where the settings say it should be. Safe to call any time.
     public void Apply()
     {
+        DefaultDevices.KeepRealSpeaker();
         var want = settings.SpeakEnabled && settings.SpeakRouteMic;
         var cable = VirtualCable.Output();
         var current = DefaultDevices.DefaultMicId();

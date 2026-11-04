@@ -370,8 +370,19 @@ public partial class SettingsWindow : Window
         installingVoice = true;
         VoiceInstallBtn.IsEnabled = false;
         VoiceInstallBtn.Content = "安装中…";
-        VoiceMissingText.Text = $"正在从 Windows 更新下载{name}语音，可能要一两分钟";
+        // Windows reports no progress to us: show the time so far, so a slow download doesn't look frozen.
+        var started = DateTime.Now;
+        var tick = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        tick.Tick += (_, _) =>
+        {
+            var t = DateTime.Now - started;
+            VoiceMissingText.Text = $"正在从 Windows 更新下载{name}语音 · 已用 {(int)t.TotalMinutes}:{t.Seconds:00}";
+        };
+        tick.Start();
+        VoiceMissingText.Text = $"正在从 Windows 更新下载{name}语音 · 已用 0:00";
+        VoiceHelp.Text = "Windows 更新有时较慢，可能要几分钟；可以先关掉这个窗口，装好后重新打开设置就能选声音。";
         var result = await Voices.Install(lang);
+        tick.Stop();
         installingVoice = false;
         RenderVoices();
         VoiceHelp.Text = result switch

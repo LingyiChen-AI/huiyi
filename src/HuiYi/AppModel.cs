@@ -155,6 +155,8 @@ public sealed class AppModel
     {
         if (IsListening) return true;
         if (!await EnsureEngines()) return false;
+        // Listening to the cable would hear only our own interpreted voice, never the meeting.
+        if (FeedFile == null) DefaultDevices.KeepRealSpeaker();
         Meeting!.Start(FeedFile != null ? new FileSource(FeedFile) : new LoopbackSource());
         StateChanged?.Invoke();
         return true;

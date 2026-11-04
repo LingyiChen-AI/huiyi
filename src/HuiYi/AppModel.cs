@@ -145,6 +145,16 @@ public sealed class AppModel
 
     public void KeepGoing() => Meeting?.KeepGoing();
 
+    /// The translation switch (panel, tray menu, settings): one place, so they all agree.
+    public void SetTranslation(bool on)
+    {
+        if (Settings.TranslationOn == on) return;
+        Settings.TranslationOn = on;
+        Settings.Save();
+        if (on) Meeting?.TranslationResumed();
+        StateChanged?.Invoke();
+    }
+
     /// Who said a line of the live meeting ("发言人 2", a name, or 对方) and their number, if shown.
     public (string Who, int? Number) SpeakerOf(string? lineId)
     {

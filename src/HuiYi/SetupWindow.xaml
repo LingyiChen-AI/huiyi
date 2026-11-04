@@ -87,7 +87,7 @@
                                 <Button x:Name="CableBtn" DockPanel.Dock="Right" Content="下载 VB-CABLE ↗" Style="{StaticResource Btn}" Click="Cable_Click"/>
                                 <TextBlock x:Name="CableText" FontSize="13" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <CheckBox x:Name="SpeakOn" Content="启用同传发言" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
+                            <CheckBox x:Name="SpeakOn" Content="启用同传发言" Style="{StaticResource Switch}" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

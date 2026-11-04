@@ -16,11 +16,15 @@
                         <StackPanel>
                             <TextBlock Text="翻译" Style="{StaticResource Overline}"/>
                             <DockPanel Style="{StaticResource Row}">
+                                <CheckBox x:Name="TranslateOn" DockPanel.Dock="Right" Style="{StaticResource Switch}" Checked="Changed" Unchecked="Changed"/>
+                                <TextBlock Text="翻译字幕" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Helper}" Text="默认关闭，只显示原文。开会时也可以在实时面板右上角或托盘菜单里随时打开。"/>
+                            <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
                                 <ComboBox x:Name="TargetBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
-                                <TextBlock Text="字幕译成" VerticalAlignment="Center"/>
+                                <TextBlock Text="译成" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBlock Style="{StaticResource Helper}" Text="自动：外语译成你的系统语言；对方说你的语言时，译成你的第二语言。"/>
-                            <CheckBox x:Name="TranslateOn" Content="显示译文" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
@@ -40,14 +44,14 @@
                                         IsSnapToTickEnabled="True" ValueChanged="Font_Changed"/>
                                 <TextBlock x:Name="FontText" Text="悬浮字幕字号" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <CheckBox x:Name="Capturable" Content="在屏幕共享和录屏中显示字幕窗口" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="Capturable" Style="{StaticResource Switch}" Content="在屏幕共享和录屏中显示字幕窗口" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" Text="关闭时只有你自己看得到；打开后窗口上会标「共享中可见」。"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="发言人" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="VoicesOn" Content="按声音区分不同发言人（发言人 1、发言人 2…）" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="VoicesOn" Style="{StaticResource Switch}" Content="按声音区分不同发言人（发言人 1、发言人 2…）" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" Text="同一个声音说过两句后开始编号（之前的句子会一起补上）；太短的话（如“嗯”“好的”）不计入。"/>
                         </StackPanel>
                     </Border>
@@ -132,7 +136,7 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="按键说话" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="SpeakOn" Content="启用同传发言：按住按键说中文，松开后译成对方的语言播报进会议" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="SpeakOn" Style="{StaticResource Switch}" Content="启用同传发言：按住按键说中文，松开后译成对方的语言播报进会议" Checked="Changed" Unchecked="Changed"/>
                             <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
                                 <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
                                     <StackPanel Orientation="Horizontal">
@@ -157,7 +161,7 @@
                                 <TextBlock Text="声音" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}"/>
-                            <CheckBox x:Name="MonitorOn" Content="播报时自己的耳机里也放一遍" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="MonitorOn" Style="{StaticResource Switch}" Content="播报时自己的耳机里也放一遍" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
@@ -181,7 +185,7 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="自动结束" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="FollowApps" Content="会议软件挂断后，自动结束本场记录" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="FollowApps" Style="{StaticResource Switch}" Content="会议软件挂断后，自动结束本场记录" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" Text="识别 Zoom、Teams、腾讯会议、飞书、钉钉、Webex 等：它们不再占用麦克风，就当作会议结束。"/>
                             <DockPanel Style="{StaticResource Row}" Margin="0,12,0,0">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -203,7 +207,7 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="启动" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="LoginOn" Content="登录 Windows 后自动启动" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="LoginOn" Style="{StaticResource Switch}" Content="登录 Windows 后自动启动" Checked="Changed" Unchecked="Changed"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">

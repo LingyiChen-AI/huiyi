@@ -40,8 +40,20 @@ public partial class NotesWindow : Window
         model.NotesChanged += RenderNotes;
         model.SpeakChanged += RenderSpeak;
         model.StateChanged += RenderSpeak;
+        model.StateChanged += RenderTranslate;
         clock.Tick += (_, _) => Tick();
+        RenderTranslate();
     }
+
+    /// The translation switch follows the setting (it can change from the tray or settings too);
+    /// switched off, the transcript shows only what was said.
+    private void RenderTranslate()
+    {
+        TranslateSwitch.IsChecked = model.Settings.TranslationOn;
+        OnLine("");
+    }
+
+    private void Translate_Click(object sender, RoutedEventArgs e) => model.SetTranslation(TranslateSwitch.IsChecked == true);
 
     public void ApplyCapturable()
     {
@@ -93,7 +105,7 @@ public partial class NotesWindow : Window
     public void Preview(string id, bool notesTab)
     {
         sessionId = id;
-        if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s);
+        if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
         EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         model.Notes.Show(id);
         RenderNotes();
@@ -148,7 +160,7 @@ public partial class NotesWindow : Window
     {
         if (sessionId == null) return;
         var atBottom = LinesScroll.VerticalOffset >= LinesScroll.ScrollableHeight - 30;
-        if (model.Store.Snapshot(sessionId) is { } s) LineVM.Sync(lines, s);
+        if (model.Store.Snapshot(sessionId) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
         EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         if (atBottom) LinesScroll.ScrollToEnd();
     }

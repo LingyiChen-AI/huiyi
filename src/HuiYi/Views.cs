@@ -42,10 +42,10 @@ public sealed class LineVM : INotifyPropertyChanged
         dst = l.Dst;
     }
 
-    public void Update(TranscriptLine l, string label, int? number)
+    public void Update(TranscriptLine l, string label, int? number, bool showDst = true)
     {
         Src = l.Src;
-        Dst = l.Dst;
+        Dst = showDst ? l.Dst : null;
         Who = label;
         WhoBrush = IsMe ? Theme.Primary : number is { } n ? Theme.Speaker(n) : Theme.Grey2;
     }
@@ -61,7 +61,8 @@ public sealed class LineVM : INotifyPropertyChanged
 
     /// Brings `list` in step with a meeting (adds new lines, updates changed ones and every speaker
     /// label: a voice gets its number only after a few lines, and then its earlier lines show it too).
-    public static void Sync(ObservableCollection<LineVM> list, Session s)
+    /// `showDst`: false hides translations (the live panel with translation switched off).
+    public static void Sync(ObservableCollection<LineVM> list, Session s, bool showDst = true)
     {
         var numbers = SpeakerLabels.Numbers(s.Lines);
         var names = SpeakerLabels.Names(s);
@@ -73,7 +74,7 @@ public sealed class LineVM : INotifyPropertyChanged
                 vm = new LineVM(l);
                 list.Add(vm);
             }
-            vm.Update(l, SpeakerLabels.Who(l, numbers, names), numbers.TryGetValue(l.Id, out var n) ? n : null);
+            vm.Update(l, SpeakerLabels.Who(l, numbers, names), numbers.TryGetValue(l.Id, out var n) ? n : null, showDst);
         }
     }
 }

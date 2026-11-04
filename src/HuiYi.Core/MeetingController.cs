@@ -121,6 +121,19 @@ public sealed class MeetingController
         SilenceAfter = TimeSpan.FromMinutes(Math.Max(1, settings.SilenceMinutes)),
     };
 
+    /// Translation was switched on mid-meeting: translate the last few lines of the other side, so
+    /// what is on screen reads in both languages at once.
+    public void TranslationResumed()
+    {
+        if (SessionId is not { } id) return;
+        foreach (var l in store.LinesOf(id).Where(l => l.Speaker == "them" && l.Dst == null).TakeLast(6))
+        {
+            // The target may have changed since the line was heard.
+            store.Mutate(id, _ => l.DstLang = TargetFor(l.SrcLang));
+            TranslateLine(id, l.Id);
+        }
+    }
+
     /// "继续记录": the end prompt was dismissed.
     public void KeepGoing()
     {

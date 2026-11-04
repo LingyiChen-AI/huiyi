@@ -105,6 +105,9 @@ public partial class App : Application
         var listening = Model.IsListening;
         Item(listening ? "结束本场会议" : "开始收听", () => _ = ToggleListening());
         Item(Model.Settings.Display == DisplayMode.Notes ? "打开实时面板" : "打开悬浮字幕", ShowLive, listening);
+        var translate = Item("翻译字幕", () => Model.SetTranslation(!Model.Settings.TranslationOn));
+        translate.IsCheckable = false;
+        translate.IsChecked = Model.Settings.TranslationOn;
         menu.Items.Add(new Separator());
         Item("会议记录…", OpenMain);
         Item("设置…", OpenSettings);

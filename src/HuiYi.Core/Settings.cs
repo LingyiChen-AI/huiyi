@@ -20,8 +20,10 @@ public sealed class AppSettings
     public DisplayMode Display { get; set; } = DisplayMode.Notes;
     /// The notes window shows in screen shares (with a badge); off by default.
     public bool NotesCapturable { get; set; }
-    public bool TranslationOn { get; set; } = true;
-    /// Tell the other side's voices apart (说话人 1、说话人 2…). On by default.
+    /// Translate the subtitles. Off by default: many meetings only need the words and the notes,
+    /// and with it off nothing is sent to a translator.
+    public bool TranslationOn { get; set; }
+    /// Tell the other side's voices apart (发言人 1、发言人 2…). On by default.
     public bool SpeakerVoices { get; set; } = true;
     public double SubtitleFontSize { get; set; } = 26;
     /// "auto": the notes follow the subtitles' target language.

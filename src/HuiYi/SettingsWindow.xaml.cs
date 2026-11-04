@@ -42,6 +42,14 @@ public partial class SettingsWindow : Window
         AboutText.Text = $"{Brand.Name} {typeof(App).Assembly.GetName().Version?.ToString(3)} · 语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。";
 
         model.Ai.Changed += () => Dispatcher.BeginInvoke(RenderKey);
+        // The translation switch also lives in the panel and the tray menu.
+        model.StateChanged += () =>
+        {
+            if (TranslateOn.IsChecked == model.Settings.TranslationOn) return;
+            loading = true;
+            TranslateOn.IsChecked = model.Settings.TranslationOn;
+            loading = false;
+        };
         Activated += (_, _) => { RenderCable(); RenderVoices(); RenderModels(); };
         RenderProviders();
         RenderKey();
@@ -73,7 +81,6 @@ public partial class SettingsWindow : Window
         var oldCapturable = s.NotesCapturable;
         s.Target = TagOf(TargetBox);
         s.Display = ModeSubs.IsChecked == true ? DisplayMode.Subtitles : DisplayMode.Notes;
-        s.TranslationOn = TranslateOn.IsChecked == true;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.NotesCapturable = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
@@ -90,6 +97,7 @@ public partial class SettingsWindow : Window
             Native.SetLaunchAtLogin(s.LaunchAtLogin);
         }
         model.SaveSettings();
+        model.SetTranslation(TranslateOn.IsChecked == true);
         if (oldDisplay != s.Display || oldCapturable != s.NotesCapturable) ((App)Application.Current).SwitchDisplay();
         if (sender == SpeakTargetBox) RenderVoices();
     }

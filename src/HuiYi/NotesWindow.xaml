@@ -68,6 +68,8 @@
 
             <!-- Segmented switch -->
             <DockPanel Grid.Row="2" Margin="14,0,14,8">
+                <CheckBox x:Name="TranslateSwitch" DockPanel.Dock="Right" Content="翻译" FontSize="12" Style="{StaticResource SwitchNight}"
+                          VerticalAlignment="Center" Margin="10,0,0,0" ToolTip="把对方说的话译成你的语言" Click="Translate_Click"/>
                 <TextBlock x:Name="NotesState" DockPanel.Dock="Right" Foreground="#8E94A8" FontSize="12" VerticalAlignment="Center"/>
                 <Border Background="#252939" CornerRadius="5" Padding="2" HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal">

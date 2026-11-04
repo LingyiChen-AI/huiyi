@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace HuiYi;
 
-/// Meeting notes kept with the session (session.json › notes). Written by Ling while the meeting
+/// Meeting notes kept with the session (session.json › notes). Written by the AI while the meeting
 /// runs and rewritten once over the whole transcript when it ends. Same shape as Cicada's.
 public sealed class MeetingNotes
 {
@@ -298,7 +298,7 @@ public static class NotesPrompt
     }
 }
 
-/// Keeps the live session's notes up to date: every ~45 s with new speech, one Ling call sends the
+/// Keeps the live session's notes up to date: every ~45 s with new speech, one AI call sends the
 /// current notes plus the new lines and gets the whole updated notes back as JSON. A failed or odd
 /// reply never replaces good notes. UI-free; the notes window listens to `Changed`.
 public sealed class NotesEngine
@@ -314,7 +314,7 @@ public sealed class NotesEngine
     /// The language notes are written in (English name).
     public Func<string> Language = () => "Simplified Chinese";
 
-    private readonly LingClient ling;
+    private readonly AiClient ai;
     private readonly SessionStore store;
     private string? sessionId;
     private Timer? timer;
@@ -323,9 +323,9 @@ public sealed class NotesEngine
     private DateTime lastAttempt = DateTime.MinValue;
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(45);
 
-    public NotesEngine(LingClient ling, SessionStore store)
+    public NotesEngine(AiClient ai, SessionStore store)
     {
-        this.ling = ling;
+        this.ai = ai;
         this.store = store;
     }
 
@@ -338,7 +338,7 @@ public sealed class NotesEngine
         sessionId = id;
         ShownId = id;
         Notes = store.Get(id)?.Notes ?? new MeetingNotes();
-        Status = ling.HasKey ? State.Idle : State.NoKey;
+        Status = ai.HasKey ? State.Idle : State.NoKey;
         lastAttempt = DateTime.Now;
         timer?.Dispose();
         timer = new Timer(_ => Tick(), null, 5000, 5000);
@@ -370,8 +370,8 @@ public sealed class NotesEngine
 
     private void Tick()
     {
-        if (Status is State.NoKey or State.InvalidKey && ling.Usable) Status = State.Idle;
-        if (Status == State.Idle && !ling.HasKey) { Status = State.NoKey; Changed?.Invoke(); }
+        if (Status is State.NoKey or State.InvalidKey && ai.Usable) Status = State.Idle;
+        if (Status == State.Idle && !ai.HasKey) { Status = State.NoKey; Changed?.Invoke(); }
         var id = sessionId;
         if (id == null || Volatile.Read(ref inFlight) == 1) return;
         var s = store.Get(id);
@@ -394,7 +394,7 @@ public sealed class NotesEngine
         {
             var session = store.Get(id);
             if (session == null || session.Lines.Count == 0) return;
-            if (!ling.HasKey) { Status = State.NoKey; return; }
+            if (!ai.HasKey) { Status = State.NoKey; return; }
             lastAttempt = DateTime.Now;
             Status = State.Updating;
             if (final) GeneratingId = id;
@@ -409,7 +409,7 @@ public sealed class NotesEngine
             MeetingNotes? next = null;
             for (var attempt = 1; attempt <= (final ? 2 : 1); attempt++)
             {
-                var raw = await ling.Chat(prompt, $"Update the notes. Write them in {lang}.", LingClient.Priority.Notes,
+                var raw = await ai.Chat(prompt, $"Update the notes. Write them in {lang}.", AiClient.Priority.Notes,
                     json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90));
                 var parsed = NotesPrompt.Parse(raw, lines.Select(l => l.T).ToList(), lines.FirstOrDefault()?.T ?? 0);
                 if (parsed == null) break;
@@ -432,13 +432,13 @@ public sealed class NotesEngine
             Status = State.Idle;
             Log.Debug($"notes: {(final ? "final" : "live")} update {lines.Count - from} new lines → {next.Topics.Count} topics in {(int)(DateTime.Now - started).TotalSeconds} s");
         }
-        catch (LingException e)
+        catch (AiException e)
         {
             Status = e.Failure switch
             {
-                LingFailure.InvalidKey => State.InvalidKey,
-                LingFailure.RateLimited => State.RateLimited,
-                LingFailure.NoKey => State.NoKey,
+                AiFailure.InvalidKey => State.InvalidKey,
+                AiFailure.RateLimited => State.RateLimited,
+                AiFailure.NoKey => State.NoKey,
                 _ => State.Failed,
             };
             Log.Debug($"notes: update failed {e.Failure}");

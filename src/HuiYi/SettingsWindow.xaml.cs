@@ -26,7 +26,7 @@ public partial class SettingsWindow : Window
         VoicesOn.IsChecked = s.SpeakerVoices;
         Capturable.IsChecked = s.NotesCapturable;
 
-        Fill(ModelBox, LingClient.Models.Select(m => (m, m)).ToArray(), s.LingModel);
+        Fill(PresetBox, ProviderPreset.All.Select(p => (p.Id, p.Name)).ToArray(), "");
         Fill(NotesLangBox, [("auto", "跟字幕一致"), .. Languages.Target.Select(l => (l.Code, l.Name))], s.NotesLanguage);
 
         SpeakOn.IsChecked = s.SpeakEnabled;
@@ -41,8 +41,9 @@ public partial class SettingsWindow : Window
         LoginOn.IsChecked = s.LaunchAtLogin;
         AboutText.Text = $"{Brand.Name} {typeof(App).Assembly.GetName().Version?.ToString(3)} · 语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。";
 
-        model.Ling.Changed += () => Dispatcher.BeginInvoke(RenderKey);
+        model.Ai.Changed += () => Dispatcher.BeginInvoke(RenderKey);
         Activated += (_, _) => { RenderCable(); RenderVoices(); RenderModels(); };
+        RenderProviders();
         RenderKey();
         RenderCable();
         RenderVoices();
@@ -75,7 +76,6 @@ public partial class SettingsWindow : Window
         s.TranslationOn = TranslateOn.IsChecked == true;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.NotesCapturable = Capturable.IsChecked == true;
-        s.LingModel = TagOf(ModelBox);
         s.NotesLanguage = TagOf(NotesLangBox);
         s.SpeakEnabled = SpeakOn.IsChecked == true;
         s.SpeakKey = KeyAlt.IsChecked == true ? SpeakKey.RightAlt : SpeakKey.RightCtrl;
@@ -103,42 +103,193 @@ public partial class SettingsWindow : Window
         model.SaveSettings();
     }
 
-    // MARK: Ling key
+    // MARK: AI services
+
+    /// The service being edited: always the one in use (switching the active one switches the editor).
+    private AiProvider? editing;
+
+    private void RenderProviders()
+    {
+        var s = model.Settings;
+        var was = loading;
+        loading = true;
+        Fill(ActiveBox, s.Providers.Select(p => (p.Id, $"{p.Name} · {p.Model}")).ToArray(), s.ActiveProvider()?.Id ?? "");
+        if (s.Providers.Count == 0) ActiveBox.Items.Add(new ComboBoxItem { Content = "还没有添加 AI 服务", Tag = "", IsEnabled = false });
+        if (s.Providers.Count == 0) ActiveBox.SelectedIndex = 0;
+        loading = was;
+        LoadEditor(s.ActiveProvider());
+    }
+
+    private void LoadEditor(AiProvider? p)
+    {
+        editing = p;
+        EditorCard.Visibility = p == null ? Visibility.Collapsed : Visibility.Visible;
+        if (p == null) return;
+        var was = loading;
+        loading = true;
+        PresetBox.SelectedItem = PresetBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == p.Preset);
+        NameBox.Text = p.Name;
+        UrlBox.Text = p.BaseUrl;
+        KeyBox.Clear();
+        SetModels(p.Info.Models, p.Model);
+        loading = was;
+        RenderPresetHints(p.Info, p.Id);
+    }
+
+    private void SetModels(IEnumerable<string> models, string current)
+    {
+        ModelBox.Items.Clear();
+        foreach (var m in models) ModelBox.Items.Add(new ComboBoxItem { Content = m, Tag = m });
+        ModelBox.Text = current;
+    }
+
+    private void RenderPresetHints(ProviderPreset info, string providerId)
+    {
+        PresetHint.Text = info.Hint ?? "";
+        PresetHint.Visibility = info.Hint == null ? Visibility.Collapsed : Visibility.Visible;
+        UrlBox.IsReadOnly = false;
+        var saved = AIKey.Read(providerId);
+        KeyHint.Text = info.KeyOptional ? "这个服务不需要 key" : saved != null ? $"已保存 {AIKey.Masked(saved)}，留空则不修改" : "还没有填写";
+        KeyLink.Visibility = info.KeyUrl.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ModelHint.Text = info.Models.Length > 0 ? "可以从列表里选，也可以直接输入模型名" : "直接输入模型名，或先填 key 再获取列表";
+    }
 
     private void RenderKey()
     {
-        var ling = model.Ling;
-        KeyState.Text = ling.State switch
+        var ai = model.Ai;
+        KeyState.Text = ai.Current == null ? "未设置：添加一个 AI 服务后即可生成纪要" : ai.State switch
         {
-            LingClient.KeyState.None => "未填写",
-            LingClient.KeyState.Checking => "验证中…",
-            LingClient.KeyState.Ok => $"✓ 已验证  {AIKey.Masked(ling.Key ?? "")} · 响应 {ling.CheckSeconds:0.0} 秒",
-            LingClient.KeyState.Invalid => "这个 key 不可用，请检查后重新填写",
-            LingClient.KeyState.Unreachable => "暂时连不上 Ling，请检查网络或代理",
-            _ => $"已保存 {AIKey.Masked(ling.Key ?? "")}",
+            AiClient.KeyState.None => $"{ai.Current.Name}：还没有填写 API key",
+            AiClient.KeyState.Checking => $"正在验证 {ai.Describe}…",
+            AiClient.KeyState.Ok => $"✓ {ai.Describe} 可用 · 响应 {ai.CheckSeconds:0.0} 秒",
+            AiClient.KeyState.Invalid => $"{ai.Current.Name}：key 不可用，请检查后重新填写",
+            AiClient.KeyState.Unreachable => $"{ai.Current.Name}：{ai.CheckError ?? "暂时连不上，请检查网络或代理"}",
+            _ => $"{ai.Describe}（尚未验证）",
         };
-        KeyState.Foreground = ling.State is LingClient.KeyState.Invalid or LingClient.KeyState.Unreachable ? Theme.Warn : Theme.Ink;
-        RemoveKeyBtn.Visibility = ling.HasKey ? Visibility.Visible : Visibility.Collapsed;
+        KeyState.Foreground = ai.State is AiClient.KeyState.Invalid or AiClient.KeyState.Unreachable ? Theme.Warn
+            : ai.State == AiClient.KeyState.Ok ? Theme.OnAir : Theme.Ink;
     }
 
-    private async void SaveKey_Click(object sender, RoutedEventArgs e)
+    private void Active_Changed(object sender, SelectionChangedEventArgs e)
     {
-        var key = KeyBox.Password.Trim();
-        if (key.Length == 0) return;
-        SaveKeyBtn.IsEnabled = false;
-        await model.Ling.SetKey(key);
+        if (loading || TagOf(ActiveBox) is not { Length: > 0 } id) return;
+        model.Settings.ActiveProviderId = id;
+        model.SaveSettings();
+        model.Ai.Refresh();
+        _ = model.Ai.Check();
+        LoadEditor(model.Settings.ActiveProvider());
+    }
+
+    private void AddProvider_Click(object sender, RoutedEventArgs e)
+    {
+        // A new service starts as the aggregator (one key, many models); the platform is one click away.
+        var p = ProviderPreset.Find("ucloud").Create();
+        if (model.Settings.Providers.Any(x => x.Name == p.Name)) p.Name += $" {model.Settings.Providers.Count + 1}";
+        model.Settings.Providers.Add(p);
+        model.Settings.ActiveProviderId = p.Id;
+        model.SaveSettings();
+        model.Ai.Refresh();
+        RenderProviders();
+        RenderKey();
+        PresetBox.Focus();
+    }
+
+    /// Picking a platform fills in its address and a model; the name follows unless the user set one.
+    private void Preset_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (loading || editing == null) return;
+        var info = ProviderPreset.Find(TagOf(PresetBox));
+        var oldInfo = editing.Info;
+        if (NameBox.Text.Trim().Length == 0 || NameBox.Text.StartsWith(oldInfo.Name)) NameBox.Text = info.Name;
+        if (info.BaseUrl.Length > 0 || oldInfo.Id != "custom") UrlBox.Text = info.BaseUrl;
+        SetModels(info.Models, info.Models.FirstOrDefault() ?? "");
+        RenderPresetHints(info, editing.Id);
+    }
+
+    /// The editor's values into the service (the key only when one was typed).
+    private bool ApplyEditor()
+    {
+        if (editing == null) return false;
+        var url = UrlBox.Text.Trim();
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var u) || u.Scheme is not ("http" or "https"))
+        {
+            ModelHint.Text = "Base URL 不对，应该像 https://api.example.com/v1";
+            ModelHint.Foreground = Theme.Warn;
+            return false;
+        }
+        ModelHint.ClearValue(ForegroundProperty);
+        editing.Preset = TagOf(PresetBox) is { Length: > 0 } preset ? preset : "custom";
+        editing.Name = NameBox.Text.Trim() is { Length: > 0 } n ? n : editing.Info.Name;
+        editing.BaseUrl = url.TrimEnd('/');
+        editing.Model = ModelBox.Text.Trim();
+        if (KeyBox.Password.Trim() is { Length: > 0 } key) AIKey.Save(editing.Id, key);
         KeyBox.Clear();
-        SaveKeyBtn.IsEnabled = true;
-        RenderKey();
+        model.SaveSettings();
+        return true;
     }
 
-    private void RemoveKey_Click(object sender, RoutedEventArgs e)
+    private async void SaveProvider_Click(object sender, RoutedEventArgs e)
     {
-        model.Ling.RemoveKey();
+        if (!ApplyEditor() || editing == null) return;
+        if (editing.Model.Length == 0)
+        {
+            ModelHint.Text = "请先选择或输入一个模型";
+            ModelHint.Foreground = Theme.Warn;
+            return;
+        }
+        model.Settings.ActiveProviderId = editing.Id;
+        model.SaveSettings();
+        SaveBtn.IsEnabled = false;
+        model.Ai.Refresh();
+        RenderProviders();
+        await model.Ai.Check();
+        SaveBtn.IsEnabled = true;
         RenderKey();
     }
 
-    private void GetKey_Click(object sender, RoutedEventArgs e) => Native.Open("https://chat.ant-ling.com/platform/api");
+    private async void FetchModels_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ApplyEditor() || editing == null) return;
+        FetchBtn.IsEnabled = false;
+        ModelHint.Text = "正在获取…";
+        try
+        {
+            var list = await AiClient.ListModels(editing);
+            SetModels(list, editing.Model);
+            ModelHint.Text = list.Count == 0 ? "这个服务没有返回模型，请直接输入模型名" : $"共 {list.Count} 个模型，点右侧箭头选择";
+            if (list.Count > 0) ModelBox.IsDropDownOpen = true;
+        }
+        catch (AiException ex) when (ex.Failure == AiFailure.InvalidKey)
+        {
+            ModelHint.Text = "key 不对或没有权限，请检查";
+        }
+        catch (Exception)
+        {
+            ModelHint.Text = "这个服务不支持获取模型列表，请直接输入模型名";
+        }
+        FetchBtn.IsEnabled = true;
+    }
+
+    private void DeleteProvider_Click(object sender, RoutedEventArgs e)
+    {
+        if (editing == null) return;
+        if (MessageBox.Show(this, $"删除「{editing.Name}」？它的 API key 也会一起删除。", Brand.Name,
+                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        AIKey.Remove(editing.Id);
+        model.Settings.Providers.Remove(editing);
+        if (model.Settings.ActiveProviderId == editing.Id) model.Settings.ActiveProviderId = model.Settings.Providers.FirstOrDefault()?.Id;
+        model.SaveSettings();
+        model.Ai.Refresh();
+        if (model.Ai.HasKey) _ = model.Ai.Check();
+        RenderProviders();
+        RenderKey();
+    }
+
+    private void GetKey_Click(object sender, RoutedEventArgs e)
+    {
+        var url = ProviderPreset.Find(TagOf(PresetBox)).KeyUrl;
+        if (url.Length > 0) Native.Open(url);
+    }
 
     // MARK: Speaking
 
@@ -163,11 +314,11 @@ public partial class SettingsWindow : Window
             if (v.Id == preferred?.Id) VoiceBox.SelectedItem = item;
         }
         loading = was;
-        var ming = model.Ling.Usable && SpeakEngine.MingVoice(lang) != null;
+        var ming = model.Ai.HasMingVoices && SpeakEngine.MingVoice(lang) != null;
         VoiceHelp.Text = ming && !model.Settings.Voices.ContainsKey(lang)
-            ? $"已填 Ling key：{Languages.ChineseName(lang)}默认用 Ming 合成；选一个 Windows 声音则改用它。"
+            ? $"当前使用蚂蚁百灵：{Languages.ChineseName(lang)}默认用 Ming 合成；选一个 Windows 声音则改用它。"
             : voices.Count == 0
-                ? $"这台电脑没有{Languages.ChineseName(lang)}语音包：可在 Windows 设置 › 时间和语言 › 语音 中添加，或填入 Ling key 改用 Ming。"
+                ? $"这台电脑没有{Languages.ChineseName(lang)}语音包：可在 Windows 设置 › 时间和语言 › 语音 中添加，或在「AI 服务」里使用蚂蚁百灵（自带 Ming 语音）。"
                 : $"播报{Languages.ChineseName(lang)}时使用的 Windows 语音。";
     }
 

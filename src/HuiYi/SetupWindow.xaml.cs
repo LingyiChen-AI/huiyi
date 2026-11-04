@@ -9,7 +9,7 @@ namespace HuiYi.App;
 /// Ling key (optional), and speaking into the meeting (optional, needs the virtual mic).
 public partial class SetupWindow : Window
 {
-    private static readonly string[] StepNames = ["本机模型", "试听", "AI 纪要", "同传发言"];
+    private static readonly string[] StepNames = ["本机模型", "试听", "AI 服务", "同传发言"];
     private readonly AppModel model;
     private readonly StackPanel[] pages;
     private CancellationTokenSource? download;
@@ -26,7 +26,8 @@ public partial class SetupWindow : Window
         Logo.Source = Icons.Mark(80, true);
         SpeakOn.IsChecked = model.Settings.SpeakEnabled;
         model.Subtitle += OnSubtitle;
-        model.Ling.Changed += () => Dispatcher.BeginInvoke(RenderKey);
+        model.Ai.Changed += () => Dispatcher.BeginInvoke(RenderKey);
+        FillPresets();
         Activated += (_, _) => RenderCable();
         Closed += (_, _) =>
         {
@@ -134,30 +135,61 @@ public partial class SetupWindow : Window
         TrySrc.Text = s.Source.Length > 120 ? "…" + s.Source[^120..] : s.Source;
     }
 
-    private void RenderKey()
+    /// Platforms offered here: those with a model to start from (the rest are set up in settings).
+    private static readonly ProviderPreset[] Quick = ProviderPreset.All.Where(p => p.Models.Length > 0).ToArray();
+
+    private ProviderPreset Chosen => Quick.FirstOrDefault(p => p.Id == (SetupPreset.SelectedItem as ComboBoxItem)?.Tag as string) ?? Quick[0];
+
+    private void FillPresets()
     {
-        KeyText.Text = model.Ling.State switch
-        {
-            LingClient.KeyState.Ok => "✓ 验证通过",
-            LingClient.KeyState.Checking => "验证中…",
-            LingClient.KeyState.Invalid => "这个 key 不可用",
-            LingClient.KeyState.Unreachable => "暂时连不上 Ling，请检查网络",
-            LingClient.KeyState.Unchecked => "已保存",
-            _ => "",
-        };
+        foreach (var p in Quick) SetupPreset.Items.Add(new ComboBoxItem { Content = p.Name, Tag = p.Id });
+        var current = model.Settings.ActiveProvider()?.Preset;
+        SetupPreset.SelectedItem = SetupPreset.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == current)
+                                   ?? SetupPreset.Items.Cast<ComboBoxItem>().First(i => (string)i.Tag == "ucloud");
     }
 
+    private void SetupPreset_Changed(object sender, SelectionChangedEventArgs e) => RenderKey();
+
+    private void RenderKey()
+    {
+        var ai = model.Ai;
+        KeyText.Text = ai.Current?.Preset != Chosen.Id ? Chosen.Hint ?? "" : ai.State switch
+        {
+            AiClient.KeyState.Ok => $"✓ {ai.Describe} 可用",
+            AiClient.KeyState.Checking => "验证中…",
+            AiClient.KeyState.Invalid => "这个 key 不可用",
+            AiClient.KeyState.Unreachable => ai.CheckError ?? "暂时连不上，请检查网络",
+            AiClient.KeyState.Unchecked => "已保存",
+            _ => Chosen.Hint ?? "",
+        };
+        KeyText.Foreground = ai.Current?.Preset == Chosen.Id && ai.State is AiClient.KeyState.Invalid or AiClient.KeyState.Unreachable
+            ? Theme.Warn : Theme.Grey;
+    }
+
+    /// Sets up (or updates) the chosen platform as the service in use, with its first model.
     private async void Key_Click(object sender, RoutedEventArgs e)
     {
         var k = KeyBox.Password.Trim();
-        if (k.Length == 0) return;
-        KeyBtn.IsEnabled = false;
-        await model.Ling.SetKey(k);
+        if (k.Length == 0 && !Chosen.KeyOptional) return;
+        var s = model.Settings;
+        var p = s.Providers.FirstOrDefault(x => x.Preset == Chosen.Id);
+        if (p == null)
+        {
+            p = Chosen.Create();
+            s.Providers.Add(p);
+        }
+        if (k.Length > 0) AIKey.Save(p.Id, k);
+        s.ActiveProviderId = p.Id;
+        model.SaveSettings();
         KeyBox.Clear();
+        KeyBtn.IsEnabled = false;
+        model.Ai.Refresh();
+        await model.Ai.Check();
         KeyBtn.IsEnabled = true;
+        RenderKey();
     }
 
-    private void GetKey_Click(object sender, RoutedEventArgs e) => Native.Open("https://chat.ant-ling.com/platform/api");
+    private void GetKey_Click(object sender, RoutedEventArgs e) => Native.Open(Chosen.KeyUrl);
 
     private void RenderCable()
     {

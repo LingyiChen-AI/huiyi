@@ -20,7 +20,7 @@ public sealed class AppModel
 {
     public AppSettings Settings { get; } = AppSettings.Load();
     public SessionStore Store { get; } = new();
-    public LingClient Ling { get; } = new();
+    public AiClient Ai { get; } = new();
     public ModelStore Models { get; } = new();
     public TranslationService Translator { get; }
     public NotesEngine Notes { get; }
@@ -51,15 +51,16 @@ public sealed class AppModel
 
     public AppModel()
     {
-        Translator = new TranslationService(Ling);
-        Notes = new NotesEngine(Ling, Store);
-        Ling.Model = () => Settings.LingModel;
-        Ling.Changed += () => Ui(() => StateChanged?.Invoke());
+        Ai.Provider = Settings.ActiveProvider;
+        Ai.Refresh();
+        Translator = new TranslationService(Ai);
+        Notes = new NotesEngine(Ai, Store);
+        Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
-        Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ling.Usable
-            ? "Google 翻译暂时被限流，整句译文改由 Ling 提供"
-            : "Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 纪要」填入 Ling key 可继续翻译"));
-        if (Ling.State == LingClient.KeyState.Unchecked) _ = Ling.Check();
+        Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable
+            ? $"Google 翻译暂时被限流，整句译文改由 {Ai.Current?.Name} 提供"
+            : "Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译"));
+        if (Ai.State == AiClient.KeyState.Unchecked) _ = Ai.Check();
         if (Models.Ready) loading = Task.Run(Load);
         ApplySpeakKey();
     }
@@ -91,8 +92,8 @@ public sealed class AppModel
             return prints;
         });
         var meeting = new MeetingController(Settings, Store, Translator, Notes, listen, SystemLanguages,
-            tagger, new SpeakerNamer(Ling, Store));
-        var speak = new SpeakEngine(Settings, rec, Translator, () => meeting.TheirLanguage, SystemLanguages, Ling);
+            tagger, new SpeakerNamer(Ai, Store));
+        var speak = new SpeakEngine(Settings, rec, Translator, () => meeting.TheirLanguage, SystemLanguages, Ai);
         meeting.SubtitleChanged += s => Ui(() => Subtitle?.Invoke(s));
         meeting.LineChanged += id => Ui(() => LineChanged?.Invoke(id));
         meeting.StateChanged += () => Ui(() => StateChanged?.Invoke());

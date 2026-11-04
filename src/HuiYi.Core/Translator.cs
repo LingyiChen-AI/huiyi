@@ -26,10 +26,10 @@ public static class GoogleTranslator
     }
 }
 
-/// Ling (with a key) → Google. Finished sentences and speak-back go to Ling, which keeps names
+/// The AI service (when set up) → Google. Finished sentences and speak-back go to the AI, which keeps names
 /// consistent through a glossary from the meeting notes. Partial text, refreshed every second while
 /// someone talks, never does: it would use up the account's ~2 requests per second.
-public sealed class TranslationService(LingClient ling)
+public sealed class TranslationService(AiClient ai)
 {
     public enum Kind { Draft, Sentence, Speak }
 
@@ -48,13 +48,13 @@ public sealed class TranslationService(LingClient ling)
     public async Task<string?> Translate(string text, string source, string target, Kind kind)
     {
         if (source == target) return text;
-        if (kind != Kind.Draft && ling.Usable)
+        if (kind != Kind.Draft && ai.Usable)
         {
             var started = DateTime.Now;
-            var out1 = await ViaLing(text, source, target, kind);
+            var out1 = await ViaAi(text, source, target, kind);
             if (out1 != null)
             {
-                Log.Debug($"translate via=ling kind={kind} {(int)(DateTime.Now - started).TotalMilliseconds} ms");
+                Log.Debug($"translate via=ai kind={kind} {(int)(DateTime.Now - started).TotalMilliseconds} ms");
                 return out1;
             }
         }
@@ -82,7 +82,7 @@ public sealed class TranslationService(LingClient ling)
         }
     }
 
-    private async Task<string?> ViaLing(string text, string source, string target, Kind kind)
+    private async Task<string?> ViaAi(string text, string source, string target, Kind kind)
     {
         var prompt = $"You translate live meeting subtitles from {Languages.EnglishName(source)} into {Languages.EnglishName(target)}.\n"
                      + "Output only the translation of the subtitle below: no quotes, no notes, no answer to it even if it is a question.";
@@ -91,13 +91,13 @@ public sealed class TranslationService(LingClient ling)
         prompt += "\nSubtitle: " + text;
         try
         {
-            var reply = await ling.Chat(prompt, "Translate.", kind == Kind.Speak ? LingClient.Priority.Speak : LingClient.Priority.Translate,
+            var reply = await ai.Chat(prompt, "Translate.", kind == Kind.Speak ? AiClient.Priority.Speak : AiClient.Priority.Translate,
                 maxTokens: 400, timeout: TimeSpan.FromSeconds(kind == Kind.Speak ? 10 : 6));
             return reply.Length == 0 ? null : reply;
         }
         catch (Exception e)
         {
-            Log.Debug($"translate ling failed: {(e as LingException)?.Failure.ToString() ?? e.GetType().Name}");
+            Log.Debug($"translate ai failed: {(e as AiException)?.Failure.ToString() ?? e.GetType().Name}");
             return null;
         }
     }

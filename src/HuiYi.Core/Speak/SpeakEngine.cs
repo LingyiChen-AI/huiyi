@@ -73,12 +73,12 @@ public sealed class SpeakEngine
     private readonly object gate = new();
     private DateTime pressedAt;
 
-    private readonly LingClient? ling;
+    private readonly AiClient? ai;
 
     public SpeakEngine(AppSettings settings, Recognizer recognizer, TranslationService translator,
-        Func<string?> theirLanguage, Func<IReadOnlyList<string>> systemLanguages, LingClient? ling = null)
+        Func<string?> theirLanguage, Func<IReadOnlyList<string>> systemLanguages, AiClient? ai = null)
     {
-        this.ling = ling;
+        this.ai = ai;
         this.settings = settings;
         this.recognizer = recognizer;
         this.translator = translator;
@@ -202,16 +202,16 @@ public sealed class SpeakEngine
         return devices;
     }
 
-    /// Speaks `text` into the virtual mic: Ming with a Ling key (natural voices, every language it
+    /// Speaks `text` into the virtual mic: Ming with an Ant Ling service (natural voices, every language it
     /// has), else a Windows voice.
     public async Task SayIntoRoom(string text, string language, bool intoRoom = true)
     {
         var useWindowsVoice = settings.Voices.ContainsKey(language) && Voices.For(language, settings.Voices[language]) != null;
-        if (!useWindowsVoice && ling?.Usable == true && MingVoice(language) is { } ming)
+        if (!useWindowsVoice && ai?.HasMingVoices == true && MingVoice(language) is { } ming)
         {
             try
             {
-                await PlayStream(ling.Speech(text, ming.Voice, ming.Language), Outputs(intoRoom));
+                await PlayStream(ai.Speech(text, ming.Voice, ming.Language), Outputs(intoRoom));
                 Log.Debug("speak: voiced by ming");
                 return;
             }
@@ -223,7 +223,7 @@ public sealed class SpeakEngine
         var voice = Voices.For(language, settings.Voices.GetValueOrDefault(language));
         if (voice == null)
         {
-            Problem?.Invoke($"系统里没有{Languages.ChineseName(language)}语音：在 Windows 设置 › 时间和语言 › 语音 里添加，或填入 Ling key 使用 Ming 的声音");
+            Problem?.Invoke($"系统里没有{Languages.ChineseName(language)}语音：在 Windows 设置 › 时间和语言 › 语音 里添加，或在「设置 › AI 服务」里使用蚂蚁百灵（自带 Ming 语音）");
             return;
         }
         using var synth = new SpeechSynthesizer { Voice = voice };

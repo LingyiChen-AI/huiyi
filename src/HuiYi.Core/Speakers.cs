@@ -10,7 +10,7 @@ namespace HuiYi;
 // SpeakerID.swift; the model and threshold were chosen with `huiyi-cli speakers` on a two-host
 // Chinese interview and a two-voice dialogue.
 
-/// A name Ling found for a voice, and the line it is based on ("00:06 “Sure, Emma…”").
+/// A name the AI found for a voice, and the line it is based on ("00:06 “Sure, Emma…”").
 public sealed record VoiceGuess(string Name, string Evidence);
 
 /// Voiceprints: unit length.
@@ -253,7 +253,7 @@ public static class SpeakerLabels
         return outp;
     }
 
-    /// Speaker number → name: the user's, else Ling's guess (unless the user turned it down).
+    /// Speaker number → name: the user's, else the AI's guess (unless the user turned it down).
     public static Dictionary<int, string> Names(Session s)
     {
         var outp = new Dictionary<int, string>();
@@ -283,13 +283,13 @@ public static class SpeakerLabels
     public static int ShownCount(IReadOnlyList<TranscriptLine> lines) => Numbers(lines).Values.Distinct().Count();
 }
 
-/// Asks Ling who 说话人 1, 2… are, from how people address each other. Only text is sent; a guess is a
+/// Asks the AI who 说话人 1, 2… are, from how people address each other. Only text is sent; a guess is a
 /// suggestion the user can change.
 public static class SpeakerNameGuess
 {
     public const int EvidenceReach = 2;
 
-    /// The transcript as Ling sees it, newest 400 lines, with speaker labels; nil when no voices are shown.
+    /// The transcript as the AI sees it, newest 400 lines, with speaker labels; nil when no voices are shown.
     public static string? Content(Session s)
     {
         var numbers = SpeakerLabels.Numbers(s.Lines);
@@ -367,16 +367,16 @@ public static class SpeakerNameGuess
     }
 }
 
-/// Asks Ling for names on its own: once two voices are on show, again every 20 lines, and once more
+/// Asks the AI for names on its own: once two voices are on show, again every 20 lines, and once more
 /// when the meeting ends. Guesses go into the meeting (`Session.VoiceGuesses`); the user corrects.
-public sealed class SpeakerNamer(LingClient ling, SessionStore store)
+public sealed class SpeakerNamer(AiClient ai, SessionStore store)
 {
     private readonly Dictionary<string, int> askedAt = new();
     private readonly HashSet<string> busy = [];
 
     public void Guess(string id, bool force = false)
     {
-        if (!ling.HasKey || store.Get(id) is not { } s) return;
+        if (!ai.HasKey || store.Get(id) is not { } s) return;
         lock (busy)
         {
             if (busy.Contains(id)) return;
@@ -393,7 +393,7 @@ public sealed class SpeakerNamer(LingClient ling, SessionStore store)
             {
                 var snapshot = new Session { Id = s.Id, Lines = store.LinesOf(id), VoiceNames = s.VoiceNames, VoiceGuesses = s.VoiceGuesses };
                 if (SpeakerNameGuess.Content(snapshot) is not { } content) return;
-                var reply = await ling.Chat(content, SpeakerNameGuess.Instruction, LingClient.Priority.Notes, json: true, maxTokens: 400);
+                var reply = await ai.Chat(content, SpeakerNameGuess.Instruction, AiClient.Priority.Notes, json: true, maxTokens: 400);
                 var (found, refuted) = SpeakerNameGuess.Read(reply, snapshot);
                 if (found.Count == 0 && refuted.Count == 0) return;
                 store.Mutate(id, x =>
@@ -407,7 +407,7 @@ public sealed class SpeakerNamer(LingClient ling, SessionStore store)
             }
             catch (Exception e)
             {
-                Log.Debug($"speakers: name guess failed {(e as LingException)?.Failure.ToString() ?? e.GetType().Name}");
+                Log.Debug($"speakers: name guess failed {(e as AiException)?.Failure.ToString() ?? e.GetType().Name}");
             }
             finally
             {

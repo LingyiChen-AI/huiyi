@@ -243,7 +243,7 @@ public sealed class MeetingController
         LineChanged?.Invoke(lineId);
         Render();
         TranslateLine(id, lineId);
-        // Once two voices are on show (and every 20 lines after), Ling may know their names.
+        // Once two voices are on show (and every 20 lines after), the AI may know their names.
         if (voice != null) namer?.Guess(id);
     }
 

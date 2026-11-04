@@ -311,8 +311,12 @@
                         <Grid>
                             <ToggleButton Style="{StaticResource ComboToggle}"
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                            <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                            <ContentPresenter x:Name="shown" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                               IsHitTestVisible="False" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="11,0,30,0"/>
+                            <!-- Editable: type a value or pick one (a model name, say). -->
+                            <TextBox x:Name="PART_EditableTextBox" Visibility="Collapsed" Margin="4,2,28,2" Padding="6,4"
+                                     BorderThickness="0" Background="Transparent" VerticalAlignment="Center"
+                                     IsReadOnly="{TemplateBinding IsReadOnly}"/>
                             <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" VerticalOffset="4"
                                    AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                                 <Border Margin="6,0,6,10" Background="White" BorderBrush="#E3E6EE" BorderThickness="1" CornerRadius="7" Padding="4"
@@ -327,6 +331,12 @@
                                 </Border>
                             </Popup>
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="shown" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

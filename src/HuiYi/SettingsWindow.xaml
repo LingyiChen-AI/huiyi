@@ -55,23 +55,61 @@
             </ScrollViewer>
         </TabItem>
 
-        <!-- AI 纪要 -->
-        <TabItem Header="AI 纪要">
+        <!-- AI 服务 -->
+        <TabItem Header="AI 服务">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
                 <StackPanel>
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
-                            <TextBlock Text="LING API KEY" Style="{StaticResource Overline}"/>
-                            <TextBlock x:Name="KeyState" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBlock Text="当前使用" Style="{StaticResource Overline}"/>
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" x:Name="SaveKeyBtn" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Click="SaveKey_Click"/>
-                                <PasswordBox x:Name="KeyBox"/>
+                                <Button DockPanel.Dock="Right" Content="＋ 添加服务" Style="{StaticResource Btn}" Margin="8,0,0,0" Click="AddProvider_Click"/>
+                                <ComboBox x:Name="ActiveBox" SelectionChanged="Active_Changed"/>
                             </DockPanel>
-                            <StackPanel Orientation="Horizontal" Margin="-6,6,0,0">
-                                <Button Content="去申请 key ↗" Style="{StaticResource GhostBtn}" Click="GetKey_Click"/>
-                                <Button x:Name="RemoveKeyBtn" Content="移除 key" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Click="RemoveKey_Click"/>
-                            </StackPanel>
-                            <TextBlock Style="{StaticResource Helper}" Text="key 加密保存在这台电脑上，不会出现在日志和导出文件里。不填也能用，只是没有 AI 纪要，整句翻译改用 Google。"/>
+                            <TextBlock x:Name="KeyState" FontSize="13" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用 Google。"/>
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="EditorCard" Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="服务设置" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <ComboBox x:Name="PresetBox" DockPanel.Dock="Right" MinWidth="280" MaxDropDownHeight="420" SelectionChanged="Preset_Changed"/>
+                                <TextBlock Text="平台" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock x:Name="PresetHint" Style="{StaticResource Helper}" Margin="0,0,0,4"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <TextBox x:Name="NameBox" DockPanel.Dock="Right" Width="280"/>
+                                <TextBlock Text="名称" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <TextBox x:Name="UrlBox" DockPanel.Dock="Right" Width="280"/>
+                                <TextBlock Text="Base URL" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <PasswordBox x:Name="KeyBox" DockPanel.Dock="Right" Width="280"/>
+                                <TextBlock Text="API key" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <Button x:Name="KeyLink" DockPanel.Dock="Right" Content="去申请 key ↗" Style="{StaticResource GhostBtn}" Click="GetKey_Click"/>
+                                <TextBlock x:Name="KeyHint" Style="{StaticResource Helper}" VerticalAlignment="Center" Margin="0"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource Row}">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <ComboBox x:Name="ModelBox" IsEditable="True" Width="280" MaxDropDownHeight="360"/>
+                                </StackPanel>
+                                <TextBlock Text="模型" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,2,0,0">
+                                <Button x:Name="FetchBtn" DockPanel.Dock="Right" Content="获取模型列表" Style="{StaticResource GhostBtn}" Click="FetchModels_Click"/>
+                                <TextBlock x:Name="ModelHint" Style="{StaticResource Helper}" VerticalAlignment="Center" Margin="0"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,14,0,0">
+                                <Button DockPanel.Dock="Right" x:Name="SaveBtn" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Click="SaveProvider_Click"/>
+                                <Button x:Name="DeleteBtn" Content="删除这个服务" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2"
+                                        HorizontalAlignment="Left" Click="DeleteProvider_Click"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Helper}" Text="key 加密保存在这台电脑上，不会出现在日志和导出文件里。"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
@@ -80,10 +118,6 @@
                             <DockPanel Style="{StaticResource Row}">
                                 <ComboBox x:Name="NotesLangBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
                                 <TextBlock Text="纪要用的语言" VerticalAlignment="Center"/>
-                            </DockPanel>
-                            <DockPanel Style="{StaticResource Row}">
-                                <ComboBox x:Name="ModelBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
-                                <TextBlock Text="模型" VerticalAlignment="Center"/>
                             </DockPanel>
                         </StackPanel>
                     </Border>

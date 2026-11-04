@@ -20,17 +20,26 @@ public static class Snapshot
         Save(main, folder, "main-notes", keepOpen: true);
         main.ShowTab(notes: false);
         Save(main, folder, "main-lines");
+        // The AI page needs a service to show (snapshots work on a copy of the settings too).
+        if (model.Settings.Providers.Count == 0)
+        {
+            model.Settings.Providers.Add(ProviderPreset.Find("ucloud").Create());
+            model.Settings.Providers.Add(ProviderPreset.Find("deepseek").Create());
+        }
         var settings = new SettingsWindow(model);
         Save(settings, folder, "settings", keepOpen: true);
         settings.Pages.SelectedIndex = 1;
         Save(settings, folder, "settings-ai", keepOpen: true);
         // An open drop-down lives in its own popup: render its list on its own.
-        settings.NotesLangBox.IsDropDownOpen = true;
-        settings.UpdateLayout();
-        settings.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        if (settings.NotesLangBox.Template.FindName("PART_Popup", settings.NotesLangBox) is System.Windows.Controls.Primitives.Popup { Child: FrameworkElement list })
-            SaveElement(list, folder, "dropdown", new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)));
-        settings.NotesLangBox.IsDropDownOpen = false;
+        foreach (var (box, name) in new[] { (settings.PresetBox, "dropdown-platforms"), (settings.ModelBox, "dropdown-models") })
+        {
+            box.IsDropDownOpen = true;
+            settings.UpdateLayout();
+            settings.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            if (box.Template.FindName("PART_Popup", box) is System.Windows.Controls.Primitives.Popup { Child: FrameworkElement list })
+                SaveElement(list, folder, name, new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xFA)));
+            box.IsDropDownOpen = false;
+        }
         settings.Close();
 
         var panel = new NotesWindow(model);

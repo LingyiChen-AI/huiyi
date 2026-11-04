@@ -4,8 +4,8 @@
 
 ## Hard rules
 
-- The Ling key lives only in `%APPDATA%\HuiYi\ling-api-key`, DPAPI-encrypted (`AIKey`): never in settings, logs or exports.
-- Every Ling call goes through `LingClient` (start gate, priorities, `thinking: disabled`, content in the system message). Partial (draft) text is translated by Google, never Ling, at most once a second.
+- API keys live only in `%APPDATA%\HuiYi\keys\<service id>.key`, DPAPI-encrypted (`AIKey`): never in settings, logs or exports.
+- Every AI call goes through `AiClient` (start gate, priorities, the platform's own thinking switch from `ProviderPreset`, content in the system message). Services are OpenAI-compatible; platforms are presets in `Providers.cs`, never special cases elsewhere. Partial (draft) text is translated by Google, never the AI, at most once a second.
 - Never speak untranslated text into the room (`TranslationService.LooksTranslated`). Never bundle VB-CABLE or the models; models are downloaded and checked against pinned SHA-256 (`ModelStore`).
 - The live panel (实时面板) and the floating subtitles (悬浮字幕) never take focus (`WS_EX_NOACTIVATE`) and stay out of captures (`WDA_EXCLUDEFROMCAPTURE`) unless the user turns on 在屏幕共享和录屏中显示字幕窗口 (then they show 共享中可见).
 - Engines in `HuiYi.Core` are UI-free and raise events on worker threads; `AppModel` hops to the UI thread.

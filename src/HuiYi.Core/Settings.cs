@@ -5,9 +5,16 @@ namespace HuiYi;
 public enum DisplayMode { Notes, Subtitles }
 public enum SpeakKey { RightCtrl, RightAlt }
 
-/// Every setting, saved as %APPDATA%\HuiYi\settings.json. Never holds the Ling key.
+/// Every setting, saved as %APPDATA%\HuiYi\settings.json. Never holds an API key.
 public sealed class AppSettings
 {
+    /// The AI services set up (notes, sentence translation, speaker names), and the one in use.
+    public List<AiProvider> Providers { get; set; } = [];
+    public string? ActiveProviderId { get; set; }
+
+    public AiProvider? ActiveProvider() =>
+        Providers.FirstOrDefault(p => p.Id == ActiveProviderId) ?? Providers.FirstOrDefault();
+
     /// "auto" follows the system languages; otherwise a target code ("zh-CN", "en"…).
     public string Target { get; set; } = "auto";
     public DisplayMode Display { get; set; } = DisplayMode.Notes;
@@ -17,7 +24,6 @@ public sealed class AppSettings
     /// Tell the other side's voices apart (说话人 1、说话人 2…). On by default.
     public bool SpeakerVoices { get; set; } = true;
     public double SubtitleFontSize { get; set; } = 26;
-    public string LingModel { get; set; } = "Ling-3.1-flash";
     /// "auto": the notes follow the subtitles' target language.
     public string NotesLanguage { get; set; } = "auto";
 

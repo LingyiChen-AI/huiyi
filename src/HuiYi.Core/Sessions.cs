@@ -31,10 +31,10 @@ public sealed class Session
     public bool HasAudio { get; set; }
     public MeetingNotes? Notes { get; set; }
     public bool? Renamed { get; set; }
-    /// Names the user gave voices, keyed by voice id. An empty name means "not Ling's guess": the
+    /// Names the user gave voices, keyed by voice id. An empty name means "not the AI's guess": the
     /// voice shows as 说话人 N.
     public Dictionary<string, string>? VoiceNames { get; set; }
-    /// Names Ling read from the conversation, keyed by voice id; shown until the user says otherwise.
+    /// Names the AI read from the conversation, keyed by voice id; shown until the user says otherwise.
     public Dictionary<string, VoiceGuess>? VoiceGuesses { get; set; }
 
     [JsonIgnore] public TimeSpan Duration => (EndedAt ?? DateTime.Now) - StartedAt;
@@ -203,7 +203,7 @@ public sealed class SessionStore
         s.Renamed = true;
     });
 
-    /// The user named a voice ("" = plain 说话人 N, turning down Ling's guess).
+    /// The user named a voice ("" = plain 说话人 N, turning down the AI's guess).
     public void SetVoiceName(string id, int voice, string name) => Mutate(id, s =>
     {
         s.VoiceNames ??= new();

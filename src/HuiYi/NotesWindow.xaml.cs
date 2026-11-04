@@ -6,7 +6,7 @@ using HuiYi.Speak;
 
 namespace HuiYi.App;
 
-/// The live notes window: subtitles as a running transcript, and the notes Ling keeps. A panel
+/// The live notes window: subtitles as a running transcript, and the notes the AI keeps. A panel
 /// that never takes focus from the meeting app and stays out of screen captures unless the user
 /// lets it show (then it wears a badge).
 public partial class NotesWindow : Window
@@ -34,7 +34,7 @@ public partial class NotesWindow : Window
             if (e.ButtonState == MouseButtonState.Pressed) DragMove();
         };
         model.LineChanged += OnLine;
-        // Speaker names (the user's or Ling's) change labels on lines already shown.
+        // Speaker names (the user's or the AI's) change labels on lines already shown.
         model.Store.Changed += () => Dispatcher.BeginInvoke(() => OnLine(""));
         model.Subtitle += OnSubtitle;
         model.NotesChanged += RenderNotes;
@@ -116,14 +116,14 @@ public partial class NotesWindow : Window
     {
         clock.Stop();
         LiveDot.Visibility = Visibility.Collapsed;
-        StateText.Text = model.Ling.HasKey ? "已结束 · 正在整理纪要" : "已结束";
+        StateText.Text = model.Ai.HasKey ? "已结束 · 正在整理纪要" : "已结束";
         StateText.Foreground = Theme.NightMuted;
         OnAirPill.Background = Theme.NightRaised;
         StopBtn.Visibility = Visibility.Collapsed;
         LivePanel.Visibility = Visibility.Collapsed;
         EndBanner.Visibility = Visibility.Collapsed;
         // The notes are being rewritten over the whole meeting: show them.
-        if (IsVisible && model.Ling.HasKey) TabNotes.IsChecked = true;
+        if (IsVisible && model.Ai.HasKey) TabNotes.IsChecked = true;
     }
 
     private void Tick()
@@ -186,15 +186,15 @@ public partial class NotesWindow : Window
             ? new System.Windows.Controls.TextBlock
             {
                 FontSize = 13, Foreground = Theme.NightMuted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
-                Text = model.Ling.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
-                                         : "在「设置 › AI 纪要」里填入 Ling key，开会时就会自动整理纪要。",
+                Text = model.Ai.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
+                                         : "在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。",
             }
             : NotesRenderer.Build(n.Notes);
         NotesState.Text = n.Status switch
         {
             NotesEngine.State.Updating => "纪要整理中…",
             NotesEngine.State.RateLimited => "请求太多，稍后再试",
-            NotesEngine.State.InvalidKey => "Ling key 不可用",
+            NotesEngine.State.InvalidKey => "AI 服务的 key 不可用",
             NotesEngine.State.Failed => "纪要这次没刷新",
             _ => "",
         };

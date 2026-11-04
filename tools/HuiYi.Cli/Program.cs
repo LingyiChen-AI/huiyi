@@ -51,9 +51,9 @@ switch (cmd)
         var settings = new AppSettings { Target = target };
         var tmp = Path.Combine(Path.GetTempPath(), "huiyi-cli-sessions");
         var store = new SessionStore(tmp);
-        var ling = new LingClient();
-        var translator = new TranslationService(ling);
-        var notes = new NotesEngine(ling, store);
+        var ai = new AiClient();
+        var translator = new TranslationService(ai);
+        var notes = new NotesEngine(ai, store);
         using var rec = new Recognizer(models);
         var listen = new ListenEngine(rec, models);
         using var prints = new Voiceprints(models);
@@ -118,8 +118,8 @@ switch (cmd)
     }
     case "translate":
     {
-        var ling = new LingClient();
-        var t = new TranslationService(ling);
+        var ai = new AiClient();
+        var t = new TranslationService(ai);
         Console.WriteLine(await t.Translate(args[1], args[2], args[3], TranslationService.Kind.Sentence) ?? "(null)");
         break;
     }
@@ -132,7 +132,7 @@ switch (cmd)
     {
         var settings = new AppSettings();
         using var rec = new Recognizer(models);
-        var speak = new SpeakEngine(settings, rec, new TranslationService(new LingClient()), () => null, () => sys);
+        var speak = new SpeakEngine(settings, rec, new TranslationService(new AiClient()), () => null, () => sys);
         speak.Problem += p => Console.WriteLine("PROBLEM " + p);
         await speak.SayIntoRoom(args[1], args[2], intoRoom: false);
         break;
@@ -184,6 +184,23 @@ switch (cmd)
         using var w = new WaveFileWriter(args[4], WaveFormat.CreateIeeeFloatWaveFormat(16000, 1));
         w.WriteSamples(part, 0, part.Length);
         Console.WriteLine($"{part.Length / 16000.0:F0} s -> {args[4]}");
+        break;
+    }
+    case "ai-models":
+    {
+        // ai-models <preset> [base url]: the chat models a platform offers (keys come from the app's own store).
+        var p = ProviderPreset.Find(args[1]).Create();
+        if (args.Length > 2) p.BaseUrl = args[2];
+        try
+        {
+            var list = await AiClient.ListModels(p);
+            Console.WriteLine($"{p.Name} ({p.BaseUrl}): {list.Count} chat models");
+            Console.WriteLine(string.Join(", ", list.Take(40)));
+        }
+        catch (AiException e)
+        {
+            Console.WriteLine($"{p.Name} ({p.BaseUrl}): {e.Failure} (a key is needed to list models)");
+        }
         break;
     }
     case "speakers":

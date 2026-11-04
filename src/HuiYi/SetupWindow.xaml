@@ -57,17 +57,22 @@
                 </StackPanel>
                 <!-- 3 -->
                 <StackPanel x:Name="Page2" Visibility="Collapsed">
-                    <TextBlock Text="第 3 步 · AI 纪要（可跳过）" Style="{StaticResource Overline}"/>
-                    <TextBlock Text="填入 Ling API key" FontSize="22" FontWeight="SemiBold"/>
+                    <TextBlock Text="第 3 步 · AI 服务（可跳过）" Style="{StaticResource Overline}"/>
+                    <TextBlock Text="接入一个大模型" FontSize="22" FontWeight="SemiBold"/>
                     <TextBlock Style="{StaticResource Helper}" FontSize="13" Margin="0,8,0,0"
-                               Text="有 key 时，开会过程中会自动整理纪要、识别发言人姓名，人名术语也翻得更准。没有也能正常看字幕。"/>
-                    <DockPanel Margin="0,24,0,0">
-                        <Button x:Name="KeyBtn" DockPanel.Dock="Right" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Click="Key_Click"/>
-                        <PasswordBox x:Name="KeyBox"/>
+                               Text="接入后，开会时会自动整理纪要、识别发言人姓名，人名术语也翻得更准。不接也能正常看字幕。之后可以在设置里添加更多服务、改 Base URL 或换模型。"/>
+                    <DockPanel Margin="0,20,0,0">
+                        <ComboBox x:Name="SetupPreset" DockPanel.Dock="Right" Width="300" MaxDropDownHeight="360" SelectionChanged="SetupPreset_Changed"/>
+                        <TextBlock Text="平台" VerticalAlignment="Center"/>
                     </DockPanel>
-                    <DockPanel Margin="0,8,0,0">
+                    <DockPanel Margin="0,10,0,0">
+                        <PasswordBox x:Name="KeyBox" DockPanel.Dock="Right" Width="300"/>
+                        <TextBlock Text="API key" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <DockPanel Margin="0,10,0,0">
+                        <Button x:Name="KeyBtn" DockPanel.Dock="Right" Content="保存并验证" Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Click="Key_Click"/>
                         <Button DockPanel.Dock="Right" Content="去申请 key ↗" Style="{StaticResource GhostBtn}" Click="GetKey_Click"/>
-                        <TextBlock x:Name="KeyText" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="KeyText" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </DockPanel>
                 </StackPanel>
                 <!-- 4 -->

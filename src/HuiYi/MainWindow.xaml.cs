@@ -117,8 +117,8 @@ public partial class MainWindow : Window
                 Child = new TextBlock
                 {
                     Style = (Style)FindResource("Helper"), FontSize = 13, Margin = new Thickness(0),
-                    Text = model.Ling.HasKey ? "这场会议还没有纪要，点右上角「生成纪要」。"
-                                             : "在「设置 › AI 纪要」里填入 Ling key 后可以生成纪要。完整的双语内容在「逐字稿」里。",
+                    Text = model.Ai.HasKey ? "这场会议还没有纪要，点右上角「生成纪要」。"
+                                             : "在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。",
                 },
             };
         if (!keepTab && switched)
@@ -129,7 +129,7 @@ public partial class MainWindow : Window
     }
 
     /// 说话人 1、说话人 2…, each with its name: type one to name that voice in this meeting (empty: back
-    /// to the number). Ling's guesses show as the name until the user changes it.
+    /// to the number). The AI's guesses show as the name until the user changes it.
     private void RenderSpeakers(Session s, bool rebuild)
     {
         var voices = SpeakerLabels.VoiceNumbers(s.Lines).OrderBy(kv => kv.Value).ToList();
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
             var box = new TextBox
             {
                 Text = names.GetValueOrDefault(number, ""), Width = 110, Padding = new Thickness(4, 2, 4, 2), FontSize = 12,
-                BorderBrush = Theme.Line, ToolTip = guess != null ? $"Ling 根据「{guess.Evidence}」猜的名字，可以改" : "输入名字，回车保存",
+                BorderBrush = Theme.Line, ToolTip = guess != null ? $"AI 根据「{guess.Evidence}」猜的名字，可以改" : "输入名字，回车保存",
             };
             void Save()
             {
@@ -191,7 +191,7 @@ public partial class MainWindow : Window
     private void Generate_Click(object sender, RoutedEventArgs e)
     {
         if (selected == null) return;
-        if (!model.Ling.HasKey)
+        if (!model.Ai.HasKey)
         {
             ((App)Application.Current).OpenSettings();
             return;

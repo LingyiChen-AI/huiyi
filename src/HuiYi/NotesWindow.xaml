@@ -164,7 +164,7 @@
                             </Border>
                         </Grid>
                         <TextBlock Text="准备好了就开始" FontSize="18" FontWeight="SemiBold" Foreground="#F4F5FA" HorizontalAlignment="Center" Margin="0,12,0,0"/>
-                        <TextBlock FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="270" Margin="0,8,0,22" LineHeight="20"
+                        <TextBlock FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,8,0,22" LineHeight="20"
                                    Text="点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。"/>
                         <Button Click="Start_Click" HorizontalAlignment="Center" Cursor="Hand">
                             <Button.Template>

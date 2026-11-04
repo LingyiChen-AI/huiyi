@@ -27,4 +27,4 @@ if (git -C $root status --porcelain) {
 }
 git -C $root tag "v$Version"
 git -C $root push -q origin HEAD "v$Version"
-"pushed v$Version: the release workflow is building it -> https://github.com/LingyiChen-AI/huiyi/actions"
+"pushed v${Version}, the release workflow is building it -> https://github.com/LingyiChen-AI/huiyi/actions"

@@ -147,8 +147,9 @@ public partial class MainWindow : Window
             var guess = s.VoiceNames?.ContainsKey(voice.ToString()) == true ? null : s.VoiceGuesses?.GetValueOrDefault(voice.ToString());
             var box = new TextBox
             {
-                Text = names.GetValueOrDefault(number, ""), Width = 110, Padding = new Thickness(4, 2, 4, 2), FontSize = 12,
-                BorderBrush = Theme.Line, ToolTip = guess != null ? $"AI 根据「{guess.Evidence}」猜的名字，可以改" : "输入名字，回车保存",
+                Style = (Style)FindResource("Field"), Tag = "起个名字",
+                Text = names.GetValueOrDefault(number, ""), Width = 110, Padding = new Thickness(7, 3, 7, 3), FontSize = 12,
+                ToolTip = guess != null ? $"AI 根据「{guess.Evidence}」猜的名字，可以改" : "输入名字，回车保存",
             };
             void Save()
             {

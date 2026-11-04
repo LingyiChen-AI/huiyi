@@ -27,15 +27,16 @@
         <!-- One template -->
         <DockPanel Grid.Column="1" Margin="28,20,24,16">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                    <Button x:Name="DefaultBtn" Content="设为默认" Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0" Click="Default_Click"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,4,0,0">
+                    <Button x:Name="DeleteBtn" Content="删除" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Margin="0,0,6,0" Click="Delete_Click"/>
                     <Button x:Name="CopyBtn" Content="复制为我的模板" Style="{StaticResource Btn}" Margin="0,0,8,0" Click="Copy_Click"/>
-                    <Button x:Name="SaveBtn" Content="保存" Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0" Click="Save_Click"/>
-                    <Button x:Name="DeleteBtn" Content="删除" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Click="Delete_Click"/>
+                    <Button x:Name="DefaultBtn" Content="设为默认" Style="{StaticResource PrimaryBtn}" Click="Default_Click"/>
+                    <Button x:Name="SaveBtn" Content="保存" Style="{StaticResource PrimaryBtn}" MinWidth="72" Margin="8,0,0,0" Click="Save_Click"/>
                 </StackPanel>
                 <StackPanel>
                     <TextBlock x:Name="NameText" FontSize="22" FontWeight="SemiBold"/>
-                    <TextBox x:Name="NameBox" FontSize="20" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,16,0"/>
+                    <TextBox x:Name="NameBox" Style="{StaticResource TitleField}" Tag="给模板起个名字" Visibility="Collapsed"
+                             Margin="-6,0,24,0" MaxWidth="460" HorizontalAlignment="Left" MinWidth="240" ToolTip="点击修改名称"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <Border x:Name="CategoryChip" Background="#ECEEFC" CornerRadius="9" Padding="8,1" Margin="0,0,8,0">
                             <TextBlock x:Name="CategoryText" FontSize="11" Foreground="#4F5BD5" FontWeight="SemiBold"/>

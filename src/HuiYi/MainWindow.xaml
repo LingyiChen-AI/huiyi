@@ -21,9 +21,9 @@
                     <Button x:Name="ListenBtn" Content="开始收听" Style="{StaticResource PrimaryBtn}" Margin="0,14,0,0" Padding="0,8" Click="Listen_Click"/>
                     <Button Content="纪要模板中心" Style="{StaticResource Btn}" Margin="0,8,0,0" Padding="0,6" Click="Templates_Click"/>
                     <Grid Margin="0,12,0,0">
-                        <TextBox x:Name="SearchBox" Padding="26,6,6,6" TextChanged="Search_Changed"/>
-                        <TextBlock Text="⌕" Foreground="#9AA1B2" FontSize="14" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
-                        <TextBlock x:Name="SearchHint" Text="搜索标题或内容" Foreground="#9AA1B2" FontSize="12" Margin="27,0,0,0"
+                        <TextBox x:Name="SearchBox" Style="{StaticResource Field}" Padding="28,7,8,7" TextChanged="Search_Changed"/>
+                        <TextBlock Text="⌕" Foreground="#9AA1B2" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                        <TextBlock x:Name="SearchHint" Text="搜索标题或内容" Foreground="#A9AFBD" FontSize="13" Margin="31,0,0,0"
                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
                     </Grid>
                 </StackPanel>
@@ -87,7 +87,7 @@
                             <Button Content="导出 Markdown" Style="{StaticResource Btn}" Click="Export_Click" Margin="0,0,8,0"/>
                             <Button Content="删除" Style="{StaticResource GhostBtn}" Foreground="#9AA1B2" Click="Delete_Click"/>
                         </StackPanel>
-                        <TextBox x:Name="TitleBox" FontSize="21" FontWeight="SemiBold" BorderThickness="0" Background="Transparent" Padding="0"
+                        <TextBox x:Name="TitleBox" Style="{StaticResource TitleField}" FontSize="21" Margin="-7,0,16,0"
                                  Foreground="#1E2235" LostFocus="Title_LostFocus" KeyDown="Title_KeyDown" ToolTip="点击修改标题"/>
                     </DockPanel>
                     <TextBlock x:Name="MetaText" Foreground="#9AA1B2" FontSize="12" Margin="0,4,0,12"/>

@@ -92,6 +92,8 @@ public partial class TemplateWindow : Window
         var isDefault = t.Id == model.Settings.DefaultTemplateId;
         DefaultBtn.Content = isDefault ? "✓ 当前默认" : "设为默认";
         DefaultBtn.IsEnabled = !isDefault;
+        // Only one filled button at a time: 保存 when editing your own, 设为默认 on a built-in one.
+        DefaultBtn.Style = (Style)FindResource(mine ? "Btn" : "PrimaryBtn");
         SaveBtn.Visibility = mine ? Visibility.Visible : Visibility.Collapsed;
         DeleteBtn.Visibility = mine ? Visibility.Visible : Visibility.Collapsed;
         CopyBtn.Content = mine ? "复制一份" : "复制为我的模板";
@@ -113,9 +115,10 @@ public partial class TemplateWindow : Window
 
         // About
         var about = Card("说明");
+        if (mine) about.Children.Add(Label("适用场景", 2));
         about.Children.Add(mine ? Field(t.Description, v => t.Description = v, "一句话说明这个模板适合什么会议")
                                 : Body(t.Description));
-        about.Children.Add(Small("关注重点（告诉 AI 这类会议最该抓住什么）", 12));
+        about.Children.Add(mine ? Label("关注重点", 14, "告诉 AI 这类会议最该抓住什么") : Small("关注重点（告诉 AI 这类会议最该抓住什么）", 12));
         about.Children.Add(mine ? Field(t.Focus, v => t.Focus = v, "例如：每条风险都要写清影响和负责人", multi: true)
                                 : Body(t.Focus.Length > 0 ? t.Focus : "—", Theme.Grey));
 
@@ -171,9 +174,13 @@ public partial class TemplateWindow : Window
             up.Click += (_, _) => { (t.Sections[index - 1], t.Sections[index]) = (t.Sections[index], t.Sections[index - 1]); RenderDetail(); };
             DockPanel.SetDock(up, Dock.Right);
             head.Children.Add(up);
-            head.Children.Add(Field(s.Title, v => s.Title = v, "这一部分的标题", width: 260));
+            var title = Field(s.Title, v => s.Title = v, "这一部分的标题", width: 260, strong: true);
+            title.Background = Brushes.White;
+            head.Children.Add(title);
             box.Children.Add(head);
-            box.Children.Add(Field(s.Instruction, v => s.Instruction = v, "AI 在这里写什么（一句话）", top: 6));
+            var what = Field(s.Instruction, v => s.Instruction = v, "AI 在这里写什么（一句话）", top: 8);
+            what.Background = Brushes.White;
+            box.Children.Add(what);
             var opts = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             var style = new ComboBox { MinWidth = 170, Margin = new Thickness(0, 0, 16, 0) };
             foreach (var (key, name) in Styles)
@@ -232,13 +239,24 @@ public partial class TemplateWindow : Window
         Child = new TextBlock { Text = text, FontSize = 11, Foreground = Theme.Primary },
     };
 
-    private static TextBox Field(string value, Action<string> set, string hint, bool multi = false, double width = double.NaN, double top = 0)
+    private static UIElement Label(string text, double top, string? help = null)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, top, 0, 6) };
+        row.Children.Add(new TextBlock { Text = text, FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Theme.Ink });
+        if (help != null)
+            row.Children.Add(new TextBlock { Text = help, FontSize = 12, Foreground = Theme.Grey2, Margin = new Thickness(8, 1, 0, 0) });
+        return row;
+    }
+
+    private TextBox Field(string value, Action<string> set, string hint, bool multi = false, double width = double.NaN, double top = 0, bool strong = false)
     {
         var box = new TextBox
         {
-            Text = value, ToolTip = hint, Width = width, Margin = new Thickness(0, top, 0, 0), HorizontalAlignment = HorizontalAlignment.Stretch,
-            TextWrapping = multi ? TextWrapping.Wrap : TextWrapping.NoWrap, AcceptsReturn = multi, MinHeight = multi ? 60 : 0,
+            Style = (Style)FindResource("Field"), Tag = hint,
+            Text = value, Width = width, Margin = new Thickness(0, top, 0, 0), HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextWrapping = multi ? TextWrapping.Wrap : TextWrapping.NoWrap, AcceptsReturn = multi, MinHeight = multi ? 64 : 0,
             VerticalContentAlignment = multi ? VerticalAlignment.Top : VerticalAlignment.Center,
+            FontWeight = strong ? FontWeights.SemiBold : FontWeights.Normal,
         };
         if (!double.IsNaN(width)) box.HorizontalAlignment = HorizontalAlignment.Left;
         box.TextChanged += (_, _) => set(box.Text);

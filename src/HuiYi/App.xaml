@@ -314,7 +314,7 @@
                             <ContentPresenter x:Name="shown" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                               IsHitTestVisible="False" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="11,0,30,0"/>
                             <!-- Editable: type a value or pick one (a model name, say). -->
-                            <TextBox x:Name="PART_EditableTextBox" Visibility="Collapsed" Margin="4,2,28,2" Padding="6,4"
+                            <TextBox x:Name="PART_EditableTextBox" Visibility="Collapsed" Margin="4,2,28,2" Padding="6,4" MinHeight="0"
                                      BorderThickness="0" Background="Transparent" VerticalAlignment="Center"
                                      IsReadOnly="{TemplateBinding IsReadOnly}"/>
                             <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" VerticalOffset="4"
@@ -421,22 +421,96 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         <!-- Text fields: the same rounded thin border as the drop-downs, indigo while typing. -->
-        <Style TargetType="TextBox">
+        <!-- A soft form field: light fill at rest, white with an accent ring when typing; Tag is the placeholder. -->
+        <Style x:Key="Field" TargetType="TextBox">
             <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
             <Setter Property="Foreground" Value="{StaticResource Ink}"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CDD2DE"/>
+            <Setter Property="Background" Value="#F7F8FB"/>
+            <Setter Property="BorderBrush" Value="#E3E6EE"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="CaretBrush" Value="{StaticResource Primary}"/>
             <Setter Property="SelectionBrush" Value="{StaticResource Primary}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
-                                          Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        <Border x:Name="ring" CornerRadius="9" BorderThickness="3" BorderBrush="Transparent" Margin="-3">
+                            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                <Grid>
+                                    <TextBlock x:Name="hint" Text="{TemplateBinding Tag}" Foreground="#A9AFBD" Margin="{TemplateBinding Padding}"
+                                               Padding="2,0,0,0" FontSize="{TemplateBinding FontSize}" FontWeight="Normal" IsHitTestVisible="False"
+                                               Visibility="Collapsed" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <ScrollViewer x:Name="PART_ContentHost"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                </Grid>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsKeyboardFocused" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="b" Property="BorderBrush" Value="#C9CEDB"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="White"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Primary}"/>
+                                <Setter TargetName="ring" Property="BorderBrush" Value="#E4E7FA"/>
+                            </Trigger>
+                            <Trigger Property="BorderThickness" Value="0">
+                                <Setter TargetName="b" Property="BorderBrush" Value="Transparent"/>
+                                <Setter TargetName="b" Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <Setter TargetName="ring" Property="BorderBrush" Value="Transparent"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- A heading you can edit in place: reads as text, shows a field only on hover and while typing. -->
+        <Style x:Key="TitleField" TargetType="TextBox" BasedOn="{StaticResource Field}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <!-- Every other text box: white on cards, as tall as a dropdown. -->
+        <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D5D9E3"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D5D9E3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="CaretBrush" Value="{StaticResource Primary}"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource Primary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="ring" CornerRadius="9" BorderThickness="3" BorderBrush="Transparent" Margin="-3">
+                            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False"/>
+                            </Border>
                         </Border>
                         <ControlTemplate.Triggers>
                             <MultiTrigger>
@@ -444,39 +518,11 @@
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsKeyboardFocused" Value="False"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="b" Property="BorderBrush" Value="#9AA3E8"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="#C9CEDB"/>
                             </MultiTrigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Primary}"/>
-                            </Trigger>
-                            <Trigger Property="BorderThickness" Value="0">
-                                <Setter TargetName="b" Property="BorderBrush" Value="Transparent"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="PasswordBox">
-            <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CDD2DE"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="CaretBrush" Value="{StaticResource Primary}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1" CornerRadius="5">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" Focusable="False"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="BorderBrush" Value="#9AA3E8"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Primary}"/>
+                                <Setter TargetName="ring" Property="BorderBrush" Value="#E4E7FA"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

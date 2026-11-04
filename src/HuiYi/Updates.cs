@@ -53,9 +53,18 @@ public sealed class Updates
                 Status = ready != null ? $"新版本 {ReadyVersion} 已下载，重启后生效" : "已是最新版本";
                 return ready != null;
             }
-            Status = $"正在下载新版本 {info.TargetFullRelease.Version}…";
+            var version = info.TargetFullRelease.Version;
+            Status = $"正在下载新版本 {version}…";
             Changed?.Invoke();
-            await manager.DownloadUpdatesAsync(info);
+            var shown = -1;
+            await manager.DownloadUpdatesAsync(info, percent =>
+            {
+                // Velopack reports often; tell the UI only when the whole percent moves.
+                if (percent == shown) return;
+                shown = percent;
+                Status = $"正在下载新版本 {version}… {percent}%";
+                Changed?.Invoke();
+            });
             ready = info;
             Status = $"新版本 {ReadyVersion} 已下载，重启后生效";
             Log.Debug($"updates: {ReadyVersion} ready");

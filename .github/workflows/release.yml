@@ -1,0 +1,65 @@
+# Pushing a tag like v0.2.0 builds and publishes that version: tests, a self-contained publish, the
+# Velopack installer and update packages (with a delta from the previous release), and a portable zip,
+# all attached to the GitHub release that installed copies check for updates.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Version from the tag
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart("v")
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "tag must look like v1.2.3" }
+          "VERSION=$v" >> $env:GITHUB_ENV
+
+      - name: Test
+        run: dotnet test tests/HuiYi.Tests -c Release
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          dotnet publish src/HuiYi/HuiYi.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishReadyToRun=true -p:DebugType=none -p:Version=$env:VERSION -o publish
+          Copy-Item LICENSE, NOTICE publish
+
+      # Same version as the Velopack package in src/HuiYi/HuiYi.csproj.
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      - name: Previous release, for the delta package
+        continue-on-error: true
+        run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir releases
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
+            --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --outputDir releases
+          New-Item -ItemType Directory -Force portable | Out-Null
+          Compress-Archive -Path publish/* -DestinationPath "portable/HuiYi-$env:VERSION-win-x64.zip" -Force
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          vpk upload github --repoUrl $env:REPO_URL --token $env:GH_TOKEN --outputDir releases `
+            --tag "${{ github.ref_name }}" --releaseName "会译 $env:VERSION" --publish --merge
+          gh release upload "${{ github.ref_name }}" "portable/HuiYi-$env:VERSION-win-x64.zip" --clobber

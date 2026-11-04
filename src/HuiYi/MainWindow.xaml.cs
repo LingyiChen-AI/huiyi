@@ -128,7 +128,7 @@ public partial class MainWindow : Window
         }
     }
 
-    /// 说话人 1、说话人 2…, each with its name: type one to name that voice in this meeting (empty: back
+    /// 发言人 1、发言人 2…, each with its name: type one to name that voice in this meeting (empty: back
     /// to the number). The AI's guesses show as the name until the user changes it.
     private void RenderSpeakers(Session s, bool rebuild)
     {

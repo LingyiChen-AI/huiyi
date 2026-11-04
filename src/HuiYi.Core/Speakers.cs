@@ -283,7 +283,7 @@ public static class SpeakerLabels
     public static int ShownCount(IReadOnlyList<TranscriptLine> lines) => Numbers(lines).Values.Distinct().Count();
 }
 
-/// Asks the AI who 说话人 1, 2… are, from how people address each other. Only text is sent; a guess is a
+/// Asks the AI who 发言人 1, 2… are, from how people address each other. Only text is sent; a guess is a
 /// suggestion the user can change.
 public static class SpeakerNameGuess
 {
@@ -295,21 +295,21 @@ public static class SpeakerNameGuess
         var numbers = SpeakerLabels.Numbers(s.Lines);
         if (numbers.Count == 0) return null;
         var lines = s.Lines.Skip(Math.Max(0, s.Lines.Count - 400)).ToList();
-        var sb = new System.Text.StringBuilder("Meeting transcript. Speakers: 你 = the user; 说话人N = one person on the other side, told apart by voice; 对方 = someone on the other side, not identified.\n");
+        var sb = new System.Text.StringBuilder("Meeting transcript. Speakers: 你 = the user; 发言人N = one person on the other side, told apart by voice; 对方 = someone on the other side, not identified.\n");
         for (var i = 0; i < lines.Count; i++)
         {
             var l = lines[i];
-            var who = l.Speaker == "me" ? "你" : numbers.TryGetValue(l.Id, out var n) ? $"说话人{n}" : "对方";
+            var who = l.Speaker == "me" ? "你" : numbers.TryGetValue(l.Id, out var n) ? $"发言人{n}" : "对方";
             sb.Append($"[L{i + 1} {TranscriptExport.Clock(l.T)} {who}] {l.Src}\n");
         }
         return sb.ToString();
     }
 
     public const string Instruction =
-        "Who are the people labelled 说话人N? Name one only when the transcript makes it clear: they " +
-        "introduce themselves on a line labelled with their own 说话人N; someone addresses them by name just " +
-        "before or after they speak (\"Thanks, George\" right after 说话人1's answer: 说话人1 is George); " +
-        "or others name them as they speak. A name on a 对方 line, or far from any line of 说话人N (an advert, " +
+        "Who are the people labelled 发言人N? Name one only when the transcript makes it clear: they " +
+        "introduce themselves on a line labelled with their own 发言人N; someone addresses them by name just " +
+        "before or after they speak (\"Thanks, George\" right after 发言人1's answer: 发言人1 is George); " +
+        "or others name them as they speak. A name on a 对方 line, or far from any line of 发言人N (an advert, " +
         "a clip, people introducing themselves on another show), is not theirs. Speech recognition writes " +
         "names by ear and often misspells them: for a public figure (an official, an executive, a presenter) " +
         "recognisable from the name and what is said, write the name as the news spells it (\"Jensen Hwang\" " +

@@ -81,9 +81,9 @@ public static class NotesPrompt
         string Line(int i)
         {
             var l = lines[i];
-            // A named voice goes as its name: notes then say "George" rather than 说话人2.
+            // A named voice goes as its name: notes then say "George" rather than 发言人2.
             var who = l.Speaker == "me" ? "你"
-                : numbers.TryGetValue(l.Id, out var n) ? (names.TryGetValue(n, out var nm) ? nm : $"说话人{n}")
+                : numbers.TryGetValue(l.Id, out var n) ? (names.TryGetValue(n, out var nm) ? nm : $"发言人{n}")
                 : numbers.Count == 0 ? "对方" : "未识别";
             return $"[L{i + 1} {TranscriptExport.Clock(l.T)} {who}] {l.Src}";
         }
@@ -108,7 +108,7 @@ public static class NotesPrompt
         if (!final) p.Append($"Current notes (JSON):\n{current}\n\n");
         if (context < from)
             p.Append("Already covered (context only):\n" + string.Join("\n", Enumerable.Range(context, from - context).Select(Line)) + "\n\n");
-        p.Append($"{(final ? "Transcript" : "New lines")} (id, mm:ss, speaker 对方=the other side / 你=me / a name or 说话人N=one person on the other side, told apart by voice and possibly wrong / 未识别=someone on the other side not identified, text). Speech recognition makes mistakes, often in names: correct them from context, and write a public figure's name as the news spells it.\n");
+        p.Append($"{(final ? "Transcript" : "New lines")} (id, mm:ss, speaker 对方=the other side / 你=me / a name or 发言人N=one person on the other side, told apart by voice and possibly wrong / 未识别=someone on the other side not identified, text). Speech recognition makes mistakes, often in names: correct them from context, and write a public figure's name as the news spells it.\n");
         p.Append(string.Join("\n", Enumerable.Range(from, lines.Count - from).Select(Line)));
         if (final && lines.Count > 0)
         {
@@ -127,7 +127,7 @@ public static class NotesPrompt
         }
         p.Append(RulesTemplate
             .Replace("__OWNER__", numbers.Count == 0 ? "\"对方\" or \"你\" or null"
-                : "the person's label from the transcript (a name like \"George\", or \"说话人2\"), \"你\", or null when unclear")
+                : "the person's label from the transcript (a name like \"George\", or \"发言人2\"), \"你\", or null when unclear")
             .Replace("__NEWTOPIC__", final ? "" : "; add at most one new topic per update")
             .Replace("__LANG__", language));
         return p.ToString();

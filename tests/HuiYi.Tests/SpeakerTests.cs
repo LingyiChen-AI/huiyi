@@ -151,8 +151,8 @@ public class SpeakerTests
     {
         var s = Named(null);
         var content = SpeakerNameGuess.Content(s) ?? "";
-        Assert.Contains("[L1 00:00 说话人1] a full line", content);
-        Assert.Contains("[L6 00:05 说话人2] a full line", content);
+        Assert.Contains("[L1 00:00 发言人1] a full line", content);
+        Assert.Contains("[L6 00:05 发言人2] a full line", content);
         Assert.Contains("[L11 00:10 你] a full line", content);
         const string reply = """{"speakers": [{"speaker": 2, "name": " George ", "evidence": "L6"}, {"speaker": 7, "name": "X"}, {"speaker": 1, "name": ""}]}""";
         var g = SpeakerNameGuess.Parse(reply, s);
@@ -164,7 +164,7 @@ public class SpeakerTests
         Assert.Equal([4], SpeakerNameGuess.Parse("""{"speakers": [{"speaker": 1, "name": "Ann", "evidence": "L1"}, {"speaker": 2, "name": "Ann", "evidence": "L6"}]}""", more).Keys.Order().ToArray());
         Assert.Empty(SpeakerNameGuess.Parse("not json", s));
         // One voice on show is worth naming too ("我是小凡…" in a video); no voice on show is not.
-        Assert.Contains("说话人1", SpeakerNameGuess.Content(new Session { Lines = Enumerable.Range(0, 6).Select(i => Line(i, 1)).ToList() }));
+        Assert.Contains("发言人1", SpeakerNameGuess.Content(new Session { Lines = Enumerable.Range(0, 6).Select(i => Line(i, 1)).ToList() }));
         Assert.Null(SpeakerNameGuess.Content(new Session { Lines = [Line(0, 1), Line(1, null)] }));
     }
 
@@ -211,7 +211,7 @@ public class SpeakerTests
     {
         var s = Named(new() { ["4"] = "George" });
         var p = NotesPrompt.Build(new MeetingNotes(), s.Lines, 0, "Simplified Chinese", final: true, SpeakerLabels.Names(s));
-        Assert.Contains("[L1 00:00 说话人1] a full line", p);
+        Assert.Contains("[L1 00:00 发言人1] a full line", p);
         Assert.Contains("[L6 00:05 George] a full line", p);
         Assert.Contains("[L11 00:10 你]", p);
         Assert.Contains("a name like \\\"George\\\"".Replace("\\\"", "\""), p);

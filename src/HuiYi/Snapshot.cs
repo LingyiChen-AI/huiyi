@@ -141,7 +141,10 @@ public static class Snapshot
             dc.DrawRectangle(back, null, new Rect(0, 0, width + 40, height + 40));
             dc.DrawRectangle(new VisualBrush(root), null, new Rect(20, 20, width, height));
         }
-        var bmp = new RenderTargetBitmap(width + 40, height + 40, 96, 96, PixelFormats.Pbgra32);
+        // HUIYI_SNAPSHOT_SCALE=2: sharp captures for a 1080p film or a retina README.
+        var scale = double.TryParse(Environment.GetEnvironmentVariable("HUIYI_SNAPSHOT_SCALE"), out var s) && s > 0 ? s : 1;
+        var bmp = new RenderTargetBitmap((int)Math.Ceiling((width + 40) * scale), (int)Math.Ceiling((height + 40) * scale),
+            96 * scale, 96 * scale, PixelFormats.Pbgra32);
         bmp.Render(visual);
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(bmp));

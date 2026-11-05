@@ -32,4 +32,4 @@ Run the app and check the behaviour, not just the build. Use `huiyi-cli loopback
 
 ## Conventions
 
-Commit messages are English and follow Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `refactor:`, `test:`, `chore:`), one change per commit. Comments say why. Keep `README.md` in step with user-visible changes.
+Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `refactor:`, `test:`, `chore:`) with the subject written entirely in Chinese, never mixed with English: `feat:` / `fix:` subjects become the release notes and the in-app update box, so each says what the user gets in one plain sentence. One change per commit. Comments say why. Keep `README.md` in step with user-visible changes.

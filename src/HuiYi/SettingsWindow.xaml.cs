@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
         VoicesOn.IsChecked = s.SpeakerVoices;
         RedoOn.IsChecked = s.RedoSpeakers;
         Capturable.IsChecked = s.HideFromCaptures;
+        RenderFrom();
 
         Fill(PresetBox, ProviderPreset.All.Select(p => (p.Id, p.Name)).ToArray(), "");
         FillTemplates();
@@ -54,10 +55,12 @@ public partial class SettingsWindow : Window
         {
             // Templates may have changed in the template center.
             if (!TemplateDefaultBox.IsDropDownOpen) FillTemplates();
-            if (TranslateOn.IsChecked == model.Settings.TranslationOn) return;
+            var was = loading;
             loading = true;
             TranslateOn.IsChecked = model.Settings.TranslationOn;
-            loading = false;
+            // The source can also be switched on the waiting panel.
+            RenderFrom();
+            loading = was;
         };
         Activated += (_, _) => { if (!installing) RenderCable(); RenderVoices(); RenderModels(); };
         RenderProviders();
@@ -101,6 +104,7 @@ public partial class SettingsWindow : Window
         s.SpeakMonitor = MonitorOn.IsChecked == true;
         s.SpeakRouteMic = RouteOn.IsChecked == true;
         s.SpeakMicId = TagOf(MicBox) is { Length: > 0 } mic ? mic : null;
+        s.ListenMicId = TagOf(ListenMicBox) is { Length: > 0 } room ? room : null;
         s.FollowMeetingApps = FollowApps.IsChecked == true;
         s.SilenceEnd = Enum.TryParse<MeetingEndWatch.Silence>(TagOf(SilenceBox), out var sil) ? sil : MeetingEndWatch.Silence.Prompt;
         s.SilenceMinutes = int.TryParse(TagOf(SilenceMinBox), out var m) ? m : 10;
@@ -429,10 +433,31 @@ public partial class SettingsWindow : Window
 
     private bool installing;
 
+    private void From_Checked(object sender, RoutedEventArgs e)
+    {
+        if (loading) return;
+        model.SetListenSource(FromMic.IsChecked == true ? ListenSource.Mic : ListenSource.Computer);
+        RenderFrom();
+    }
+
+    private void RenderFrom()
+    {
+        var mic = model.Settings.ListenFrom == ListenSource.Mic;
+        FromPc.IsChecked = !mic;
+        FromMic.IsChecked = mic;
+        ListenMicRow.Visibility = mic ? Visibility.Visible : Visibility.Collapsed;
+        FromHelp.Text = mic
+            ? "线下会议用：大家围着一个麦克风讨论，会译听麦克风里的声音，按声音分出每个人。会议室的全向麦效果最好。"
+            : "线上会议、听视频用：会译听电脑放出来的声音，腾讯会议、飞书、Zoom 等都可以，不用接进会议软件。";
+        if (model.IsListening) FromHelp.Text += "改动从下一场会议开始生效。";
+    }
+
+
     private void FillMics()
     {
         var was = loading;
         loading = true;
+        Fill(ListenMicBox, [("", "自动（系统麦克风）"), .. DefaultDevices.Mics().Select(m => (m.Id, m.Name))], model.Settings.ListenMicId ?? "");
         Fill(MicBox, [("", "自动（系统原来的麦克风）"), .. DefaultDevices.Mics().Select(m => (m.Id, m.Name))], model.Settings.SpeakMicId ?? "");
         loading = was;
     }

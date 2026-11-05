@@ -168,11 +168,32 @@ public sealed class AppModel
     {
         if (IsListening) return true;
         if (!await EnsureEngines()) return false;
-        // Listening to the cable would hear only our own interpreted voice, never the meeting.
-        if (FeedFile == null) DefaultDevices.KeepRealSpeaker();
-        Meeting!.Start(FeedFile != null ? new FileSource(FeedFile) : new LoopbackSource());
+        IAudioSource source;
+        if (FeedFile != null) source = new FileSource(FeedFile);
+        else if (Settings.ListenFrom == ListenSource.Mic) source = new MicSource(ListenMicId);
+        else
+        {
+            // Listening to the cable would hear only our own interpreted voice, never the meeting.
+            DefaultDevices.KeepRealSpeaker();
+            source = new LoopbackSource();
+        }
+        Meeting!.Start(source);
         StateChanged?.Invoke();
         return true;
+    }
+
+    /// The room's microphone: the one chosen, else my real one (never the cable, which is the
+    /// system default while interpreting is on).
+    public string? ListenMicId() =>
+        Settings.ListenMicId is { } chosen && DefaultDevices.Active(chosen) ? chosen : Routing.MyMicId();
+
+    /// Switched from the waiting panel or settings; a meeting already going keeps its source.
+    public void SetListenSource(ListenSource from)
+    {
+        if (Settings.ListenFrom == from) return;
+        Settings.ListenFrom = from;
+        Settings.Save();
+        StateChanged?.Invoke();
     }
 
     public void StopListening()

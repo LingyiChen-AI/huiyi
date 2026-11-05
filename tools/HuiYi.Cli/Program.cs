@@ -46,6 +46,7 @@ switch (cmd)
     }
     case "listen":
     case "loopback":
+    case "mic":
     {
         var target = args.Length > 2 ? args[2] : "auto";
         var settings = new AppSettings { Target = target };
@@ -86,6 +87,22 @@ switch (cmd)
             fs.Finished += () => done.TrySetResult();
             source = fs;
         }
+        else if (cmd == "mic")
+        {
+            // The microphone path without a microphone: the file goes into CABLE Input and is
+            // heard on CABLE Output, a capture device like any USB conference mic.
+            var cableIn = VirtualCable.Input() ?? throw new InvalidOperationException("VB-CABLE is not installed");
+            var cableOut = VirtualCable.Output()!;
+            source = new MicSource(cableOut.ID);
+            var wasapi = new NAudio.Wave.WasapiOut(cableIn, NAudio.CoreAudioApi.AudioClientShareMode.Shared, true, 100);
+            wasapi.Init(new MediaFoundationReader(args[1]));
+            wasapi.PlaybackStopped += (_, _) => Task.Delay(2500).ContinueWith(_ => done.TrySetResult());
+            meeting.Start(source);
+            wasapi.Play();
+            await done.Task;
+            wasapi.Dispose();
+            source = null!;
+        }
         else
         {
             source = new LoopbackSource();
@@ -94,16 +111,19 @@ switch (cmd)
             player.Init(reader);
             player.PlaybackStopped += (_, _) => Task.Delay(2500).ContinueWith(_ => done.TrySetResult());
         }
-        meeting.Start(source);
-        player?.Play();
-        await done.Task;
+        if (source != null)
+        {
+            meeting.Start(source);
+            player?.Play();
+            await done.Task;
+        }
         // Read faster than real time, the decoder is still behind: wait until it stops moving.
         double fed;
         do
         {
             fed = listen.FedSeconds;
             await Task.Delay(1500);
-        } while (listen.FedSeconds > fed);
+        } while (cmd == "listen" && listen.FedSeconds > fed);
         var id = meeting.SessionId!;
         // Let the last translations land.
         await Task.Delay(3000);

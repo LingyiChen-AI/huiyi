@@ -160,28 +160,47 @@ public sealed class LoopbackSource : IAudioSource
     }
 }
 
-/// The microphone (default capture device, or one chosen by endpoint id).
-public sealed class MicSource(string? deviceId = null) : IAudioSource
+/// The microphone (default capture device, or one chosen by endpoint id). The device is picked
+/// again whenever capture drops (a USB conference mic unplugged and back), like LoopbackSource.
+public sealed class MicSource : IAudioSource
 {
     public event Action<float[]>? Samples;
     public event Action<string>? Failed;
+    private readonly Func<string?> pick;
     private WasapiCapture? capture;
+    private volatile bool running;
+
+    public MicSource(string? deviceId = null) : this(() => deviceId) { }
+    public MicSource(Func<string?> pick) => this.pick = pick;
 
     public void Start()
+    {
+        running = true;
+        Open();
+    }
+
+    private void Open()
     {
         try
         {
             var en = new MMDeviceEnumerator();
-            var device = deviceId == null ? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications)
-                : en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).FirstOrDefault(d => d.ID == deviceId)
-                  ?? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
+            var id = pick();
+            var device = (id == null ? null
+                : en.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).FirstOrDefault(d => d.ID == id))
+                ?? en.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
             capture = new WasapiCapture(device, true, 20);
             var format = capture.WaveFormat;
             var resampler = new Resampler(format.SampleRate);
+            Log.Debug($"mic: {format.SampleRate} Hz {format.Channels} ch on {device.FriendlyName}");
             capture.DataAvailable += (_, e) =>
             {
                 if (e.BytesRecorded == 0) return;
                 Samples?.Invoke(resampler.Process(Resampler.ToMonoFloat(e.Buffer, e.BytesRecorded, format)));
+            };
+            capture.RecordingStopped += (_, e) =>
+            {
+                if (e.Exception != null) Log.Debug($"mic: stopped {e.Exception.Message}");
+                if (running) Task.Delay(1000).ContinueWith(_ => { if (running) Reopen(); });
             };
             capture.StartRecording();
         }
@@ -192,8 +211,15 @@ public sealed class MicSource(string? deviceId = null) : IAudioSource
         }
     }
 
+    private void Reopen()
+    {
+        try { capture?.Dispose(); } catch { }
+        Open();
+    }
+
     public void Stop()
     {
+        running = false;
         try { capture?.StopRecording(); } catch { }
     }
 

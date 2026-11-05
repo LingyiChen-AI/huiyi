@@ -23,7 +23,7 @@ if ($LASTEXITCODE -ne 0) { git -C $root checkout -- $csproj; throw "tests failed
 
 if (git -C $root status --porcelain) {
     git -C $root add $csproj
-    git -C $root commit -q -m "chore: release $Version"
+    git -C $root commit -q -m "chore: 发布 $Version"
 }
 git -C $root tag "v$Version"
 git -C $root push -q origin HEAD "v$Version"

@@ -230,6 +230,99 @@ public sealed class MicSource : IAudioSource
     }
 }
 
+/// What the PC plays and the microphone, heard as one stream, the way a meeting app records a
+/// call: the other side (from the PC) and this end (me, or a room round one mic) both land in the
+/// transcript. The microphone's steady clock drives the output; the PC's sound, which WASAPI only
+/// sends while something plays, is queued and laid over it. With no working microphone the PC's
+/// sound still comes through, a little later.
+public sealed class MixSource(IAudioSource pc, IAudioSource? mic, Func<bool>? muteMic = null) : IAudioSource
+{
+    public event Action<float[]>? Samples;
+    public event Action<string>? Failed;
+    private readonly object gate = new();
+    private readonly Queue<float> fromPc = new();
+    private int duck;
+
+    /// The PC's sound waits at most this long for microphone samples to lie over (0.3 s).
+    private const int MaxWait = 4800;
+    /// While the PC plays a voice, the microphone also hears it from the speakers a moment later:
+    /// it is turned down then (and for half a second after), so the other side is not heard twice.
+    private const float Loud = 0.01f, DuckGain = 0.15f;
+    private const int DuckTail = 8000;
+
+    public void Start()
+    {
+        pc.Samples += OnPc;
+        pc.Failed += OnFailed;
+        pc.Start();
+        if (mic == null) return;
+        mic.Samples += OnMic;
+        // A missing or broken microphone must not stop the meeting: the PC's side carries on.
+        mic.Failed += m => Log.Debug($"mix: microphone left out ({m})");
+        mic.Start();
+    }
+
+    private void OnFailed(string message) => Failed?.Invoke(message);
+
+    private void OnPc(float[] chunk)
+    {
+        lock (gate)
+        {
+            if (mic == null)
+            {
+                Samples?.Invoke(chunk);
+                return;
+            }
+            if (Rms(chunk) > Loud) duck = DuckTail;
+            foreach (var x in chunk) fromPc.Enqueue(x);
+            // No microphone samples coming (it dropped, or is reopening): let the PC's sound out alone.
+            if (fromPc.Count > MaxWait)
+            {
+                var alone = new float[fromPc.Count - MaxWait];
+                for (var i = 0; i < alone.Length; i++) alone[i] = fromPc.Dequeue();
+                Samples?.Invoke(alone);
+            }
+        }
+    }
+
+    private void OnMic(float[] chunk)
+    {
+        lock (gate)
+        {
+            var gain = muteMic?.Invoke() == true ? 0f : 1f;
+            var output = new float[chunk.Length];
+            for (var i = 0; i < chunk.Length; i++)
+            {
+                var g = duck > 0 ? gain * DuckGain : gain;
+                if (duck > 0) duck--;
+                var p = fromPc.Count > 0 ? fromPc.Dequeue() : 0f;
+                output[i] = Math.Clamp(chunk[i] * g + p, -1f, 1f);
+            }
+            Samples?.Invoke(output);
+        }
+    }
+
+    private static float Rms(float[] x)
+    {
+        if (x.Length == 0) return 0;
+        double sum = 0;
+        foreach (var v in x) sum += v * v;
+        return (float)Math.Sqrt(sum / x.Length);
+    }
+
+    public void Stop()
+    {
+        pc.Stop();
+        mic?.Stop();
+    }
+
+    public void Dispose()
+    {
+        pc.Dispose();
+        mic?.Dispose();
+    }
+}
+
 /// An audio file played through the pipeline at real speed (tests and the self-check), or as fast
 /// as possible.
 public sealed class FileSource(string path, bool realTime = true) : IAudioSource

@@ -164,13 +164,7 @@
                             </Border>
                         </Grid>
                         <TextBlock Text="准备好了就开始" FontSize="18" FontWeight="SemiBold" Foreground="#F4F5FA" HorizontalAlignment="Center" Margin="0,12,0,0"/>
-                        <TextBlock x:Name="ReadyText" FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,8,0,16" LineHeight="20"/>
-                        <Border Background="#252939" CornerRadius="5" Padding="2" HorizontalAlignment="Center" Margin="0,0,0,20">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="ReadyPc" Content="电脑声音" GroupName="from" Style="{StaticResource SegNight}" Checked="From_Checked"/>
-                                <RadioButton x:Name="ReadyMic" Content="麦克风" GroupName="from" Style="{StaticResource SegNight}" Checked="From_Checked"/>
-                            </StackPanel>
-                        </Border>
+                        <TextBlock x:Name="ReadyText" FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,8,0,22" LineHeight="20"/>
                         <Button Click="Start_Click" HorizontalAlignment="Center" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">

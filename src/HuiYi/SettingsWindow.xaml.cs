@@ -58,8 +58,6 @@ public partial class SettingsWindow : Window
             var was = loading;
             loading = true;
             TranslateOn.IsChecked = model.Settings.TranslationOn;
-            // The source can also be switched on the waiting panel.
-            RenderFrom();
             loading = was;
         };
         Activated += (_, _) => { if (!installing) RenderCable(); RenderVoices(); RenderModels(); };
@@ -433,22 +431,22 @@ public partial class SettingsWindow : Window
 
     private bool installing;
 
-    private void From_Checked(object sender, RoutedEventArgs e)
+    private void ListenMic_Changed(object sender, RoutedEventArgs e)
     {
         if (loading) return;
-        model.SetListenSource(FromMic.IsChecked == true ? ListenSource.Mic : ListenSource.Computer);
+        model.Settings.ListenMic = ListenMicOn.IsChecked == true;
+        model.SaveSettings();
         RenderFrom();
     }
 
     private void RenderFrom()
     {
-        var mic = model.Settings.ListenFrom == ListenSource.Mic;
-        FromPc.IsChecked = !mic;
-        FromMic.IsChecked = mic;
+        var mic = model.Settings.ListenMic;
+        ListenMicOn.IsChecked = mic;
         ListenMicRow.Visibility = mic ? Visibility.Visible : Visibility.Collapsed;
         FromHelp.Text = mic
-            ? "线下会议用：大家围着一个麦克风讨论，会译听麦克风里的声音，按声音分出每个人。会议室的全向麦效果最好。"
-            : "线上会议、听视频用：会译听电脑放出来的声音，腾讯会议、飞书、Zoom 等都可以，不用接进会议软件。";
+            ? "电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）一起记，线上线下的会都不漏。用音箱外放时，对方说话期间麦克风会自动压低，同一句不会记两遍。"
+            : "只听电脑放出来的声音，你自己和身边的人说的话不会记下来。";
         if (model.IsListening) FromHelp.Text += "改动从下一场会议开始生效。";
     }
 

@@ -16,13 +16,8 @@
                         <StackPanel>
                             <TextBlock Text="收听" Style="{StaticResource Overline}"/>
                             <DockPanel Style="{StaticResource Row}">
-                                <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton x:Name="FromPc" Content="电脑声音" GroupName="from" Style="{StaticResource Seg}" Checked="From_Checked"/>
-                                        <RadioButton x:Name="FromMic" Content="麦克风" GroupName="from" Style="{StaticResource Seg}" Checked="From_Checked"/>
-                                    </StackPanel>
-                                </Border>
-                                <TextBlock Text="听哪里的声音" VerticalAlignment="Center"/>
+                                <CheckBox x:Name="ListenMicOn" DockPanel.Dock="Right" Style="{StaticResource Switch}" Checked="ListenMic_Changed" Unchecked="ListenMic_Changed"/>
+                                <TextBlock Text="同时收听麦克风" VerticalAlignment="Center"/>
                             </DockPanel>
                             <DockPanel x:Name="ListenMicRow" Style="{StaticResource Row}">
                                 <ComboBox x:Name="ListenMicBox" DockPanel.Dock="Right" MinWidth="220" MaxWidth="300" SelectionChanged="Changed"/>

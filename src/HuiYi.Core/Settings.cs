@@ -4,7 +4,6 @@ namespace HuiYi;
 
 public enum DisplayMode { Notes, Subtitles }
 public enum SpeakKey { RightCtrl, RightAlt }
-public enum ListenSource { Computer, Mic }
 
 /// Every setting, saved as %APPDATA%\HuiYi\settings.json. Never holds an API key.
 public sealed class AppSettings
@@ -19,10 +18,10 @@ public sealed class AppSettings
     /// "auto" follows the system languages; otherwise a target code ("zh-CN", "en"…).
     public string Target { get; set; } = "auto";
     public DisplayMode Display { get; set; } = DisplayMode.Notes;
-    /// Where the meeting is heard: what the PC plays (online meetings, videos), or a microphone
-    /// (people in one room round a conference mic).
-    public ListenSource ListenFrom { get; set; } = ListenSource.Computer;
-    /// The microphone listened to with ListenSource.Mic (an endpoint id); null: the system's own.
+    /// Listen to the microphone too, beside what the PC plays: my own words, or a room round one
+    /// mic. On by default, as a meeting app records both ends.
+    public bool ListenMic { get; set; } = true;
+    /// The microphone listened to (an endpoint id); null: my real one, never the virtual cable.
     public string? ListenMicId { get; set; }
     /// Keep the live panel and subtitles out of screenshots, recordings and screen shares (with a
     /// badge). Off by default: people screenshot the panel. (Replaces NotesCapturable, whose saved

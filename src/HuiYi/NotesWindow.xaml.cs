@@ -98,27 +98,10 @@ public partial class NotesWindow : Window
         if (first) PlaceTopRight();
     }
 
-    private bool renderingFrom;
-
-    /// Online meeting or a room round one microphone: chosen right before starting.
-    private void RenderFrom()
-    {
-        var mic = model.Settings.ListenFrom == ListenSource.Mic;
-        renderingFrom = true;
-        ReadyPc.IsChecked = !mic;
-        ReadyMic.IsChecked = mic;
-        renderingFrom = false;
-        ReadyText.Text = mic
-            ? "点「开始会议」后，会译开始收听麦克风，适合大家围着一个麦克风开会。"
+    private void RenderFrom() =>
+        ReadyText.Text = model.Settings.ListenMic
+            ? "点「开始会议」后，会译同时收听电脑里的声音和你的麦克风，实时出字幕、整理纪要。"
             : "点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。";
-    }
-
-    private void From_Checked(object sender, RoutedEventArgs e)
-    {
-        if (renderingFrom || ReadyText == null) return;
-        model.SetListenSource(ReadyMic.IsChecked == true ? ListenSource.Mic : ListenSource.Computer);
-        RenderFrom();
-    }
 
     private async void Start_Click(object sender, RoutedEventArgs e)
     {

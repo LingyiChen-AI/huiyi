@@ -47,6 +47,7 @@ switch (cmd)
     case "listen":
     case "loopback":
     case "mic":
+    case "both":
     {
         var target = args.Length > 2 ? args[2] : "auto";
         var settings = new AppSettings { Target = target };
@@ -86,6 +87,33 @@ switch (cmd)
             var fs = new FileSource(args[1], realTime: false);
             fs.Finished += () => done.TrySetResult();
             source = fs;
+        }
+        else if (cmd == "both")
+        {
+            // both <pc-audio> <mic-audio>: the app's real source, the PC and a microphone mixed. The
+            // first file plays on the speakers (the other side), then the second goes into the
+            // virtual cable, heard as a microphone (me), each starting while the other still plays.
+            var cableIn = VirtualCable.Input() ?? throw new InvalidOperationException("VB-CABLE is not installed");
+            source = new MixSource(new LoopbackSource(), new MicSource(VirtualCable.Output()!.ID));
+            var speaker = new WaveOutEvent();
+            speaker.Init(new MediaFoundationReader(args[1]));
+            var mine = new NAudio.Wave.WasapiOut(cableIn, NAudio.CoreAudioApi.AudioClientShareMode.Shared, true, 100);
+            var mineReader = new MediaFoundationReader(args[2]);
+            mine.Init(mineReader);
+            var left = 2;
+            void Ended() { if (Interlocked.Decrement(ref left) == 0) Task.Delay(2500).ContinueWith(_ => done.TrySetResult()); }
+            speaker.PlaybackStopped += (_, _) => Ended();
+            mine.PlaybackStopped += (_, _) => Ended();
+            meeting.Start(source);
+            speaker.Play();
+            // Mine starts 3 s before the speaker's file ends: a reply that overlaps a little.
+            var pcLength = new MediaFoundationReader(args[1]).TotalTime;
+            await Task.Delay(pcLength - TimeSpan.FromSeconds(3));
+            mine.Play();
+            await done.Task;
+            speaker.Dispose();
+            mine.Dispose();
+            source = null!;
         }
         else if (cmd == "mic")
         {

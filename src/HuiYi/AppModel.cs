@@ -170,12 +170,14 @@ public sealed class AppModel
         if (!await EnsureEngines()) return false;
         IAudioSource source;
         if (FeedFile != null) source = new FileSource(FeedFile);
-        else if (Settings.ListenFrom == ListenSource.Mic) source = new MicSource(ListenMicId);
         else
         {
             // Listening to the cable would hear only our own interpreted voice, never the meeting.
             DefaultDevices.KeepRealSpeaker();
-            source = new LoopbackSource();
+            // Both ends of the meeting. While I hold the interpreting key my words become a 我 line
+            // of their own, so the microphone is muted for them here.
+            var mic = Settings.ListenMic && DefaultDevices.Mics().Count > 0 ? new MicSource(ListenMicId) : null;
+            source = new MixSource(new LoopbackSource(), mic, () => Speak?.Status == SpeakEngine.State.Recording);
         }
         Meeting!.Start(source);
         StateChanged?.Invoke();
@@ -186,15 +188,6 @@ public sealed class AppModel
     /// system default while interpreting is on).
     public string? ListenMicId() =>
         Settings.ListenMicId is { } chosen && DefaultDevices.Active(chosen) ? chosen : Routing.MyMicId();
-
-    /// Switched from the waiting panel or settings; a meeting already going keeps its source.
-    public void SetListenSource(ListenSource from)
-    {
-        if (Settings.ListenFrom == from) return;
-        Settings.ListenFrom = from;
-        Settings.Save();
-        StateChanged?.Invoke();
-    }
 
     public void StopListening()
     {

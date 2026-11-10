@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -16,7 +17,7 @@ public sealed class LineVM : INotifyPropertyChanged
     public bool IsMe { get; }
     private string src = "";
     private string? dst;
-    private string who = "发言人";
+    private string who = L.T("发言人");
     private Brush whoBrush = Theme.Grey2;
 
     /// The voice behind the line and its speaker number, once it has one: then the name can be changed.
@@ -32,6 +33,7 @@ public sealed class LineVM : INotifyPropertyChanged
         }
     }
     public bool Renamable => !IsMe && Voice != null && number != null;
+    public bool HasName { get; private set; }
 
     public string Src { get => src; set => Set(ref src, value); }
     public string Who { get => who; set => Set(ref who, value); }
@@ -57,11 +59,14 @@ public sealed class LineVM : INotifyPropertyChanged
         dst = l.Dst;
     }
 
-    public void Update(TranscriptLine l, string label, int? number, bool showDst = true)
+    public void Update(TranscriptLine l, string label, int? number, bool showDst = true, bool hasName = false)
     {
         Src = l.Src;
         Dst = showDst ? l.Dst : null;
-        Who = label;
+        // Speaker names and transcript text are user content. Only generated labels follow the UI.
+        HasName = hasName;
+        Who = IsMe ? L.T("我") : hasName ? label : number is { } speaker
+            ? L.F("发言人 {0}", speaker) : L.T("发言人");
         Voice = l.Voice;
         Number = number;
         WhoBrush = IsMe ? Theme.Primary : number is { } n ? Theme.Speaker(n) : Theme.Grey2;
@@ -91,7 +96,8 @@ public sealed class LineVM : INotifyPropertyChanged
                 vm = new LineVM(l, s.StartedAt);
                 list.Add(vm);
             }
-            vm.Update(l, SpeakerLabels.Who(l, numbers, names), numbers.TryGetValue(l.Id, out var n) ? n : null, showDst);
+            var number = numbers.TryGetValue(l.Id, out var n) ? n : (int?)null;
+            vm.Update(l, SpeakerLabels.Who(l, numbers, names), number, showDst, number is { } speaker && names.ContainsKey(speaker));
         }
     }
 }

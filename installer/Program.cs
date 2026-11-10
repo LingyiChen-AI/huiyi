@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -15,6 +16,7 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        L.SetLanguage("auto");
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new SetupForm());
@@ -42,7 +44,7 @@ internal sealed class SetupForm : Form
     public SetupForm()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        Text = "安装 会译";
+        Text = L.T("安装 会译");
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Font = new Font("Microsoft YaHei UI", 9.5f);
         BackColor = Color.White;
@@ -50,7 +52,7 @@ internal sealed class SetupForm : Form
         MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 330);
+        ClientSize = new Size(560, 374);
 
         var logo = new PictureBox
         {
@@ -59,36 +61,36 @@ internal sealed class SetupForm : Form
         };
         var title = new Label
         {
-            Text = "安装 会译", Font = new Font(Font.FontFamily, 16f, FontStyle.Bold), ForeColor = Ink,
+            Text = L.T("安装 会译"), Font = new Font(Font.FontFamily, 16f, FontStyle.Bold), ForeColor = Ink,
             AutoSize = true, Location = new Point(102, 28),
         };
         var versionLabel = new Label
         {
-            Text = $"版本 {version.Major}.{version.Minor}.{version.Build}", ForeColor = Grey, AutoSize = true,
-            Location = new Point(206, 38),
+            Text = L.F("版本 {0}.{1}.{2}", version.Major, version.Minor, version.Build), ForeColor = Grey, AutoSize = true,
+            Location = new Point(104 + TextRenderer.MeasureText(title.Text, title.Font).Width + 12, 38),
         };
         var subtitle = new Label
         {
-            Text = "Windows 上的 AI 会议助手：实时字幕与翻译、AI 纪要、同声传译",
-            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(104, 66, 430, 24),
+            Text = L.T("Windows 上的 AI 会议助手：实时字幕与翻译、AI 纪要、同声传译"),
+            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(104, 66, 424, 44),
         };
 
-        var where = new Label { Text = "安装位置", ForeColor = Ink, Font = new Font(Font, FontStyle.Bold), AutoSize = true, Location = new Point(32, 118) };
+        var where = new Label { Text = L.T("安装位置"), ForeColor = Ink, Font = new Font(Font, FontStyle.Bold), AutoSize = true, Location = new Point(32, 118) };
         existing = InstalledAt();
         pathBox = new TextBox
         {
             Text = existing ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), PackId),
             Bounds = new Rectangle(32, 144, 400, 28),
         };
-        browseBtn = FlatButton("浏览…", false);
+        browseBtn = FlatButton(L.T("浏览…"), false);
         browseBtn.Bounds = new Rectangle(442, 142, 86, 30);
         browseBtn.Click += (_, _) => Browse();
         var help = new Label
         {
             Text = existing != null
-                ? "已经安装在这里，将覆盖安装为这个版本。要换位置，请先在 Windows「设置 › 应用」里卸载会译。"
-                : "程序约 300 MB；首次启动还会下载约 260 MB 的识别模型。装在当前用户下，不需要管理员权限，之后会自动更新。",
-            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 180, 496, 44),
+                ? L.T("已经安装在这里，将覆盖安装为这个版本。要换位置，请先在 Windows「设置 › 应用」里卸载会译。")
+                : L.T("程序约 300 MB；首次启动还会下载约 260 MB 的识别模型。装在当前用户下，不需要管理员权限，之后会自动更新。"),
+            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 180, 496, 64),
         };
         if (existing != null)
         {
@@ -96,14 +98,14 @@ internal sealed class SetupForm : Form
             browseBtn.Enabled = false;
         }
 
-        progress = new ProgressBar { Style = ProgressBarStyle.Marquee, Bounds = new Rectangle(32, 236, 496, 6), Visible = false };
-        statusLabel = new Label { ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 248, 496, 22) };
+        progress = new ProgressBar { Style = ProgressBarStyle.Marquee, Bounds = new Rectangle(32, 252, 496, 6), Visible = false };
+        statusLabel = new Label { ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 264, 496, 42) };
 
-        installBtn = FlatButton(existing != null ? "更新" : "安装", true);
-        installBtn.Bounds = new Rectangle(428, 280, 100, 34);
+        installBtn = FlatButton(existing != null ? L.T("更新") : L.T("安装"), true);
+        installBtn.Bounds = new Rectangle(428, 322, 100, 34);
         installBtn.Click += async (_, _) => await Install();
-        cancelBtn = FlatButton("取消", false);
-        cancelBtn.Bounds = new Rectangle(318, 280, 100, 34);
+        cancelBtn = FlatButton(L.T("取消"), false);
+        cancelBtn.Bounds = new Rectangle(318, 322, 100, 34);
         cancelBtn.Click += (_, _) => Close();
         AcceptButton = installBtn;
         // Open with the install button focused, not the path selected.
@@ -140,7 +142,7 @@ internal sealed class SetupForm : Form
 
     private void Browse()
     {
-        using var dialog = new FolderBrowserDialog { Description = "选择安装会译的文件夹", ShowNewFolderButton = true };
+        using var dialog = new FolderBrowserDialog { Description = L.T("选择安装会译的文件夹"), ShowNewFolderButton = true };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         var chosen = dialog.SelectedPath;
         // A folder with other things in it gets its own 会译 subfolder, so uninstalling never touches them.
@@ -171,13 +173,13 @@ internal sealed class SetupForm : Form
         var dir = pathBox.Text.Trim();
         if (dir.Length == 0 || !Path.IsPathRooted(dir))
         {
-            MessageBox.Show(this, "请选择一个完整的文件夹路径，例如 D:\\Apps\\HuiYi。", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, L.T("请选择一个完整的文件夹路径，例如 D:\\Apps\\HuiYi。"), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
         dir = Path.GetFullPath(dir);
         if (!Writable(dir))
         {
-            MessageBox.Show(this, "没有权限写入这个文件夹（例如 Program Files 需要管理员权限，以后自动更新也会写不进去）。\n\n请换一个位置，例如 D:\\Apps\\HuiYi。",
+            MessageBox.Show(this, L.T("没有权限写入这个文件夹（例如 Program Files 需要管理员权限，以后自动更新也会写不进去）。\n\n请换一个位置，例如 D:\\Apps\\HuiYi。"),
                 Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
@@ -194,18 +196,18 @@ internal sealed class SetupForm : Form
 
         installBtn.Enabled = cancelBtn.Enabled = browseBtn.Enabled = pathBox.Enabled = false;
         progress.Visible = true;
-        statusLabel.Text = "正在安装，大约需要半分钟…";
+        statusLabel.Text = L.T("正在安装，大约需要半分钟…");
         var (ok, error) = await Task.Run(() => RunVelopack(dir));
         progress.Visible = false;
         if (!ok)
         {
             statusLabel.Text = "";
-            MessageBox.Show(this, "安装没有成功：" + error, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, L.T("安装没有成功：") + error, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
             installBtn.Enabled = cancelBtn.Enabled = true;
             browseBtn.Enabled = pathBox.Enabled = existing == null;
             return;
         }
-        statusLabel.Text = "安装完成，正在打开会译…";
+        statusLabel.Text = L.T("安装完成，正在打开会译…");
         var app = Path.Combine(dir, "current", "HuiYi.exe");
         try { if (File.Exists(app)) Process.Start(new ProcessStartInfo(app) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(app) }); }
         catch { }
@@ -219,7 +221,7 @@ internal sealed class SetupForm : Form
         try
         {
             using var payload = Assembly.GetExecutingAssembly().GetManifestResourceStream("VelopackSetup.exe");
-            if (payload == null) return (false, "安装包不完整（缺少程序文件），请重新下载。");
+            if (payload == null) return (false, L.T("安装包不完整（缺少程序文件），请重新下载。"));
             Directory.CreateDirectory(temp);
             var setup = Path.Combine(temp, "Setup.exe");
             using (var file = File.Create(setup)) payload.CopyTo(file);
@@ -231,7 +233,7 @@ internal sealed class SetupForm : Form
             p.WaitForExit();
             if (p.ExitCode == 0 && File.Exists(Path.Combine(dir, "Update.exe"))) return (true, null);
             var tail = File.Exists(log) ? string.Join("\n", File.ReadAllLines(log).Reverse().Take(4).Reverse()) : "";
-            return (false, $"安装程序返回 {p.ExitCode}。{tail}");
+            return (false, L.F("安装程序返回 {0}。{1}", p.ExitCode, tail));
         }
         catch (Exception e)
         {

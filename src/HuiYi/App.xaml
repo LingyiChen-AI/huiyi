@@ -1,6 +1,7 @@
 <Application x:Class="HuiYi.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:HuiYi.App"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <!-- 会译 palette: cool slate, one indigo for actions and selection, green for "on air". -->

@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Text;
 
 namespace HuiYi;
@@ -73,7 +74,7 @@ public static class Languages
         Target.FirstOrDefault(l => l.Code == code)?.Name ?? Source.FirstOrDefault(l => l.Code == code)?.Name ?? code;
 
     /// The language's name inside Chinese UI copy ("系统里没有英语语音").
-    public static string ChineseName(string code) => code switch
+    public static string ChineseName(string code) => L.T(code switch
     {
         "zh-CN" => "简体中文",
         "zh-TW" => "繁体中文",
@@ -86,7 +87,7 @@ public static class Languages
         "de" => "德语",
         "pt" => "葡萄牙语",
         _ => code,
-    };
+    });
 
     /// CJK text is joined without spaces.
     public static string Joiner(string code) => code.StartsWith("zh") || code is "ja" or "yue" ? "" : " ";

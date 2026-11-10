@@ -1,0 +1,1812 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="&#10;识别成 " xml:space="preserve">
+    <value>
+識別成 </value>
+  </data>
+  <data name=" · 正在记录" xml:space="preserve">
+    <value> · 正在記錄</value>
+  </data>
+  <data name=" 副本" xml:space="preserve">
+    <value> 副本</value>
+  </data>
+  <data name="15 个内置模板：项目周会、站会、需求评审、复盘、客户拜访、面试……也可以自己做。" xml:space="preserve">
+    <value>15 個內置模板：項目周會、站會、需求評審、復盤、客戶拜訪、面試……也可以自己做。</value>
+  </data>
+  <data name="AI 在这里写什么（一句话）" xml:space="preserve">
+    <value>AI 在這里寫什么（一句話）</value>
+  </data>
+  <data name="AI 服务" xml:space="preserve">
+    <value>AI 服務</value>
+  </data>
+  <data name="AI 服务的 key 不可用" xml:space="preserve">
+    <value>AI 服務的 key 不可用</value>
+  </data>
+  <data name="AI 根据「{0}」猜的名字，可以改" xml:space="preserve">
+    <value>AI 根據「{0}」猜的名字，可以改</value>
+  </data>
+  <data name="AI 正在通读整场会议…" xml:space="preserve">
+    <value>AI 正在通讀整場會議…</value>
+  </data>
+  <data name="Base URL 不对，应该像 https://api.example.com/v1" xml:space="preserve">
+    <value>Base URL 不對，應該像 https://api.example.com/v1</value>
+  </data>
+  <data name="Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译" xml:space="preserve">
+    <value>Google 翻譯暫時被限流，字幕先只顯示原文。在「設置 › AI 服務」接入一個大模型即可繼續翻譯</value>
+  </data>
+  <data name="Google 翻译暂时被限流，整句译文改由 {0} 提供" xml:space="preserve">
+    <value>Google 翻譯暫時被限流，整句譯文改由 {0} 提供</value>
+  </data>
+  <data name="Kimi（月之暗面）" xml:space="preserve">
+    <value>Kimi（月之暗面）</value>
+  </data>
+  <data name="Markdown|*.md|文本|*.txt" xml:space="preserve">
+    <value>Markdown|*.md|文本|*.txt</value>
+  </data>
+  <data name="UCloud 模型服务（聚合）" xml:space="preserve">
+    <value>UCloud 模型服務（聚合）</value>
+  </data>
+  <data name="Windows 上的 AI 会议助手：实时字幕与翻译、AI 纪要、同声传译" xml:space="preserve">
+    <value>Windows 上的 AI 會議助手：實時字幕與翻譯、AI 紀要、同聲傳譯</value>
+  </data>
+  <data name="Windows 更新有时较慢，可能要几分钟；可以先关掉这个窗口，装好后重新打开设置就能选声音。" xml:space="preserve">
+    <value>Windows 更新有時較慢，可能要幾分鐘；可以先關掉這個窗口，裝好后重新打開設置就能選聲音。</value>
+  </data>
+  <data name="key 不对或没有权限，请检查" xml:space="preserve">
+    <value>key 不對或沒有權限，請檢查</value>
+  </data>
+  <data name="key 加密保存在这台电脑上，不会出现在日志和导出文件里。" xml:space="preserve">
+    <value>key 加密保存在這臺電腦上，不會出現在日志和導出文件里。</value>
+  </data>
+  <data name="{0:HH:mm} · {1} · {2} 句" xml:space="preserve">
+    <value>{0:HH:mm} · {1} · {2} 句</value>
+  </data>
+  <data name="{0:yyyy年M月d日 HH:mm} · 时长 {1} · {2} 句{3}" xml:space="preserve">
+    <value>{0:yyyy年M月d日 HH:mm} · 時長 {1} · {2} 句{3}</value>
+  </data>
+  <data name="{0} · 会议记录" xml:space="preserve">
+    <value>{0} · 會議記錄</value>
+  </data>
+  <data name="{0} · 单击开始收听" xml:space="preserve">
+    <value>{0} · 單擊開始收聽</value>
+  </data>
+  <data name="{0} · 单击打开面板" xml:space="preserve">
+    <value>{0} · 單擊打開面板</value>
+  </data>
+  <data name="{0} · 开始使用" xml:space="preserve">
+    <value>{0} · 開始使用</value>
+  </data>
+  <data name="{0} · 收听中（单击打开面板，右键结束会议）" xml:space="preserve">
+    <value>{0} · 收聽中（單擊打開面板，右鍵結束會議）</value>
+  </data>
+  <data name="{0} · 模板中心" xml:space="preserve">
+    <value>{0} · 模板中心</value>
+  </data>
+  <data name="{0} · 正在说" xml:space="preserve">
+    <value>{0} · 正在說</value>
+  </data>
+  <data name="{0} · 设置" xml:space="preserve">
+    <value>{0} · 設置</value>
+  </data>
+  <data name="{0} 个议题" xml:space="preserve">
+    <value>{0} 個議題</value>
+  </data>
+  <data name="{0} 个部分" xml:space="preserve">
+    <value>{0} 個部分</value>
+  </data>
+  <data name="{0} 分钟" xml:space="preserve">
+    <value>{0} 分鐘</value>
+  </data>
+  <data name="{0} 年 {1} 月" xml:space="preserve">
+    <value>{0} 年 {1} 月</value>
+  </data>
+  <data name="{0} 月" xml:space="preserve">
+    <value>{0} 月</value>
+  </data>
+  <data name="{0} 的会议似乎已结束" xml:space="preserve">
+    <value>{0} 的會議似乎已結束</value>
+  </data>
+  <data name="{0} 项待办" xml:space="preserve">
+    <value>{0} 項待辦</value>
+  </data>
+  <data name="{0} 项有截止日期" xml:space="preserve">
+    <value>{0} 項有截止日期</value>
+  </data>
+  <data name="{0} 项结论" xml:space="preserve">
+    <value>{0} 項結論</value>
+  </data>
+  <data name="{0}语音已经安装，重启会译后就能在这里选到。" xml:space="preserve">
+    <value>{0}語音已經安裝，重啟會譯后就能在這里選到。</value>
+  </data>
+  <data name="{0}（尚未验证）" xml:space="preserve">
+    <value>{0}（尚未驗證）</value>
+  </data>
+  <data name="{0}（默认）" xml:space="preserve">
+    <value>{0}（默認）</value>
+  </data>
+  <data name="{0}，{1} 秒后自动结束本场记录。" xml:space="preserve">
+    <value>{0}，{1} 秒后自動結束本場記錄。</value>
+  </data>
+  <data name="{0}，稍后将自动结束本场记录。如需继续，请打开实时面板点「不结束，继续」。" xml:space="preserve">
+    <value>{0}，稍后將自動結束本場記錄。如需繼續，請打開實時面板點「不結束，繼續」。</value>
+  </data>
+  <data name="{0}：key 不可用，请检查后重新填写" xml:space="preserve">
+    <value>{0}：key 不可用，請檢查后重新填寫</value>
+  </data>
+  <data name="{0}：还没有填写 API key" xml:space="preserve">
+    <value>{0}：還沒有填寫 API key</value>
+  </data>
+  <data name="▶ 试听" xml:space="preserve">
+    <value>▶ 試聽</value>
+  </data>
+  <data name="● 收听中 · 点击结束" xml:space="preserve">
+    <value>● 收聽中 · 點擊結束</value>
+  </data>
+  <data name="✓ {0} 可用" xml:space="preserve">
+    <value>✓ {0} 可用</value>
+  </data>
+  <data name="✓ {0} 可用 · 响应 {1:0.0} 秒" xml:space="preserve">
+    <value>✓ {0} 可用 · 響應 {1:0.0} 秒</value>
+  </data>
+  <data name="✓ {0}语音装好了，可以试听。" xml:space="preserve">
+    <value>✓ {0}語音裝好了，可以試聽。</value>
+  </data>
+  <data name="✓ 已保存，之后整理纪要就按它来" xml:space="preserve">
+    <value>✓ 已保存，之后整理紀要就按它來</value>
+  </data>
+  <data name="✓ 已安装 VB-CABLE 虚拟麦克风" xml:space="preserve">
+    <value>✓ 已安裝 VB-CABLE 虛擬麥克風</value>
+  </data>
+  <data name="✓ 当前默认" xml:space="preserve">
+    <value>✓ 當前默認</value>
+  </data>
+  <data name="✓ 模型已就绪" xml:space="preserve">
+    <value>✓ 模型已就緒</value>
+  </data>
+  <data name="。也可以去 vb-audio.com/Cable 手动下载安装。" xml:space="preserve">
+    <value>。也可以去 vb-audio.com/Cable 手動下載安裝。</value>
+  </data>
+  <data name="。请检查网络后点「重新下载」。" xml:space="preserve">
+    <value>。請檢查網絡后點「重新下載」。</value>
+  </data>
+  <data name="こんにちは、よく聞こえています。" xml:space="preserve">
+    <value>こんにちは、よく聞こえています。</value>
+  </data>
+  <data name="一个 key 可用 DeepSeek、千问、GLM、豆包、Kimi 等上百个模型" xml:space="preserve">
+    <value>一個 key 可用 DeepSeek、千問、GLM、豆包、Kimi 等上百個模型</value>
+  </data>
+  <data name="一句话说明这个模板适合什么会议" xml:space="preserve">
+    <value>一句話說明這個模板適合什么會議</value>
+  </data>
+  <data name="一对一沟通" xml:space="preserve">
+    <value>一對一溝通</value>
+  </data>
+  <data name="一键安装" xml:space="preserve">
+    <value>一鍵安裝</value>
+  </data>
+  <data name="一键安装{0}语音" xml:space="preserve">
+    <value>一鍵安裝{0}語音</value>
+  </data>
+  <data name="上一步" xml:space="preserve">
+    <value>上一步</value>
+  </data>
+  <data name="上次会议以来完成了什么，按工作线或人分条写" xml:space="preserve">
+    <value>上次會議以來完成了什么，按工作線或人分條寫</value>
+  </data>
+  <data name="上移" xml:space="preserve">
+    <value>上移</value>
+  </data>
+  <data name="下一次更新起按新模板整理" xml:space="preserve">
+    <value>下一次更新起按新模板整理</value>
+  </data>
+  <data name="下一步" xml:space="preserve">
+    <value>下一步</value>
+  </data>
+  <data name="下一步（可跳过）" xml:space="preserve">
+    <value>下一步（可跳過）</value>
+  </data>
+  <data name="下周计划" xml:space="preserve">
+    <value>下周計劃</value>
+  </data>
+  <data name="下次提醒" xml:space="preserve">
+    <value>下次提醒</value>
+  </data>
+  <data name="下载 {0} 失败" xml:space="preserve">
+    <value>下載 {0} 失敗</value>
+  </data>
+  <data name="下载中  {0} / {1} MB" xml:space="preserve">
+    <value>下載中  {0} / {1} MB</value>
+  </data>
+  <data name="下载中…" xml:space="preserve">
+    <value>下載中…</value>
+  </data>
+  <data name="下载失败，请检查网络后再试" xml:space="preserve">
+    <value>下載失敗，請檢查網絡后再試</value>
+  </data>
+  <data name="下载失败，请检查网络后再试。" xml:space="preserve">
+    <value>下載失敗，請檢查網絡后再試。</value>
+  </data>
+  <data name="下载失败：" xml:space="preserve">
+    <value>下載失敗：</value>
+  </data>
+  <data name="下载完成后才能继续" xml:space="preserve">
+    <value>下載完成后才能繼續</value>
+  </data>
+  <data name="下载完成，正在安装，会译会自动重新打开…" xml:space="preserve">
+    <value>下載完成，正在安裝，會譯會自動重新打開…</value>
+  </data>
+  <data name="下载本机语音模型" xml:space="preserve">
+    <value>下載本機語音模型</value>
+  </data>
+  <data name="下载的安装包校验不通过，已停止安装" xml:space="preserve">
+    <value>下載的安裝包校驗不通過，已停止安裝</value>
+  </data>
+  <data name="不到 1 分钟" xml:space="preserve">
+    <value>不到 1 分鐘</value>
+  </data>
+  <data name="不处理" xml:space="preserve">
+    <value>不處理</value>
+  </data>
+  <data name="不结束，继续" xml:space="preserve">
+    <value>不結束，繼續</value>
+  </data>
+  <data name="不要漏掉任何一个不同的想法，哪怕还不成熟；相近的归到一起；标出大家最感兴趣的。" xml:space="preserve">
+    <value>不要漏掉任何一個不同的想法，哪怕還不成熟；相近的歸到一起；標出大家最感興趣的。</value>
+  </data>
+  <data name="业务上的问题以及讨论出的原因" xml:space="preserve">
+    <value>業務上的問題以及討論出的原因</value>
+  </data>
+  <data name="业务与管理" xml:space="preserve">
+    <value>業務與管理</value>
+  </data>
+  <data name="主要观点" xml:space="preserve">
+    <value>主要觀點</value>
+  </data>
+  <data name="也可以填方舟控制台里以 ep- 开头的接入点 ID" xml:space="preserve">
+    <value>也可以填方舟控制臺里以 ep- 開頭的接入點 ID</value>
+  </data>
+  <data name="亮点" xml:space="preserve">
+    <value>亮點</value>
+  </data>
+  <data name="人事" xml:space="preserve">
+    <value>人事</value>
+  </data>
+  <data name="人名与术语" xml:space="preserve">
+    <value>人名與術語</value>
+  </data>
+  <data name="今天" xml:space="preserve">
+    <value>今天</value>
+  </data>
+  <data name="今日计划" xml:space="preserve">
+    <value>今日計劃</value>
+  </data>
+  <data name="从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。" xml:space="preserve">
+    <value>從 VB-Audio 官網下載免費的 VB-CABLE，校驗后打開它的安裝程序，需要管理員權限。</value>
+  </data>
+  <data name="任何兼容 OpenAI Chat Completions 的服务：填 Base URL、key 和模型名" xml:space="preserve">
+    <value>任何兼容 OpenAI Chat Completions 的服務：填 Base URL、key 和模型名</value>
+  </data>
+  <data name="会上对需求的改动，以及影响到哪些地方" xml:space="preserve">
+    <value>會上對需求的改動，以及影響到哪些地方</value>
+  </data>
+  <data name="会上提到的时间" xml:space="preserve">
+    <value>會上提到的時間</value>
+  </data>
+  <data name="会上明确定下来、大家达成一致的事项，每条一句；没有明确定下的不要写" xml:space="preserve">
+    <value>會上明確定下來、大家達成一致的事項，每條一句；沒有明確定下的不要寫</value>
+  </data>
+  <data name="会上明确定下来的事项，每条一句" xml:space="preserve">
+    <value>會上明確定下來的事項，每條一句</value>
+  </data>
+  <data name="会后跟进" xml:space="preserve">
+    <value>會后跟進</value>
+  </data>
+  <data name="会议" xml:space="preserve">
+    <value>會議</value>
+  </data>
+  <data name="会议 {0}" xml:space="preserve">
+    <value>會議 {0}</value>
+  </data>
+  <data name="会议实时字幕与纪要" xml:space="preserve">
+    <value>會議實時字幕與紀要</value>
+  </data>
+  <data name="会议结束后，用整场录音重新校对发言人" xml:space="preserve">
+    <value>會議結束后，用整場錄音重新校對發言人</value>
+  </data>
+  <data name="会议记录" xml:space="preserve">
+    <value>會議記錄</value>
+  </data>
+  <data name="会议软件挂断后，自动结束本场记录" xml:space="preserve">
+    <value>會議軟件掛斷后，自動結束本場記錄</value>
+  </data>
+  <data name="会议软件的麦克风用「默认」就行，对方只听得到翻译后的声音，听不到你的原声。关掉同声传译或退出会译时自动切回原来的麦克风。" xml:space="preserve">
+    <value>會議軟件的麥克風用「默認」就行，對方只聽得到翻譯后的聲音，聽不到你的原聲。關掉同聲傳譯或退出會譯時自動切回原來的麥克風。</value>
+  </data>
+  <data name="你好，我这边能听清楚。" xml:space="preserve">
+    <value>你好，我這邊能聽清楚。</value>
+  </data>
+  <data name="你好，我這邊聽得很清楚。" xml:space="preserve">
+    <value>你好，我這邊聽得很清楚。</value>
+  </data>
+  <data name="例如：张三、Daniel" xml:space="preserve">
+    <value>例如：張三、Daniel</value>
+  </data>
+  <data name="例如：每条风险都要写清影响和负责人" xml:space="preserve">
+    <value>例如：每條風險都要寫清影響和負責人</value>
+  </data>
+  <data name="保存" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="保存并验证" xml:space="preserve">
+    <value>保存并驗證</value>
+  </data>
+  <data name="保持私下谈话的语气；记录双向的反馈和对方需要的支持。" xml:space="preserve">
+    <value>保持私下談話的語氣；記錄雙向的反饋和對方需要的支持。</value>
+  </data>
+  <data name="保留意见" xml:space="preserve">
+    <value>保留意見</value>
+  </data>
+  <data name="候选人背景" xml:space="preserve">
+    <value>候選人背景</value>
+  </data>
+  <data name="候选人背景、各维度表现、亮点和疑虑、建议。" xml:space="preserve">
+    <value>候選人背景、各維度表現、亮點和疑慮、建議。</value>
+  </data>
+  <data name="候选人自己介绍的经历和背景" xml:space="preserve">
+    <value>候選人自己介紹的經歷和背景</value>
+  </data>
+  <data name="值得深入" xml:space="preserve">
+    <value>值得深入</value>
+  </data>
+  <data name="值得记住的话，尽量贴近原话" xml:space="preserve">
+    <value>值得記住的話，盡量貼近原話</value>
+  </data>
+  <data name="做哪些，明确不做哪些" xml:space="preserve">
+    <value>做哪些，明確不做哪些</value>
+  </data>
+  <data name="做得好、要保持的地方" xml:space="preserve">
+    <value>做得好、要保持的地方</value>
+  </data>
+  <data name="做得好的" xml:space="preserve">
+    <value>做得好的</value>
+  </data>
+  <data name="做得好的、待改进的、根本原因和改进行动。" xml:space="preserve">
+    <value>做得好的、待改進的、根本原因和改進行動。</value>
+  </data>
+  <data name="停止收听" xml:space="preserve">
+    <value>停止收聽</value>
+  </data>
+  <data name="先提醒再结束" xml:space="preserve">
+    <value>先提醒再結束</value>
+  </data>
+  <data name="共 {0} 个模型，点右侧箭头选择" xml:space="preserve">
+    <value>共 {0} 個模型，點右側箭頭選擇</value>
+  </data>
+  <data name="共享屏幕时，对对方隐藏实时面板和字幕" xml:space="preserve">
+    <value>共享屏幕時，對對方隱藏實時面板和字幕</value>
+  </data>
+  <data name="关注重点" xml:space="preserve">
+    <value>關注重點</value>
+  </data>
+  <data name="关注重点（告诉 AI 这类会议最该抓住什么）" xml:space="preserve">
+    <value>關注重點（告訴 AI 這類會議最該抓住什么）</value>
+  </data>
+  <data name="关键指标" xml:space="preserve">
+    <value>關鍵指標</value>
+  </data>
+  <data name="关键指标、问题分析、决策和跟进事项。" xml:space="preserve">
+    <value>關鍵指標、問題分析、決策和跟進事項。</value>
+  </data>
+  <data name="关键的问题和回答" xml:space="preserve">
+    <value>關鍵的問題和回答</value>
+  </data>
+  <data name="关闭时，单击图标只打开实时面板，点面板上的「开始会议」才开始录制，避免误点就录。" xml:space="preserve">
+    <value>關閉時，單擊圖標只打開實時面板，點面板上的「開始會議」才開始錄制，避免誤點就錄。</value>
+  </data>
+  <data name="具体、对事不对人；每条改进行动都要对应到它要解决的问题。" xml:space="preserve">
+    <value>具體、對事不對人；每條改進行動都要對應到它要解決的問題。</value>
+  </data>
+  <data name="内置 · {0}" xml:space="preserve">
+    <value>內置 · {0}</value>
+  </data>
+  <data name="决策与结论" xml:space="preserve">
+    <value>決策與結論</value>
+  </data>
+  <data name="决策会" xml:space="preserve">
+    <value>決策會</value>
+  </data>
+  <data name="准备好了就开始" xml:space="preserve">
+    <value>準備好了就開始</value>
+  </data>
+  <data name="出了问题或让人难受的地方" xml:space="preserve">
+    <value>出了問題或讓人難受的地方</value>
+  </data>
+  <data name="切换后立即生效。字幕和纪要语言可分别设置。" xml:space="preserve">
+    <value>切換后立即生效。字幕和紀要語言可分別設置。</value>
+  </data>
+  <data name="删除" xml:space="preserve">
+    <value>刪除</value>
+  </data>
+  <data name="删除「{0}」？" xml:space="preserve">
+    <value>刪除「{0}」？</value>
+  </data>
+  <data name="删除模板「{0}」？" xml:space="preserve">
+    <value>刪除模板「{0}」？</value>
+  </data>
+  <data name="删除这个服务" xml:space="preserve">
+    <value>刪除這個服務</value>
+  </data>
+  <data name="删除这场会议" xml:space="preserve">
+    <value>刪除這場會議</value>
+  </data>
+  <data name="单击通知区域图标时直接开始收听" xml:space="preserve">
+    <value>單擊通知區域圖標時直接開始收聽</value>
+  </data>
+  <data name="卡住某人的问题，以及谁能帮忙解决" xml:space="preserve">
+    <value>卡住某人的問題，以及誰能幫忙解決</value>
+  </data>
+  <data name="印象深刻的话，尽量贴近原话，注明谁说的" xml:space="preserve">
+    <value>印象深刻的話，盡量貼近原話，注明誰說的</value>
+  </data>
+  <data name="原因分析" xml:space="preserve">
+    <value>原因分析</value>
+  </data>
+  <data name="原因分析 · " xml:space="preserve">
+    <value>原因分析 · </value>
+  </data>
+  <data name="原计划是什么，实际结果如何" xml:space="preserve">
+    <value>原計劃是什么，實際結果如何</value>
+  </data>
+  <data name="去申请 key ↗" xml:space="preserve">
+    <value>去申請 key ↗</value>
+  </data>
+  <data name="双方互相给出的反馈" xml:space="preserve">
+    <value>雙方互相給出的反饋</value>
+  </data>
+  <data name="反馈" xml:space="preserve">
+    <value>反饋</value>
+  </data>
+  <data name="发现新版本" xml:space="preserve">
+    <value>發現新版本</value>
+  </data>
+  <data name="发现新版本 {0}" xml:space="preserve">
+    <value>發現新版本 {0}</value>
+  </data>
+  <data name="发言人" xml:space="preserve">
+    <value>發言人</value>
+  </data>
+  <data name="发言人 {0}" xml:space="preserve">
+    <value>發言人 {0}</value>
+  </data>
+  <data name="取消" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="变更与影响" xml:space="preserve">
+    <value>變更與影響</value>
+  </data>
+  <data name="只听电脑放出来的声音，你自己和身边的人说的话不会记下来。" xml:space="preserve">
+    <value>只聽電腦放出來的聲音，你自己和身邊的人說的話不會記下來。</value>
+  </data>
+  <data name="可以从列表里选，也可以直接输入模型名" xml:space="preserve">
+    <value>可以從列表里選，也可以直接輸入模型名</value>
+  </data>
+  <data name="可选方案" xml:space="preserve">
+    <value>可選方案</value>
+  </data>
+  <data name="右 Alt" xml:space="preserve">
+    <value>右 Alt</value>
+  </data>
+  <data name="右 Ctrl" xml:space="preserve">
+    <value>右 Ctrl</value>
+  </data>
+  <data name="同一个声音说过两句后开始编号（之前的句子会一起补上）；太短的话（如“嗯”“好的”）不计入。" xml:space="preserve">
+    <value>同一個聲音說過兩句后開始編號（之前的句子會一起補上）；太短的話（如“嗯”“好的”）不計入。</value>
+  </data>
+  <data name="同声传译" xml:space="preserve">
+    <value>同聲傳譯</value>
+  </data>
+  <data name="同声传译打开后，播报会从 CABLE Output 送进会议。" xml:space="preserve">
+    <value>同聲傳譯打開后，播報會從 CABLE Output 送進會議。</value>
+  </data>
+  <data name="同声传译要靠它把译好的声音送进会议。点「一键安装」会从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。" xml:space="preserve">
+    <value>同聲傳譯要靠它把譯好的聲音送進會議。點「一鍵安裝」會從 VB-Audio 官網下載免費的 VB-CABLE，校驗后打開它的安裝程序，需要管理員權限。</value>
+  </data>
+  <data name="同声传译：按住 {0} 说，松开后译成{1}播报" xml:space="preserve">
+    <value>同聲傳譯：按住 {0} 說，松開后譯成{1}播報</value>
+  </data>
+  <data name="同声传译：需要先安装虚拟麦克风（设置 › 同声传译）" xml:space="preserve">
+    <value>同聲傳譯：需要先安裝虛擬麥克風（設置 › 同聲傳譯）</value>
+  </data>
+  <data name="同时收听麦克风" xml:space="preserve">
+    <value>同時收聽麥克風</value>
+  </data>
+  <data name="名称" xml:space="preserve">
+    <value>名稱</value>
+  </data>
+  <data name="听众的提问和回答" xml:space="preserve">
+    <value>聽眾的提問和回答</value>
+  </data>
+  <data name="听懂每一场跨语言会议" xml:space="preserve">
+    <value>聽懂每一場跨語言會議</value>
+  </data>
+  <data name="启动" xml:space="preserve">
+    <value>啟動</value>
+  </data>
+  <data name="告诉 AI 这类会议最该抓住什么" xml:space="preserve">
+    <value>告訴 AI 這類會議最該抓住什么</value>
+  </data>
+  <data name="嘉宾" xml:space="preserve">
+    <value>嘉賓</value>
+  </data>
+  <data name="嘉宾是谁，按介绍时的说法" xml:space="preserve">
+    <value>嘉賓是誰，按介紹時的說法</value>
+  </data>
+  <data name="嘉宾背景、主要观点、精彩引用和问答。" xml:space="preserve">
+    <value>嘉賓背景、主要觀點、精彩引用和問答。</value>
+  </data>
+  <data name="围绕一个或几个待定事项，记录选项、权衡和最终决定。" xml:space="preserve">
+    <value>圍繞一個或幾個待定事項，記錄選項、權衡和最終決定。</value>
+  </data>
+  <data name="固定部分" xml:space="preserve">
+    <value>固定部分</value>
+  </data>
+  <data name="在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。" xml:space="preserve">
+    <value>在「設置 › AI 服務」里接入一個大模型后可以生成紀要。完整的雙語內容在「逐字稿」里。</value>
+  </data>
+  <data name="在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。" xml:space="preserve">
+    <value>在「設置 › AI 服務」里接入一個大模型，開會時就會自動整理紀要。</value>
+  </data>
+  <data name="培训 / 课程笔记" xml:space="preserve">
+    <value>培訓 / 課程筆記</value>
+  </data>
+  <data name="填好 key 后点「获取模型列表」" xml:space="preserve">
+    <value>填好 key 后點「獲取模型列表」</value>
+  </data>
+  <data name="声音" xml:space="preserve">
+    <value>聲音</value>
+  </data>
+  <data name="备选方案对比" xml:space="preserve">
+    <value>備選方案對比</value>
+  </data>
+  <data name="复制一份" xml:space="preserve">
+    <value>復制一份</value>
+  </data>
+  <data name="复制为我的模板" xml:space="preserve">
+    <value>復制為我的模板</value>
+  </data>
+  <data name="复盘会" xml:space="preserve">
+    <value>復盤會</value>
+  </data>
+  <data name="大家想继续推进的想法，以及原因" xml:space="preserve">
+    <value>大家想繼續推進的想法，以及原因</value>
+  </data>
+  <data name="大家认可的需求点" xml:space="preserve">
+    <value>大家認可的需求點</value>
+  </data>
+  <data name="头脑风暴" xml:space="preserve">
+    <value>頭腦風暴</value>
+  </data>
+  <data name="字幕" xml:space="preserve">
+    <value>字幕</value>
+  </data>
+  <data name="学习与内容" xml:space="preserve">
+    <value>學習與內容</value>
+  </data>
+  <data name="安装" xml:space="preserve">
+    <value>安裝</value>
+  </data>
+  <data name="安装 Windows 自带的{0}语音包（从 Windows 更新下载，约几十 MB，需要管理员权限）。装好后在这里选声音、试听。" xml:space="preserve">
+    <value>安裝 Windows 自帶的{0}語音包（從 Windows 更新下載，約幾十 MB，需要管理員權限）。裝好后在這里選聲音、試聽。</value>
+  </data>
+  <data name="安装 会译" xml:space="preserve">
+    <value>安裝 會譯</value>
+  </data>
+  <data name="安装中…" xml:space="preserve">
+    <value>安裝中…</value>
+  </data>
+  <data name="安装位置" xml:space="preserve">
+    <value>安裝位置</value>
+  </data>
+  <data name="安装包不完整（缺少程序文件），请重新下载。" xml:space="preserve">
+    <value>安裝包不完整（缺少程序文件），請重新下載。</value>
+  </data>
+  <data name="安装包里没有找到安装程序" xml:space="preserve">
+    <value>安裝包里沒有找到安裝程序</value>
+  </data>
+  <data name="安装完成，正在打开会译…" xml:space="preserve">
+    <value>安裝完成，正在打開會譯…</value>
+  </data>
+  <data name="安装已取消。" xml:space="preserve">
+    <value>安裝已取消。</value>
+  </data>
+  <data name="安装没成功：" xml:space="preserve">
+    <value>安裝沒成功：</value>
+  </data>
+  <data name="安装没有成功：" xml:space="preserve">
+    <value>安裝沒有成功：</value>
+  </data>
+  <data name="安装程序已经运行完。如果这里还显示没装上，重启电脑后就能用了。" xml:space="preserve">
+    <value>安裝程序已經運行完。如果這里還顯示沒裝上，重啟電腦后就能用了。</value>
+  </data>
+  <data name="安装程序没有启动" xml:space="preserve">
+    <value>安裝程序沒有啟動</value>
+  </data>
+  <data name="安装程序返回 {0}。{1}" xml:space="preserve">
+    <value>安裝程序返回 {0}。{1}</value>
+  </data>
+  <data name="完成" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="实时面板" xml:space="preserve">
+    <value>實時面板</value>
+  </data>
+  <data name="客户拜访 / 销售沟通" xml:space="preserve">
+    <value>客戶拜訪 / 銷售溝通</value>
+  </data>
+  <data name="客户提出的反对意见、疑虑和条件" xml:space="preserve">
+    <value>客戶提出的反對意見、疑慮和條件</value>
+  </data>
+  <data name="客户是谁、现状如何、在场有哪些人" xml:space="preserve">
+    <value>客戶是誰、現狀如何、在場有哪些人</value>
+  </data>
+  <data name="客户背景" xml:space="preserve">
+    <value>客戶背景</value>
+  </data>
+  <data name="客户需求、痛点、顾虑、预算与决策链、下一步。" xml:space="preserve">
+    <value>客戶需求、痛點、顧慮、預算與決策鏈、下一步。</value>
+  </data>
+  <data name="客户需要什么，现在哪里不好用" xml:space="preserve">
+    <value>客戶需要什么，現在哪里不好用</value>
+  </data>
+  <data name="对方最近的状态和工作情况" xml:space="preserve">
+    <value>對方最近的狀態和工作情況</value>
+  </data>
+  <data name="对方看不到" xml:space="preserve">
+    <value>對方看不到</value>
+  </data>
+  <data name="对进度、质量或可行性的风险" xml:space="preserve">
+    <value>對進度、質量或可行性的風險</value>
+  </data>
+  <data name="导出 Markdown" xml:space="preserve">
+    <value>導出 Markdown</value>
+  </data>
+  <data name="尚未下载" xml:space="preserve">
+    <value>尚未下載</value>
+  </data>
+  <data name="已保存" xml:space="preserve">
+    <value>已保存</value>
+  </data>
+  <data name="已保存 {0}，留空则不修改" xml:space="preserve">
+    <value>已保存 {0}，留空則不修改</value>
+  </data>
+  <data name="已复制，可以修改了" xml:space="preserve">
+    <value>已復制，可以修改了</value>
+  </data>
+  <data name="已是最新版本" xml:space="preserve">
+    <value>已是最新版本</value>
+  </data>
+  <data name="已用整场录音重新校对了发言人：{0} 句有调整{1}，纪要会随之更新。" xml:space="preserve">
+    <value>已用整場錄音重新校對了發言人：{0} 句有調整{1}，紀要會隨之更新。</value>
+  </data>
+  <data name="已确定" xml:space="preserve">
+    <value>已確定</value>
+  </data>
+  <data name="已确定（对勾）" xml:space="preserve">
+    <value>已確定（對勾）</value>
+  </data>
+  <data name="已确认的需求点" xml:space="preserve">
+    <value>已確認的需求點</value>
+  </data>
+  <data name="已经安装在这里，将覆盖安装为这个版本。要换位置，请先在 Windows「设置 › 应用」里卸载会译。" xml:space="preserve">
+    <value>已經安裝在這里，將覆蓋安裝為這個版本。要換位置，請先在 Windows「設置 › 應用」里卸載會譯。</value>
+  </data>
+  <data name="已经有一阵没人说话" xml:space="preserve">
+    <value>已經有一陣沒人說話</value>
+  </data>
+  <data name="已经有一阵没人说话了" xml:space="preserve">
+    <value>已經有一陣沒人說話了</value>
+  </data>
+  <data name="已结束" xml:space="preserve">
+    <value>已結束</value>
+  </data>
+  <data name="已结束 · 正在整理纪要" xml:space="preserve">
+    <value>已結束 · 正在整理紀要</value>
+  </data>
+  <data name="带截止日期" xml:space="preserve">
+    <value>帶截止日期</value>
+  </data>
+  <data name="带负责人" xml:space="preserve">
+    <value>帶負責人</value>
+  </data>
+  <data name="平台" xml:space="preserve">
+    <value>平臺</value>
+  </data>
+  <data name="开会时只能根据已经听到的声音判断，开头几分钟和抢话容易分错；会后会拿整场的声音重新核对一遍，并更新纪要。录音只临时存在本机，校对完立即删除。" xml:space="preserve">
+    <value>開會時只能根據已經聽到的聲音判斷，開頭幾分鐘和搶話容易分錯；會后會拿整場的聲音重新核對一遍，并更新紀要。錄音只臨時存在本機，校對完立即刪除。</value>
+  </data>
+  <data name="开始会议" xml:space="preserve">
+    <value>開始會議</value>
+  </data>
+  <data name="开始使用" xml:space="preserve">
+    <value>開始使用</value>
+  </data>
+  <data name="开始收听" xml:space="preserve">
+    <value>開始收聽</value>
+  </data>
+  <data name="开始新会议" xml:space="preserve">
+    <value>開始新會議</value>
+  </data>
+  <data name="当前不是安装版（开发版），不能自动更新" xml:space="preserve">
+    <value>當前不是安裝版（開發版），不能自動更新</value>
+  </data>
+  <data name="当前不是安装版（开发版），不能自动更新。" xml:space="preserve">
+    <value>當前不是安裝版（開發版），不能自動更新。</value>
+  </data>
+  <data name="当前使用" xml:space="preserve">
+    <value>當前使用</value>
+  </data>
+  <data name="当前使用蚂蚁百灵：{0}默认用 Ming 合成；选一个 Windows 声音则改用它。" xml:space="preserve">
+    <value>當前使用螞蟻百靈：{0}默認用 Ming 合成；選一個 Windows 聲音則改用它。</value>
+  </data>
+  <data name="录音中 · 松开按键后翻译" xml:space="preserve">
+    <value>錄音中 · 松開按鍵后翻譯</value>
+  </data>
+  <data name="待办" xml:space="preserve">
+    <value>待辦</value>
+  </data>
+  <data name="待办事项" xml:space="preserve">
+    <value>待辦事項</value>
+  </data>
+  <data name="待办（方框）" xml:space="preserve">
+    <value>待辦（方框）</value>
+  </data>
+  <data name="待改进" xml:space="preserve">
+    <value>待改進</value>
+  </data>
+  <data name="待澄清问题" xml:space="preserve">
+    <value>待澄清問題</value>
+  </data>
+  <data name="德语" xml:space="preserve">
+    <value>德語</value>
+  </data>
+  <data name="恢复为发言人 {0}" xml:space="preserve">
+    <value>恢復為發言人 {0}</value>
+  </data>
+  <data name="悬浮字幕" xml:space="preserve">
+    <value>懸浮字幕</value>
+  </data>
+  <data name="悬浮字幕字号" xml:space="preserve">
+    <value>懸浮字幕字號</value>
+  </data>
+  <data name="悬浮字幕字号  {0:0}" xml:space="preserve">
+    <value>懸浮字幕字號  {0:0}</value>
+  </data>
+  <data name="成长与支持" xml:space="preserve">
+    <value>成長與支持</value>
+  </data>
+  <data name="我" xml:space="preserve">
+    <value>我</value>
+  </data>
+  <data name="我们答应客户的事" xml:space="preserve">
+    <value>我們答應客戶的事</value>
+  </data>
+  <data name="我方承诺" xml:space="preserve">
+    <value>我方承諾</value>
+  </data>
+  <data name="我的模板" xml:space="preserve">
+    <value>我的模板</value>
+  </data>
+  <data name="我的麦克风" xml:space="preserve">
+    <value>我的麥克風</value>
+  </data>
+  <data name="截图、录屏和屏幕共享里看不到这个窗口（设置 › 字幕里可以改）" xml:space="preserve">
+    <value>截圖、錄屏和屏幕共享里看不到這個窗口（設置 › 字幕里可以改）</value>
+  </data>
+  <data name="截止 " xml:space="preserve">
+    <value>截止 </value>
+  </data>
+  <data name="截止日期" xml:space="preserve">
+    <value>截止日期</value>
+  </data>
+  <data name="打开同声传译" xml:space="preserve">
+    <value>打開同聲傳譯</value>
+  </data>
+  <data name="打开同声传译时，自动把系统麦克风切到 CABLE Output" xml:space="preserve">
+    <value>打開同聲傳譯時，自動把系統麥克風切到 CABLE Output</value>
+  </data>
+  <data name="打开同声传译：按住按键说话，松开后译成对方的语言，播报进会议" xml:space="preserve">
+    <value>打開同聲傳譯：按住按鍵說話，松開后譯成對方的語言，播報進會議</value>
+  </data>
+  <data name="打开后截图、录屏和屏幕共享里都看不到它们，只有你自己看得到（窗口上会标「对方看不到」）。默认关闭，可以正常截图。" xml:space="preserve">
+    <value>打開后截圖、錄屏和屏幕共享里都看不到它們，只有你自己看得到（窗口上會標「對方看不到」）。默認關閉，可以正常截圖。</value>
+  </data>
+  <data name="打开实时面板" xml:space="preserve">
+    <value>打開實時面板</value>
+  </data>
+  <data name="打开实时面板 ›" xml:space="preserve">
+    <value>打開實時面板 ›</value>
+  </data>
+  <data name="打开悬浮字幕" xml:space="preserve">
+    <value>打開懸浮字幕</value>
+  </data>
+  <data name="打开数据文件夹" xml:space="preserve">
+    <value>打開數據文件夾</value>
+  </data>
+  <data name="打开模板中心" xml:space="preserve">
+    <value>打開模板中心</value>
+  </data>
+  <data name="打开系统语音设置 ↗" xml:space="preserve">
+    <value>打開系統語音設置 ↗</value>
+  </data>
+  <data name="技术方案评审" xml:space="preserve">
+    <value>技術方案評審</value>
+  </data>
+  <data name="技术风险和依赖" xml:space="preserve">
+    <value>技術風險和依賴</value>
+  </data>
+  <data name="把对方说的话实时翻译成你的语言" xml:space="preserve">
+    <value>把對方說的話實時翻譯成你的語言</value>
+  </data>
+  <data name="把对方说的话译成你的语言" xml:space="preserve">
+    <value>把對方說的話譯成你的語言</value>
+  </data>
+  <data name="把已经达成一致的和还没定的分开；记录需求的改动以及改动原因。" xml:space="preserve">
+    <value>把已經達成一致的和還沒定的分開；記錄需求的改動以及改動原因。</value>
+  </data>
+  <data name="把目标、做与不做的范围、带日期的里程碑、谁负责什么都定清楚。" xml:space="preserve">
+    <value>把目標、做與不做的范圍、帶日期的里程碑、誰負責什么都定清楚。</value>
+  </data>
+  <data name="抓住讨论了什么、定下了什么、接下来谁做什么、什么时候完成。" xml:space="preserve">
+    <value>抓住討論了什么、定下了什么、接下來誰做什么、什么時候完成。</value>
+  </data>
+  <data name="按人记录昨天、今天和阻塞，五分钟看完。" xml:space="preserve">
+    <value>按人記錄昨天、今天和阻塞，五分鐘看完。</value>
+  </data>
+  <data name="按人记录：做了什么、要做什么、被什么卡住。越简短越好。" xml:space="preserve">
+    <value>按人記錄：做了什么、要做什么、被什么卡住。越簡短越好。</value>
+  </data>
+  <data name="按住右 Ctrl 说话，松开后自动译成对方的语言，通过虚拟麦克风播报进会议。打开后会译会把系统麦克风切到虚拟麦克风，会议软件的麦克风用「默认」即可。" xml:space="preserve">
+    <value>按住右 Ctrl 說話，松開后自動譯成對方的語言，通過虛擬麥克風播報進會議。打開后會譯會把系統麥克風切到虛擬麥克風，會議軟件的麥克風用「默認」即可。</value>
+  </data>
+  <data name="按住的键" xml:space="preserve">
+    <value>按住的鍵</value>
+  </data>
+  <data name="按声音区分不同发言人（发言人 1、发言人 2…）" xml:space="preserve">
+    <value>按聲音區分不同發言人（發言人 1、發言人 2…）</value>
+  </data>
+  <data name="按学习笔记来写：主要观点、概念和步骤、例子、值得记住的话。" xml:space="preserve">
+    <value>按學習筆記來寫：主要觀點、概念和步驟、例子、值得記住的話。</value>
+  </data>
+  <data name="按工作线对照计划看进度；尽早暴露风险和阻塞；每条待办都要有负责人和截止日期。" xml:space="preserve">
+    <value>按工作線對照計劃看進度；盡早暴露風險和阻塞；每條待辦都要有負責人和截止日期。</value>
+  </data>
+  <data name="按时间列出议题和要点，每条标出在会上的真实时间" xml:space="preserve">
+    <value>按時間列出議題和要點，每條標出在會上的真實時間</value>
+  </data>
+  <data name="按键说话" xml:space="preserve">
+    <value>按鍵說話</value>
+  </data>
+  <data name="接下来计划做什么，按工作线或人分条写，有时间点就写具体日期" xml:space="preserve">
+    <value>接下來計劃做什么，按工作線或人分條寫，有時間點就寫具體日期</value>
+  </data>
+  <data name="接入一个大模型" xml:space="preserve">
+    <value>接入一個大模型</value>
+  </data>
+  <data name="接入后，开会时会自动整理纪要、识别发言人姓名，人名术语也翻得更准。不接也能正常看字幕。之后可以在设置里添加更多服务、改 Base URL 或换模型。" xml:space="preserve">
+    <value>接入后，開會時會自動整理紀要、識別發言人姓名，人名術語也翻得更準。不接也能正常看字幕。之后可以在設置里添加更多服務、改 Base URL 或換模型。</value>
+  </data>
+  <data name="推荐方案的关键设计点" xml:space="preserve">
+    <value>推薦方案的關鍵設計點</value>
+  </data>
+  <data name="提出过但没有改变决定的反对意见或顾虑" xml:space="preserve">
+    <value>提出過但沒有改變決定的反對意見或顧慮</value>
+  </data>
+  <data name="提出过的每个不同想法，每条一句，尽量按主题归类" xml:space="preserve">
+    <value>提出過的每個不同想法，每條一句，盡量按主題歸類</value>
+  </data>
+  <data name="提到的关键数字，原样写出，带上周期和对比" xml:space="preserve">
+    <value>提到的關鍵數字，原樣寫出，帶上周期和對比</value>
+  </data>
+  <data name="提到的竞争对手或替代方案" xml:space="preserve">
+    <value>提到的競爭對手或替代方案</value>
+  </data>
+  <data name="搜索标题或内容" xml:space="preserve">
+    <value>搜索標題或內容</value>
+  </data>
+  <data name="播报{0}时使用的 Windows 语音。" xml:space="preserve">
+    <value>播報{0}時使用的 Windows 語音。</value>
+  </data>
+  <data name="播报声音" xml:space="preserve">
+    <value>播報聲音</value>
+  </data>
+  <data name="播报时自己的耳机里也放一遍" xml:space="preserve">
+    <value>播報時自己的耳機里也放一遍</value>
+  </data>
+  <data name="收听" xml:space="preserve">
+    <value>收聽</value>
+  </data>
+  <data name="收听中" xml:space="preserve">
+    <value>收聽中</value>
+  </data>
+  <data name="收听中 · 有人说话时字幕会出现在这里" xml:space="preserve">
+    <value>收聽中 · 有人說話時字幕會出現在這里</value>
+  </data>
+  <data name="收听中…现在播放一段视频" xml:space="preserve">
+    <value>收聽中…現在播放一段視頻</value>
+  </data>
+  <data name="收听时打开" xml:space="preserve">
+    <value>收聽時打開</value>
+  </data>
+  <data name="收起" xml:space="preserve">
+    <value>收起</value>
+  </data>
+  <data name="收起面板，继续在后台收听" xml:space="preserve">
+    <value>收起面板，繼續在后臺收聽</value>
+  </data>
+  <data name="收集所有点子，归类并标出值得深入的。" xml:space="preserve">
+    <value>收集所有點子，歸類并標出值得深入的。</value>
+  </data>
+  <data name="改动从下一场会议开始生效。" xml:space="preserve">
+    <value>改動從下一場會議開始生效。</value>
+  </data>
+  <data name="改进了使用体验，修复了一些问题。" xml:space="preserve">
+    <value>改進了使用體驗，修復了一些問題。</value>
+  </data>
+  <data name="改进行动" xml:space="preserve">
+    <value>改進行動</value>
+  </data>
+  <data name="放一段外语视频试试" xml:space="preserve">
+    <value>放一段外語視頻試試</value>
+  </data>
+  <data name="数字一律照会上原话写；把事实（数字）、分析和决策分开。" xml:space="preserve">
+    <value>數字一律照會上原話寫；把事實（數字）、分析和決策分開。</value>
+  </data>
+  <data name="整理中…" xml:space="preserve">
+    <value>整理中…</value>
+  </data>
+  <data name="新模板" xml:space="preserve">
+    <value>新模板</value>
+  </data>
+  <data name="新版本 {0} 已下载" xml:space="preserve">
+    <value>新版本 {0} 已下載</value>
+  </data>
+  <data name="新的部分" xml:space="preserve">
+    <value>新的部分</value>
+  </data>
+  <data name="方案要点" xml:space="preserve">
+    <value>方案要點</value>
+  </data>
+  <data name="方案要点、备选对比、风险依赖和评审结论。" xml:space="preserve">
+    <value>方案要點、備選對比、風險依賴和評審結論。</value>
+  </data>
+  <data name="无法打开麦克风：" xml:space="preserve">
+    <value>無法打開麥克風：</value>
+  </data>
+  <data name="无法采集系统声音：" xml:space="preserve">
+    <value>無法采集系統聲音：</value>
+  </data>
+  <data name="日语" xml:space="preserve">
+    <value>日語</value>
+  </data>
+  <data name="昨天" xml:space="preserve">
+    <value>昨天</value>
+  </data>
+  <data name="昨日完成" xml:space="preserve">
+    <value>昨日完成</value>
+  </data>
+  <data name="显示" xml:space="preserve">
+    <value>顯示</value>
+  </data>
+  <data name="普通列表" xml:space="preserve">
+    <value>普通列表</value>
+  </data>
+  <data name="智谱 GLM" xml:space="preserve">
+    <value>智譜 GLM</value>
+  </data>
+  <data name="暂时连不上，请检查网络" xml:space="preserve">
+    <value>暫時連不上，請檢查網絡</value>
+  </data>
+  <data name="更新" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="最终决定" xml:space="preserve">
+    <value>最終決定</value>
+  </data>
+  <data name="最近 7 天" xml:space="preserve">
+    <value>最近 7 天</value>
+  </data>
+  <data name="有人认领的具体行动，写清负责人和截止日期" xml:space="preserve">
+    <value>有人認領的具體行動，寫清負責人和截止日期</value>
+  </data>
+  <data name="有人认领的具体行动，每条以动词开头；负责人写实际去做的人，截止时间写成具体日期" xml:space="preserve">
+    <value>有人認領的具體行動，每條以動詞開頭；負責人寫實際去做的人，截止時間寫成具體日期</value>
+  </data>
+  <data name="服务设置" xml:space="preserve">
+    <value>服務設置</value>
+  </data>
+  <data name="未命名模板" xml:space="preserve">
+    <value>未命名模板</value>
+  </data>
+  <data name="未开始" xml:space="preserve">
+    <value>未開始</value>
+  </data>
+  <data name="未设置：添加一个 AI 服务后即可生成纪要" xml:space="preserve">
+    <value>未設置：添加一個 AI 服務后即可生成紀要</value>
+  </data>
+  <data name="本周进展" xml:space="preserve">
+    <value>本周進展</value>
+  </data>
+  <data name="本地 Ollama" xml:space="preserve">
+    <value>本地 Ollama</value>
+  </data>
+  <data name="本机模型" xml:space="preserve">
+    <value>本機模型</value>
+  </data>
+  <data name="本机模型与数据" xml:space="preserve">
+    <value>本機模型與數據</value>
+  </data>
+  <data name="本机运行的模型，不需要 key；点「获取模型列表」读取已下载的模型" xml:space="preserve">
+    <value>本機運行的模型，不需要 key；點「獲取模型列表」讀取已下載的模型</value>
+  </data>
+  <data name="查看新版本 {0}" xml:space="preserve">
+    <value>查看新版本 {0}</value>
+  </data>
+  <data name="查看运行日志" xml:space="preserve">
+    <value>查看運行日志</value>
+  </data>
+  <data name="核心观点" xml:space="preserve">
+    <value>核心觀點</value>
+  </data>
+  <data name="核心观点、知识点、案例、金句和问答。" xml:space="preserve">
+    <value>核心觀點、知識點、案例、金句和問答。</value>
+  </data>
+  <data name="根据候选人说的内容公正评价，每条都要有依据；不要编造分数。" xml:space="preserve">
+    <value>根據候選人說的內容公正評價，每條都要有依據；不要編造分數。</value>
+  </data>
+  <data name="根本原因" xml:space="preserve">
+    <value>根本原因</value>
+  </data>
+  <data name="案例" xml:space="preserve">
+    <value>案例</value>
+  </data>
+  <data name="检查更新" xml:space="preserve">
+    <value>檢查更新</value>
+  </data>
+  <data name="检查更新失败，请检查网络后再试" xml:space="preserve">
+    <value>檢查更新失敗，請檢查網絡后再試</value>
+  </data>
+  <data name="概要" xml:space="preserve">
+    <value>概要</value>
+  </data>
+  <data name="概要总是会写；以下部分可以选。" xml:space="preserve">
+    <value>概要總是會寫；以下部分可以選。</value>
+  </data>
+  <data name="模型" xml:space="preserve">
+    <value>模型</value>
+  </data>
+  <data name="模板" xml:space="preserve">
+    <value>模板</value>
+  </data>
+  <data name="模板中心" xml:space="preserve">
+    <value>模板中心</value>
+  </data>
+  <data name="正在下载 VB-CABLE…" xml:space="preserve">
+    <value>正在下載 VB-CABLE…</value>
+  </data>
+  <data name="正在下载新版本… 0%" xml:space="preserve">
+    <value>正在下載新版本… 0%</value>
+  </data>
+  <data name="正在下载新版本… {0}%" xml:space="preserve">
+    <value>正在下載新版本… {0}%</value>
+  </data>
+  <data name="正在从 Windows 更新下载{0}语音 · 已用 0:00" xml:space="preserve">
+    <value>正在從 Windows 更新下載{0}語音 · 已用 0:00</value>
+  </data>
+  <data name="正在从 Windows 更新下载{0}语音 · 已用 {1}:{2:00}" xml:space="preserve">
+    <value>正在從 Windows 更新下載{0}語音 · 已用 {1}:{2:00}</value>
+  </data>
+  <data name="正在加载模型…" xml:space="preserve">
+    <value>正在加載模型…</value>
+  </data>
+  <data name="正在安装，大约需要半分钟…" xml:space="preserve">
+    <value>正在安裝，大約需要半分鐘…</value>
+  </data>
+  <data name="正在播报给对方" xml:space="preserve">
+    <value>正在播報給對方</value>
+  </data>
+  <data name="正在检查更新…" xml:space="preserve">
+    <value>正在檢查更新…</value>
+  </data>
+  <data name="正在用这个模板的会议会改用默认模板，已经写好的纪要不受影响。" xml:space="preserve">
+    <value>正在用這個模板的會議會改用默認模板，已經寫好的紀要不受影響。</value>
+  </data>
+  <data name="正在翻译…" xml:space="preserve">
+    <value>正在翻譯…</value>
+  </data>
+  <data name="正在获取…" xml:space="preserve">
+    <value>正在獲取…</value>
+  </data>
+  <data name="正在记录会议：更新会先结束本场会议（记录会保存），再重启会译。" xml:space="preserve">
+    <value>正在記錄會議：更新會先結束本場會議（記錄會保存），再重啟會譯。</value>
+  </data>
+  <data name="正在说…" xml:space="preserve">
+    <value>正在說…</value>
+  </data>
+  <data name="正在读取更新内容…" xml:space="preserve">
+    <value>正在讀取更新內容…</value>
+  </data>
+  <data name="正在验证 {0}…" xml:space="preserve">
+    <value>正在驗證 {0}…</value>
+  </data>
+  <data name="每 6 小时自动检查一次新版本，发现后会问你要不要更新。" xml:space="preserve">
+    <value>每 6 小時自動檢查一次新版本，發現后會問你要不要更新。</value>
+  </data>
+  <data name="每个人今天要做什么，负责人写这个人" xml:space="preserve">
+    <value>每個人今天要做什么，負責人寫這個人</value>
+  </data>
+  <data name="每个人完成了什么，负责人写这个人" xml:space="preserve">
+    <value>每個人完成了什么，負責人寫這個人</value>
+  </data>
+  <data name="每个维度一条（如专业能力、沟通、解决问题、动机），附上依据" xml:space="preserve">
+    <value>每個維度一條（如專業能力、溝通、解決問題、動機），附上依據</value>
+  </data>
+  <data name="每个里程碑以及它的具体日期" xml:space="preserve">
+    <value>每個里程碑以及它的具體日期</value>
+  </data>
+  <data name="每日站会" xml:space="preserve">
+    <value>每日站會</value>
+  </data>
+  <data name="没人说话超过" xml:space="preserve">
+    <value>沒人說話超過</value>
+  </data>
+  <data name="没听清，再说一次" xml:space="preserve">
+    <value>沒聽清，再說一次</value>
+  </data>
+  <data name="没有权限写入这个文件夹（例如 Program Files 需要管理员权限，以后自动更新也会写不进去）。&#10;&#10;请换一个位置，例如 D:\Apps\HuiYi。" xml:space="preserve">
+    <value>沒有權限寫入這個文件夾（例如 Program Files 需要管理員權限，以后自動更新也會寫不進去）。
+
+請換一個位置，例如 D:\Apps\HuiYi。</value>
+  </data>
+  <data name="没能自动安装（可能是公司电脑限制了 Windows 更新）。可以点下面的按钮，在系统设置 › 语音 › 添加语音 里手动添加{0}。" xml:space="preserve">
+    <value>沒能自動安裝（可能是公司電腦限制了 Windows 更新）。可以點下面的按鈕，在系統設置 › 語音 › 添加語音 里手動添加{0}。</value>
+  </data>
+  <data name="法语" xml:space="preserve">
+    <value>法語</value>
+  </data>
+  <data name="浏览…" xml:space="preserve">
+    <value>瀏覽…</value>
+  </data>
+  <data name="火山方舟（豆包）" xml:space="preserve">
+    <value>火山方舟（豆包）</value>
+  </data>
+  <data name="灵小雅" xml:space="preserve">
+    <value>靈小雅</value>
+  </data>
+  <data name="点「开始会议」后，会译同时收听电脑里的声音和你的麦克风，实时出字幕、整理纪要。" xml:space="preserve">
+    <value>點「開始會議」后，會譯同時收聽電腦里的聲音和你的麥克風，實時出字幕、整理紀要。</value>
+  </data>
+  <data name="点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。" xml:space="preserve">
+    <value>點「開始會議」后，會譯開始收聽電腦里的聲音，實時出字幕、整理紀要。</value>
+  </data>
+  <data name="点「开始收听」，然后在电脑上播放任意外语视频或会议录音，译文会实时出现在下面。" xml:space="preserve">
+    <value>點「開始收聽」，然后在電腦上播放任意外語視頻或會議錄音，譯文會實時出現在下面。</value>
+  </data>
+  <data name="点击修改名称" xml:space="preserve">
+    <value>點擊修改名稱</value>
+  </data>
+  <data name="点击修改标题" xml:space="preserve">
+    <value>點擊修改標題</value>
+  </data>
+  <data name="点击给这位发言人改名" xml:space="preserve">
+    <value>點擊給這位發言人改名</value>
+  </data>
+  <data name="点子清单" xml:space="preserve">
+    <value>點子清單</value>
+  </data>
+  <data name="点左上角「开始收听」，或单击任务栏通知区域的图标。会议里听到的内容会整理在这里。" xml:space="preserve">
+    <value>點左上角「開始收聽」，或單擊任務欄通知區域的圖標。會議里聽到的內容會整理在這里。</value>
+  </data>
+  <data name="版本 {0}.{1}.{2}" xml:space="preserve">
+    <value>版本 {0}.{1}.{2}</value>
+  </data>
+  <data name="版本与更新" xml:space="preserve">
+    <value>版本與更新</value>
+  </data>
+  <data name="现在结束" xml:space="preserve">
+    <value>現在結束</value>
+  </data>
+  <data name="生成纪要" xml:space="preserve">
+    <value>生成紀要</value>
+  </data>
+  <data name="用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用 Google。" xml:space="preserve">
+    <value>用于會議紀要、整句翻譯和識別發言人姓名。可以添加多個，隨時切換；不設置也能用，只是沒有 AI 紀要，整句翻譯改用 Google。</value>
+  </data>
+  <data name="用哪个麦克风" xml:space="preserve">
+    <value>用哪個麥克風</value>
+  </data>
+  <data name="用来说明的例子和故事" xml:space="preserve">
+    <value>用來說明的例子和故事</value>
+  </data>
+  <data name="电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）一起记，线上线下的会都不漏。用音箱外放时，对方说话期间麦克风会自动压低，同一句不会记两遍。" xml:space="preserve">
+    <value>電腦放出來的聲音（對方）和麥克風（你自己、會議室里的人）一起記，線上線下的會都不漏。用音箱外放時，對方說話期間麥克風會自動壓低，同一句不會記兩遍。</value>
+  </data>
+  <data name="电脑里有人说话时，逐字稿会一句句出现在这里。" xml:space="preserve">
+    <value>電腦里有人說話時，逐字稿會一句句出現在這里。</value>
+  </data>
+  <data name="界面语言" xml:space="preserve">
+    <value>界面語言</value>
+  </data>
+  <data name="留意客户的需求、痛点、异议、预算、时间表和谁拍板；记下我们答应了客户什么。" xml:space="preserve">
+    <value>留意客戶的需求、痛點、異議、預算、時間表和誰拍板；記下我們答應了客戶什么。</value>
+  </data>
+  <data name="疑虑" xml:space="preserve">
+    <value>疑慮</value>
+  </data>
+  <data name="登录 Windows 后自动启动" xml:space="preserve">
+    <value>登錄 Windows 后自動啟動</value>
+  </data>
+  <data name="百度千帆（文心）" xml:space="preserve">
+    <value>百度千帆（文心）</value>
+  </data>
+  <data name="目标、范围、里程碑、分工和风险。" xml:space="preserve">
+    <value>目標、范圍、里程碑、分工和風險。</value>
+  </data>
+  <data name="目标与成功标准" xml:space="preserve">
+    <value>目標與成功標準</value>
+  </data>
+  <data name="目标与结果" xml:space="preserve">
+    <value>目標與結果</value>
+  </data>
+  <data name="直接结束" xml:space="preserve">
+    <value>直接結束</value>
+  </data>
+  <data name="直接输入模型名，或先填 key 再获取列表" xml:space="preserve">
+    <value>直接輸入模型名，或先填 key 再獲取列表</value>
+  </data>
+  <data name="看起来 {0} 的会议已经结束" xml:space="preserve">
+    <value>看起來 {0} 的會議已經結束</value>
+  </data>
+  <data name="知识点" xml:space="preserve">
+    <value>知識點</value>
+  </data>
+  <data name="硅基流动" xml:space="preserve">
+    <value>硅基流動</value>
+  </data>
+  <data name="确认了哪些需求、还有哪些要澄清、改动和风险。" xml:space="preserve">
+    <value>確認了哪些需求、還有哪些要澄清、改動和風險。</value>
+  </data>
+  <data name="程序约 300 MB；首次启动还会下载约 260 MB 的识别模型。装在当前用户下，不需要管理员权限，之后会自动更新。" xml:space="preserve">
+    <value>程序約 300 MB；首次啟動還會下載約 260 MB 的識別模型。裝在當前用戶下，不需要管理員權限，之后會自動更新。</value>
+  </data>
+  <data name="突出的优势，附上依据" xml:space="preserve">
+    <value>突出的優勢，附上依據</value>
+  </data>
+  <data name="立即更新" xml:space="preserve">
+    <value>立即更新</value>
+  </data>
+  <data name="竞品信息" xml:space="preserve">
+    <value>競品信息</value>
+  </data>
+  <data name="第 1 步 · 准备识别模型" xml:space="preserve">
+    <value>第 1 步 · 準備識別模型</value>
+  </data>
+  <data name="第 2 步 · 试听" xml:space="preserve">
+    <value>第 2 步 · 試聽</value>
+  </data>
+  <data name="第 3 步 · AI 服务（可跳过）" xml:space="preserve">
+    <value>第 3 步 · AI 服務（可跳過）</value>
+  </data>
+  <data name="第 4 步 · 同声传译（可跳过）" xml:space="preserve">
+    <value>第 4 步 · 同聲傳譯（可跳過）</value>
+  </data>
+  <data name="等待声音…" xml:space="preserve">
+    <value>等待聲音…</value>
+  </data>
+  <data name="简体中文" xml:space="preserve">
+    <value>簡體中文</value>
+  </data>
+  <data name="粤语" xml:space="preserve">
+    <value>粵語</value>
+  </data>
+  <data name="精彩引用" xml:space="preserve">
+    <value>精彩引用</value>
+  </data>
+  <data name="系统里没有{0}语音，这句没有播报：在「设置 › 同声传译 › 播报声音」里一键安装" xml:space="preserve">
+    <value>系統里沒有{0}語音，這句沒有播報：在「設置 › 同聲傳譯 › 播報聲音」里一鍵安裝</value>
+  </data>
+  <data name="系统麦克风现在是 CABLE Output，播报会送进会议。" xml:space="preserve">
+    <value>系統麥克風現在是 CABLE Output，播報會送進會議。</value>
+  </data>
+  <data name="繁体中文" xml:space="preserve">
+    <value>繁體中文</value>
+  </data>
+  <data name="纠正识别错的人名，解释陌生术语" xml:space="preserve">
+    <value>糾正識別錯的人名，解釋陌生術語</value>
+  </data>
+  <data name="约 260 MB，只需下载一次。语音识别和发言人区分都在这台电脑上完成，会议声音不会上传。" xml:space="preserve">
+    <value>約 260 MB，只需下載一次。語音識別和發言人區分都在這臺電腦上完成，會議聲音不會上傳。</value>
+  </data>
+  <data name="纪要" xml:space="preserve">
+    <value>紀要</value>
+  </data>
+  <data name="纪要包含 · {0} 个部分" xml:space="preserve">
+    <value>紀要包含 · {0} 個部分</value>
+  </data>
+  <data name="纪要整理中…" xml:space="preserve">
+    <value>紀要整理中…</value>
+  </data>
+  <data name="纪要更新于 {0:M月d日 HH:mm}" xml:space="preserve">
+    <value>紀要更新于 {0:M月d日 HH:mm}</value>
+  </data>
+  <data name="纪要模板" xml:space="preserve">
+    <value>紀要模板</value>
+  </data>
+  <data name="纪要模板中心：选默认模板、自定义模板" xml:space="preserve">
+    <value>紀要模板中心：選默認模板、自定義模板</value>
+  </data>
+  <data name="纪要用的语言" xml:space="preserve">
+    <value>紀要用的語言</value>
+  </data>
+  <data name="纪要这次没刷新" xml:space="preserve">
+    <value>紀要這次沒刷新</value>
+  </data>
+  <data name="纪要里所有时间都写真实时间：议题和要点标会上的钟点（如 14:05），截止日期、里程碑、下次会议换算成具体日期（如 11月6日（周三））。" xml:space="preserve">
+    <value>紀要里所有時間都寫真實時間：議題和要點標會上的鐘點（如 14:05），截止日期、里程碑、下次會議換算成具體日期（如 11月6日（周三））。</value>
+  </data>
+  <data name="经营分析会" xml:space="preserve">
+    <value>經營分析會</value>
+  </data>
+  <data name="结束" xml:space="preserve">
+    <value>結束</value>
+  </data>
+  <data name="结束会议" xml:space="preserve">
+    <value>結束會議</value>
+  </data>
+  <data name="结束本场会议" xml:space="preserve">
+    <value>結束本場會議</value>
+  </data>
+  <data name="结束这场会议的收听" xml:space="preserve">
+    <value>結束這場會議的收聽</value>
+  </data>
+  <data name="结论建议" xml:space="preserve">
+    <value>結論建議</value>
+  </data>
+  <data name="给「发言人 {0}」起个名字" xml:space="preserve">
+    <value>給「發言人 {0}」起個名字</value>
+  </data>
+  <data name="给模板起个名字" xml:space="preserve">
+    <value>給模板起個名字</value>
+  </data>
+  <data name="翻译" xml:space="preserve">
+    <value>翻譯</value>
+  </data>
+  <data name="翻译字幕" xml:space="preserve">
+    <value>翻譯字幕</value>
+  </data>
+  <data name="翻译没成功，这句没有说出去" xml:space="preserve">
+    <value>翻譯沒成功，這句沒有說出去</value>
+  </data>
+  <data name="聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。" xml:space="preserve">
+    <value>聊上幾句后，AI 會在這里整理紀要，之后大約每 45 秒刷新一次。</value>
+  </data>
+  <data name="职业发展话题，以及需要的帮助或资源" xml:space="preserve">
+    <value>職業發展話題，以及需要的幫助或資源</value>
+  </data>
+  <data name="能力评估" xml:space="preserve">
+    <value>能力評估</value>
+  </data>
+  <data name="腾讯混元" xml:space="preserve">
+    <value>騰訊混元</value>
+  </data>
+  <data name="自动" xml:space="preserve">
+    <value>自動</value>
+  </data>
+  <data name="自动结束" xml:space="preserve">
+    <value>自動結束</value>
+  </data>
+  <data name="自动（对方用的语言）" xml:space="preserve">
+    <value>自動（對方用的語言）</value>
+  </data>
+  <data name="自动（系统原来的麦克风）" xml:space="preserve">
+    <value>自動（系統原來的麥克風）</value>
+  </data>
+  <data name="自动（系统麦克风）" xml:space="preserve">
+    <value>自動（系統麥克風）</value>
+  </data>
+  <data name="自动：外语译成你的系统语言；对方说你的语言时，译成你的第二语言。" xml:space="preserve">
+    <value>自動：外語譯成你的系統語言；對方說你的語言時，譯成你的第二語言。</value>
+  </data>
+  <data name="自定义（OpenAI 兼容）" xml:space="preserve">
+    <value>自定義（OpenAI 兼容）</value>
+  </data>
+  <data name="英语" xml:space="preserve">
+    <value>英語</value>
+  </data>
+  <data name="范围" xml:space="preserve">
+    <value>范圍</value>
+  </data>
+  <data name="获取模型列表" xml:space="preserve">
+    <value>獲取模型列表</value>
+  </data>
+  <data name="葡萄牙语" xml:space="preserve">
+    <value>葡萄牙語</value>
+  </data>
+  <data name="虚拟麦克风" xml:space="preserve">
+    <value>虛擬麥克風</value>
+  </data>
+  <data name="蚂蚁百灵 Ling" xml:space="preserve">
+    <value>螞蟻百靈 Ling</value>
+  </data>
+  <data name="表达的主要观点，以及是谁的观点" xml:space="preserve">
+    <value>表達的主要觀點，以及是誰的觀點</value>
+  </data>
+  <data name="西班牙语" xml:space="preserve">
+    <value>西班牙語</value>
+  </data>
+  <data name="要写什么，一句话说清" xml:space="preserve">
+    <value>要寫什么，一句話說清</value>
+  </data>
+  <data name="要决定的是什么事，为什么现在要定" xml:space="preserve">
+    <value>要決定的是什么事，為什么現在要定</value>
+  </data>
+  <data name="角色分工" xml:space="preserve">
+    <value>角色分工</value>
+  </data>
+  <data name="讨论原因时整理成问题和几条原因" xml:space="preserve">
+    <value>討論原因時整理成問題和幾條原因</value>
+  </data>
+  <data name="讨论过的备选方案，以及选或不选的原因" xml:space="preserve">
+    <value>討論過的備選方案，以及選或不選的原因</value>
+  </data>
+  <data name="讨论过的每个方案，各用一句话写清主要优缺点" xml:space="preserve">
+    <value>討論過的每個方案，各用一句話寫清主要優缺點</value>
+  </data>
+  <data name="让对方听懂你说的话" xml:space="preserve">
+    <value>讓對方聽懂你說的話</value>
+  </data>
+  <data name="议题" xml:space="preserve">
+    <value>議題</value>
+  </data>
+  <data name="议题时间线" xml:space="preserve">
+    <value>議題時間線</value>
+  </data>
+  <data name="议题背景" xml:space="preserve">
+    <value>議題背景</value>
+  </data>
+  <data name="记下每位发言人的观点和最精彩的话，分清谁说的。" xml:space="preserve">
+    <value>記下每位發言人的觀點和最精彩的話，分清誰說的。</value>
+  </data>
+  <data name="记录推荐方案、备选方案以及没选它们的原因、评审人的顾虑。" xml:space="preserve">
+    <value>記錄推薦方案、備選方案以及沒選它們的原因、評審人的顧慮。</value>
+  </data>
+  <data name="讲到的概念、定义、方法或步骤" xml:space="preserve">
+    <value>講到的概念、定義、方法或步驟</value>
+  </data>
+  <data name="讲者希望大家记住的主要观点" xml:space="preserve">
+    <value>講者希望大家記住的主要觀點</value>
+  </data>
+  <data name="设为默认" xml:space="preserve">
+    <value>設為默認</value>
+  </data>
+  <data name="设置" xml:space="preserve">
+    <value>設置</value>
+  </data>
+  <data name="访谈 / 播客" xml:space="preserve">
+    <value>訪談 / 播客</value>
+  </data>
+  <data name="评审人提出的顾虑、问题和建议" xml:space="preserve">
+    <value>評審人提出的顧慮、問題和建議</value>
+  </data>
+  <data name="评审意见" xml:space="preserve">
+    <value>評審意見</value>
+  </data>
+  <data name="评审结论" xml:space="preserve">
+    <value>評審結論</value>
+  </data>
+  <data name="识别 Zoom、Teams、腾讯会议、飞书、钉钉、Webex 等：它们不再占用麦克风，就当作会议结束。" xml:space="preserve">
+    <value>識別 Zoom、Teams、騰訊會議、飛書、釘釘、Webex 等：它們不再占用麥克風，就當作會議結束。</value>
+  </data>
+  <data name="识别出错：" xml:space="preserve">
+    <value>識別出錯：</value>
+  </data>
+  <data name="识别模型加载失败：" xml:space="preserve">
+    <value>識別模型加載失敗：</value>
+  </data>
+  <data name="识别模型已就绪：中文、英语、日语、韩语、粤语，以及发言人区分" xml:space="preserve">
+    <value>識別模型已就緒：中文、英語、日語、韓語、粵語，以及發言人區分</value>
+  </data>
+  <data name="识别模型未下载，首次收听前会自动下载" xml:space="preserve">
+    <value>識別模型未下載，首次收聽前會自動下載</value>
+  </data>
+  <data name="译成" xml:space="preserve">
+    <value>譯成</value>
+  </data>
+  <data name="试听" xml:space="preserve">
+    <value>試聽</value>
+  </data>
+  <data name="语音检测模型加载失败" xml:space="preserve">
+    <value>語音檢測模型加載失敗</value>
+  </data>
+  <data name="语音识别与发言人区分都在本机完成。开源组件与许可见安装目录里的 NOTICE。" xml:space="preserve">
+    <value>語音識別與發言人區分都在本機完成。開源組件與許可見安裝目錄里的 NOTICE。</value>
+  </data>
+  <data name="说明" xml:space="preserve">
+    <value>說明</value>
+  </data>
+  <data name="说话功能出错：" xml:space="preserve">
+    <value>說話功能出錯：</value>
+  </data>
+  <data name="请先完成识别模型下载" xml:space="preserve">
+    <value>請先完成識別模型下載</value>
+  </data>
+  <data name="请先选择或输入一个模型" xml:space="preserve">
+    <value>請先選擇或輸入一個模型</value>
+  </data>
+  <data name="请在弹出的窗口里点「Install Driver」…" xml:space="preserve">
+    <value>請在彈出的窗口里點「Install Driver」…</value>
+  </data>
+  <data name="请求太多，稍后再试" xml:space="preserve">
+    <value>請求太多，稍后再試</value>
+  </data>
+  <data name="请选择一个完整的文件夹路径，例如 D:\Apps\HuiYi。" xml:space="preserve">
+    <value>請選擇一個完整的文件夾路徑，例如 D:\Apps\HuiYi。</value>
+  </data>
+  <data name="谁负责什么" xml:space="preserve">
+    <value>誰負責什么</value>
+  </data>
+  <data name="负责人" xml:space="preserve">
+    <value>負責人</value>
+  </data>
+  <data name="起个名字" xml:space="preserve">
+    <value>起個名字</value>
+  </data>
+  <data name="跟字幕一致" xml:space="preserve">
+    <value>跟字幕一致</value>
+  </data>
+  <data name="跟随系统" xml:space="preserve">
+    <value>跟隨系統</value>
+  </data>
+  <data name="输入名字，回车保存" xml:space="preserve">
+    <value>輸入名字，回車保存</value>
+  </data>
+  <data name="近况" xml:space="preserve">
+    <value>近況</value>
+  </data>
+  <data name="近况、话题、反馈和需要的支持。" xml:space="preserve">
+    <value>近況、話題、反饋和需要的支持。</value>
+  </data>
+  <data name="还没有会议记录" xml:space="preserve">
+    <value>還沒有會議記錄</value>
+  </data>
+  <data name="还没有填写" xml:space="preserve">
+    <value>還沒有填寫</value>
+  </data>
+  <data name="还没有添加 AI 服务" xml:space="preserve">
+    <value>還沒有添加 AI 服務</value>
+  </data>
+  <data name="还没有虚拟麦克风" xml:space="preserve">
+    <value>還沒有虛擬麥克風</value>
+  </data>
+  <data name="还没装虚拟麦克风（VB-CABLE），先在设置里安装" xml:space="preserve">
+    <value>還沒裝虛擬麥克風（VB-CABLE），先在設置里安裝</value>
+  </data>
+  <data name="还需要回答的问题，以及该由谁回答" xml:space="preserve">
+    <value>還需要回答的問題，以及該由誰回答</value>
+  </data>
+  <data name="这一部分的标题" xml:space="preserve">
+    <value>這一部分的標題</value>
+  </data>
+  <data name="这个 AI 服务和它的 API key 会一起删除。" xml:space="preserve">
+    <value>這個 AI 服務和它的 API key 會一起刪除。</value>
+  </data>
+  <data name="这个 key 不可用" xml:space="preserve">
+    <value>這個 key 不可用</value>
+  </data>
+  <data name="这个服务不支持获取模型列表，请直接输入模型名" xml:space="preserve">
+    <value>這個服務不支持獲取模型列表，請直接輸入模型名</value>
+  </data>
+  <data name="这个服务不需要 key" xml:space="preserve">
+    <value>這個服務不需要 key</value>
+  </data>
+  <data name="这个服务没有返回模型，请直接输入模型名" xml:space="preserve">
+    <value>這個服務沒有返回模型，請直接輸入模型名</value>
+  </data>
+  <data name="这台电脑还没有{0}语音" xml:space="preserve">
+    <value>這臺電腦還沒有{0}語音</value>
+  </data>
+  <data name="这场会是为了做决定：让可选方案、各自的利弊和最终拍板一目了然。" xml:space="preserve">
+    <value>這場會是為了做決定：讓可選方案、各自的利弊和最終拍板一目了然。</value>
+  </data>
+  <data name="这场会议" xml:space="preserve">
+    <value>這場會議</value>
+  </data>
+  <data name="这场会议的纪要模板：换了就按新模板重新整理" xml:space="preserve">
+    <value>這場會議的紀要模板：換了就按新模板重新整理</value>
+  </data>
+  <data name="这场会议还没有纪要，点右上角「生成纪要」。" xml:space="preserve">
+    <value>這場會議還沒有紀要，點右上角「生成紀要」。</value>
+  </data>
+  <data name="这场会议里这个人说的话都会显示这个名字，纪要里也会用它。" xml:space="preserve">
+    <value>這場會議里這個人說的話都會顯示這個名字，紀要里也會用它。</value>
+  </data>
+  <data name="进展、风险、决策、待办一目了然，适合周会 / 例会。" xml:space="preserve">
+    <value>進展、風險、決策、待辦一目了然，適合周會 / 例會。</value>
+  </data>
+  <data name="退出{0}" xml:space="preserve">
+    <value>退出{0}</value>
+  </data>
+  <data name="适合大多数会议：概要、议题时间线、决策、待办。" xml:space="preserve">
+    <value>適合大多數會議：概要、議題時間線、決策、待辦。</value>
+  </data>
+  <data name="适用场景" xml:space="preserve">
+    <value>適用場景</value>
+  </data>
+  <data name="选一个模板，AI 就按它的结构写纪要。" xml:space="preserve">
+    <value>選一個模板，AI 就按它的結構寫紀要。</value>
+  </data>
+  <data name="选择安装会译的文件夹" xml:space="preserve">
+    <value>選擇安裝會譯的文件夾</value>
+  </data>
+  <data name="逐字稿" xml:space="preserve">
+    <value>逐字稿</value>
+  </data>
+  <data name="逐字稿和纪要会一起删掉，删除后无法恢复。" xml:space="preserve">
+    <value>逐字稿和紀要會一起刪掉，刪除后無法恢復。</value>
+  </data>
+  <data name="通用" xml:space="preserve">
+    <value>通用</value>
+  </data>
+  <data name="通用会议" xml:space="preserve">
+    <value>通用會議</value>
+  </data>
+  <data name="里程碑" xml:space="preserve">
+    <value>里程碑</value>
+  </data>
+  <data name="重启并更新到 {0}" xml:space="preserve">
+    <value>重啟并更新到 {0}</value>
+  </data>
+  <data name="重新下载" xml:space="preserve">
+    <value>重新下載</value>
+  </data>
+  <data name="重新整理纪要" xml:space="preserve">
+    <value>重新整理紀要</value>
+  </data>
+  <data name="重试" xml:space="preserve">
+    <value>重試</value>
+  </data>
+  <data name="金句" xml:space="preserve">
+    <value>金句</value>
+  </data>
+  <data name="问答" xml:space="preserve">
+    <value>問答</value>
+  </data>
+  <data name="问答要点" xml:space="preserve">
+    <value>問答要點</value>
+  </data>
+  <data name="问题与原因" xml:space="preserve">
+    <value>問題與原因</value>
+  </data>
+  <data name="问题背后的根本原因，而不只是表面现象" xml:space="preserve">
+    <value>問題背后的根本原因，而不只是表面現象</value>
+  </data>
+  <data name="阻塞问题" xml:space="preserve">
+    <value>阻塞問題</value>
+  </data>
+  <data name="阿里云百炼（通义千问）" xml:space="preserve">
+    <value>阿里云百煉（通義千問）</value>
+  </data>
+  <data name="需关注" xml:space="preserve">
+    <value>需關注</value>
+  </data>
+  <data name="需求与痛点" xml:space="preserve">
+    <value>需求與痛點</value>
+  </data>
+  <data name="需求是什么、给谁用，几句话说清" xml:space="preserve">
+    <value>需求是什么、給誰用，幾句話說清</value>
+  </data>
+  <data name="需求概述" xml:space="preserve">
+    <value>需求概述</value>
+  </data>
+  <data name="需求评审" xml:space="preserve">
+    <value>需求評審</value>
+  </data>
+  <data name="需要后续核实的顾虑或短板" xml:space="preserve">
+    <value>需要后續核實的顧慮或短板</value>
+  </data>
+  <data name="面板已收起，会议仍在记录。单击通知区域的图标可重新打开。" xml:space="preserve">
+    <value>面板已收起，會議仍在記錄。單擊通知區域的圖標可重新打開。</value>
+  </data>
+  <data name="面试官明确说出的建议；没说就留空" xml:space="preserve">
+    <value>面試官明確說出的建議；沒說就留空</value>
+  </data>
+  <data name="面试记录" xml:space="preserve">
+    <value>面試記錄</value>
+  </data>
+  <data name="韩语" xml:space="preserve">
+    <value>韓語</value>
+  </data>
+  <data name="项目与研发" xml:space="preserve">
+    <value>項目與研發</value>
+  </data>
+  <data name="项目启动会" xml:space="preserve">
+    <value>項目啟動會</value>
+  </data>
+  <data name="项目周会" xml:space="preserve">
+    <value>項目周會</value>
+  </data>
+  <data name="项目要达成什么，怎么衡量成功" xml:space="preserve">
+    <value>項目要達成什么，怎么衡量成功</value>
+  </data>
+  <data name="顾虑与异议" xml:space="preserve">
+    <value>顧慮與異議</value>
+  </data>
+  <data name="预算、时间与决策链" xml:space="preserve">
+    <value>預算、時間與決策鏈</value>
+  </data>
+  <data name="预算、时间要求和由谁决定（就会上说到的写）" xml:space="preserve">
+    <value>預算、時間要求和由誰決定（就會上說到的寫）</value>
+  </data>
+  <data name="额外支持 Ming 自然语音（同声传译播报）" xml:space="preserve">
+    <value>額外支持 Ming 自然語音（同聲傳譯播報）</value>
+  </data>
+  <data name="风险" xml:space="preserve">
+    <value>風險</value>
+  </data>
+  <data name="风险 / 问题（提醒）" xml:space="preserve">
+    <value>風險 / 問題（提醒）</value>
+  </data>
+  <data name="风险、阻塞或延期，每条写清影响" xml:space="preserve">
+    <value>風險、阻塞或延期，每條寫清影響</value>
+  </data>
+  <data name="风险与依赖" xml:space="preserve">
+    <value>風險與依賴</value>
+  </data>
+  <data name="风险与问题" xml:space="preserve">
+    <value>風險與問題</value>
+  </data>
+  <data name="风险和外部依赖" xml:space="preserve">
+    <value>風險和外部依賴</value>
+  </data>
+  <data name="验证中…" xml:space="preserve">
+    <value>驗證中…</value>
+  </data>
+  <data name="默认" xml:space="preserve">
+    <value>默認</value>
+  </data>
+  <data name="默认关闭，只显示原文。开会时也可以在实时面板右上角或托盘菜单里随时打开。" xml:space="preserve">
+    <value>默認關閉，只顯示原文。開會時也可以在實時面板右上角或托盤菜單里隨時打開。</value>
+  </data>
+  <data name="默认模板" xml:space="preserve">
+    <value>默認模板</value>
+  </data>
+  <data name="（其中 {0} 句拆成了两个人）" xml:space="preserve">
+    <value>（其中 {0} 句拆成了兩個人）</value>
+  </data>
+  <data name="（我的）" xml:space="preserve">
+    <value>（我的）</value>
+  </data>
+  <data name="（译文稍后出现）" xml:space="preserve">
+    <value>（譯文稍后出現）</value>
+  </data>
+  <data name="＋ 新建空白模板" xml:space="preserve">
+    <value>＋ 新建空白模板</value>
+  </data>
+  <data name="＋ 添加一个部分" xml:space="preserve">
+    <value>＋ 添加一個部分</value>
+  </data>
+  <data name="＋ 添加服务" xml:space="preserve">
+    <value>＋ 添加服務</value>
+  </data>
+</root>

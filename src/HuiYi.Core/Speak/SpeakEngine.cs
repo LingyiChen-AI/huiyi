@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using HuiYi.Audio;
 using HuiYi.Speech;
 using NAudio.CoreAudioApi;
@@ -130,7 +131,7 @@ public sealed class SpeakEngine
         if (Status != State.Idle) return;
         if (!VirtualCable.Installed)
         {
-            Problem?.Invoke("还没装虚拟麦克风（VB-CABLE），先在设置里安装");
+            Problem?.Invoke(L.T("还没装虚拟麦克风（VB-CABLE），先在设置里安装"));
             return;
         }
         lock (gate) recorded.Clear();
@@ -166,7 +167,7 @@ public sealed class SpeakEngine
             var text = HeardText.Clean(r.Text);
             if (!text.Any(char.IsLetter))
             {
-                Problem?.Invoke("没听清，再说一次");
+                Problem?.Invoke(L.T("没听清，再说一次"));
                 return;
             }
             var target = Target();
@@ -181,7 +182,7 @@ public sealed class SpeakEngine
                 var t = await translator.Translate(text, r.Lang, target, TranslationService.Kind.Speak);
                 if (t == null || !TranslationService.LooksTranslated(text, t, target))
                 {
-                    Problem?.Invoke("翻译没成功，这句没有说出去");
+                    Problem?.Invoke(L.T("翻译没成功，这句没有说出去"));
                     Log.Debug("speak: no usable translation, nothing spoken");
                     return;
                 }
@@ -194,7 +195,7 @@ public sealed class SpeakEngine
         catch (Exception e)
         {
             Log.Debug($"speak: failed {e.Message}");
-            Problem?.Invoke("说话功能出错：" + e.Message);
+            Problem?.Invoke(L.T("说话功能出错：") + e.Message);
         }
         finally
         {
@@ -246,7 +247,7 @@ public sealed class SpeakEngine
         var voice = Voices.For(language, settings.Voices.GetValueOrDefault(language));
         if (voice == null)
         {
-            Problem?.Invoke($"系统里没有{Languages.ChineseName(language)}语音，这句没有播报：在「设置 › 同声传译 › 播报声音」里一键安装");
+            Problem?.Invoke(L.F("系统里没有{0}语音，这句没有播报：在「设置 › 同声传译 › 播报声音」里一键安装", Languages.ChineseName(language)));
             return;
         }
         using var synth = new SpeechSynthesizer { Voice = voice };

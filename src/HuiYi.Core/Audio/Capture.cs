@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -137,7 +138,7 @@ public sealed class LoopbackSource : IAudioSource
         catch (Exception e)
         {
             Log.Debug($"loopback: start failed {e.Message}");
-            Failed?.Invoke("无法采集系统声音：" + e.Message);
+            Failed?.Invoke(L.T("无法采集系统声音：") + e.Message);
         }
     }
 
@@ -207,7 +208,7 @@ public sealed class MicSource : IAudioSource
         catch (Exception e)
         {
             Log.Debug($"mic: start failed {e.Message}");
-            Failed?.Invoke("无法打开麦克风：" + e.Message);
+            Failed?.Invoke(L.T("无法打开麦克风：") + e.Message);
         }
     }
 

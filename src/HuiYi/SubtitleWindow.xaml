@@ -1,7 +1,8 @@
 <Window x:Class="HuiYi.App.SubtitleWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="悬浮字幕" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        xmlns:local="clr-namespace:HuiYi.App"
+        Title="{local:Loc Key='悬浮字幕'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ShowActivated="False" ResizeMode="NoResize"
         SizeToContent="Height" Width="900" FontFamily="Microsoft YaHei UI, Segoe UI">
     <!-- Translation first and large, the original under it; a coloured edge says who is speaking. -->
@@ -16,14 +17,14 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,4">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
                         <Border x:Name="Shared" Background="#3A3F55" CornerRadius="3" Padding="6,1" Margin="0,0,8,0" Visibility="Collapsed">
-                            <TextBlock Text="对方看不到" Foreground="#E8EAF2" FontSize="11"/>
+                            <TextBlock Text="{local:Loc Key='对方看不到'}" Foreground="#E8EAF2" FontSize="11"/>
                         </Border>
-                        <Button x:Name="CloseBtn" Content="结束" FontSize="11" Padding="8,1" Foreground="#8E94A8" Background="Transparent"
-                                BorderBrush="#3A3F55" Cursor="Hand" ToolTip="结束这场会议的收听" Click="Stop_Click"/>
+                        <Button x:Name="CloseBtn" Content="{local:Loc Key='结束'}" FontSize="11" Padding="8,1" Foreground="#8E94A8" Background="Transparent"
+                                BorderBrush="#3A3F55" Cursor="Hand" ToolTip="{local:Loc Key='结束这场会议的收听'}" Click="Stop_Click"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="7" Height="7" Fill="#22B07D" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                        <TextBlock x:Name="WhoText" Text="收听中" Foreground="#8E94A8" FontSize="12"/>
+                        <TextBlock x:Name="WhoText" Text="{local:Loc Key='收听中'}" Foreground="#8E94A8" FontSize="12"/>
                     </StackPanel>
                 </DockPanel>
                 <TextBlock x:Name="TranslationText" Grid.Row="1" Foreground="White" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap"/>

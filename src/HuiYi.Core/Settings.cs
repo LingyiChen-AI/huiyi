@@ -18,6 +18,8 @@ public sealed class AppSettings
     /// "auto" follows the system languages; otherwise a target code ("zh-CN", "en"…).
     public string Target { get; set; } = "auto";
     public DisplayMode Display { get; set; } = DisplayMode.Notes;
+    /// Interface only; subtitle and notes languages keep their own settings.
+    public string UiLanguage { get; set; } = "auto";
     /// Listen to the microphone too, beside what the PC plays: my own words, or a room round one
     /// mic. On by default, as a meeting app records both ends.
     public bool ListenMic { get; set; } = true;

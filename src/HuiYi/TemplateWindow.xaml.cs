@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,11 +22,19 @@ public partial class TemplateWindow : Window
     {
         this.model = model;
         InitializeComponent();
-        Title = $"{Brand.Name} · 模板中心";
+        UiText.Set(this, "Title", () => L.F("{0} · 模板中心", L.T("会译")));
         Icon = Icons.Mark(64, false);
         current = NoteTemplates.Find(select ?? model.Settings.DefaultTemplateId, model.MyTemplates);
+        PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
         RenderList();
         Show(current);
+    }
+
+    private void LanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        RenderList();
+        NameText.Text = current.BuiltIn ? L.T(current.Name) : current.Name;
+        RenderDetail();
     }
 
     // MARK: List
@@ -37,7 +46,7 @@ public partial class TemplateWindow : Window
         {
             ListHost.Children.Add(new TextBlock
             {
-                Text = group.Key, FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Theme.Grey2, Margin = new Thickness(6, 12, 0, 4),
+                Text = group.All(t => t.BuiltIn) || group.Key == "我的模板" ? L.T(group.Key) : group.Key, FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Theme.Grey2, Margin = new Thickness(6, 12, 0, 4),
             });
             foreach (var t in group) ListHost.Children.Add(Row(t));
         }
@@ -52,19 +61,19 @@ public partial class TemplateWindow : Window
             var badge = new Border
             {
                 Background = Theme.PrimarySoft, CornerRadius = new CornerRadius(8), Padding = new Thickness(6, 0, 6, 1),
-                Child = new TextBlock { Text = "默认", FontSize = 10, Foreground = Theme.Primary, FontWeight = FontWeights.SemiBold },
+                Child = UiText.Bind(new TextBlock { Text = L.T("默认"), FontSize = 10, Foreground = Theme.Primary, FontWeight = FontWeights.SemiBold }, ("Text", () => L.T("默认"))),
             };
             DockPanel.SetDock(badge, Dock.Right);
             name.Children.Add(badge);
         }
-        name.Children.Add(new TextBlock { Text = t.Name, FontSize = 13, FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal, TextTrimming = TextTrimming.CharacterEllipsis });
+        name.Children.Add(new TextBlock { Text = t.BuiltIn ? L.T(t.Name) : t.Name, FontSize = 13, FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal, TextTrimming = TextTrimming.CharacterEllipsis });
         var body = new StackPanel();
         body.Children.Add(name);
-        body.Children.Add(new TextBlock
+        body.Children.Add(UiText.Bind(new TextBlock
         {
-            Text = t.Description.Length > 0 ? t.Description : $"{t.Sections.Count} 个部分", FontSize = 11, Foreground = Theme.Grey2,
+            Text = t.Description.Length > 0 ? (t.BuiltIn ? L.T(t.Description) : t.Description) : L.F("{0} 个部分", t.Sections.Count), FontSize = 11, Foreground = Theme.Grey2,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0),
-        });
+        }, ("Text", () => t.Description.Length > 0 ? (t.BuiltIn ? L.T(t.Description) : t.Description) : L.F("{0} 个部分", t.Sections.Count))));
         var row = new Border
         {
             Background = selected ? Theme.PrimarySoft : Brushes.Transparent, CornerRadius = new CornerRadius(5),
@@ -83,20 +92,20 @@ public partial class TemplateWindow : Window
         current = t;
         draft = t.BuiltIn ? null : Clone(t);
         var mine = draft != null;
-        NameText.Text = t.Name;
+        NameText.Text = t.BuiltIn ? L.T(t.Name) : t.Name;
         NameText.Visibility = mine ? Visibility.Collapsed : Visibility.Visible;
         NameBox.Text = t.Name;
         NameBox.Visibility = mine ? Visibility.Visible : Visibility.Collapsed;
-        CategoryText.Text = t.BuiltIn ? $"内置 · {t.Category}" : "我的模板";
+        UiText.Set(CategoryText, "Text", () => t.BuiltIn ? L.F("内置 · {0}", L.T(t.Category)) : L.T("我的模板"));
         SavedText.Text = "";
         var isDefault = t.Id == model.Settings.DefaultTemplateId;
-        DefaultBtn.Content = isDefault ? "✓ 当前默认" : "设为默认";
+        UiText.Set(DefaultBtn, "Content", () => isDefault ? L.T("✓ 当前默认") : L.T("设为默认"));
         DefaultBtn.IsEnabled = !isDefault;
         // Only one filled button at a time: 保存 when editing your own, 设为默认 on a built-in one.
         DefaultBtn.Style = (Style)FindResource(mine ? "Btn" : "PrimaryBtn");
         SaveBtn.Visibility = mine ? Visibility.Visible : Visibility.Collapsed;
         DeleteBtn.Visibility = mine ? Visibility.Visible : Visibility.Collapsed;
-        CopyBtn.Content = mine ? "复制一份" : "复制为我的模板";
+        UiText.Set(CopyBtn, "Content", () => mine ? L.T("复制一份") : L.T("复制为我的模板"));
         RenderList();
         RenderDetail();
     }
@@ -112,43 +121,56 @@ public partial class TemplateWindow : Window
         DetailHost.Children.Clear();
         var t = draft ?? current;
         var mine = draft != null;
+        if (t.BuiltIn)
+        {
+            var display = Clone(t);
+            display.Name = L.T(t.Name);
+            display.Description = L.T(t.Description);
+            display.Focus = L.T(t.Focus);
+            foreach (var section in display.Sections)
+            {
+                section.Title = L.T(section.Title);
+                section.Instruction = L.T(section.Instruction);
+            }
+            t = display;
+        }
 
         // About
-        var about = Card("说明");
-        if (mine) about.Children.Add(Label("适用场景", 2));
-        about.Children.Add(mine ? Field(t.Description, v => t.Description = v, "一句话说明这个模板适合什么会议")
+        var about = Card(L.T("说明"));
+        if (mine) about.Children.Add(Label(L.T("适用场景"), 2));
+        about.Children.Add(mine ? Field(t.Description, v => t.Description = v, L.T("一句话说明这个模板适合什么会议"))
                                 : Body(t.Description));
-        about.Children.Add(mine ? Label("关注重点", 14, "告诉 AI 这类会议最该抓住什么") : Small("关注重点（告诉 AI 这类会议最该抓住什么）", 12));
-        about.Children.Add(mine ? Field(t.Focus, v => t.Focus = v, "例如：每条风险都要写清影响和负责人", multi: true)
+        about.Children.Add(mine ? Label(L.T("关注重点"), 14, L.T("告诉 AI 这类会议最该抓住什么")) : Small(L.T("关注重点（告诉 AI 这类会议最该抓住什么）"), 12));
+        about.Children.Add(mine ? Field(t.Focus, v => t.Focus = v, L.T("例如：每条风险都要写清影响和负责人"), multi: true)
                                 : Body(t.Focus.Length > 0 ? t.Focus : "—", Theme.Grey));
 
         // Options
-        var opts = Card("固定部分");
-        opts.Children.Add(Body("概要总是会写；以下部分可以选。", Theme.Grey2, 12));
-        opts.Children.Add(Toggle("议题时间线", "按时间列出议题和要点，每条标出在会上的真实时间", t.Topics, v => t.Topics = v, mine));
-        opts.Children.Add(Toggle("原因分析", "讨论原因时整理成问题和几条原因", t.Fishbone, v => t.Fishbone = v, mine));
-        opts.Children.Add(Toggle("人名与术语", "纠正识别错的人名，解释陌生术语", t.Terms, v => t.Terms = v, mine));
+        var opts = Card(L.T("固定部分"));
+        opts.Children.Add(Body(L.T("概要总是会写；以下部分可以选。"), Theme.Grey2, 12));
+        opts.Children.Add(Toggle(L.T("议题时间线"), L.T("按时间列出议题和要点，每条标出在会上的真实时间"), t.Topics, v => t.Topics = v, mine));
+        opts.Children.Add(Toggle(L.T("原因分析"), L.T("讨论原因时整理成问题和几条原因"), t.Fishbone, v => t.Fishbone = v, mine));
+        opts.Children.Add(Toggle(L.T("人名与术语"), L.T("纠正识别错的人名，解释陌生术语"), t.Terms, v => t.Terms = v, mine));
 
         // Sections
-        var parts = Card($"纪要包含 · {t.Sections.Count} 个部分");
+        var parts = Card(L.F("纪要包含 · {0} 个部分", t.Sections.Count));
         for (var i = 0; i < t.Sections.Count; i++) parts.Children.Add(SectionRow(t, i, mine));
         if (mine)
         {
-            var add = new Button { Content = "＋ 添加一个部分", Style = (Style)FindResource("Btn"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 0) };
+            var add = UiText.Bind(new Button { Content = L.T("＋ 添加一个部分"), Style = (Style)FindResource("Btn"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 0) }, ("Content", () => L.T("＋ 添加一个部分")));
             add.Click += (_, _) =>
             {
                 var n = 1;
                 while (t.Sections.Any(s => s.Key == $"part{n}")) n++;
-                t.Sections.Add(new TemplateSection { Key = $"part{n}", Title = "新的部分", Instruction = "要写什么，一句话说清" });
+                t.Sections.Add(new TemplateSection { Key = $"part{n}", Title = L.T("新的部分"), Instruction = L.T("要写什么，一句话说清") });
                 RenderDetail();
             };
             parts.Children.Add(add);
         }
-        DetailHost.Children.Add(new TextBlock
+        DetailHost.Children.Add(UiText.Bind(new TextBlock
         {
-            Text = "纪要里所有时间都写真实时间：议题和要点标会上的钟点（如 14:05），截止日期、里程碑、下次会议换算成具体日期（如 11月6日（周三））。",
+            Text = L.T("纪要里所有时间都写真实时间：议题和要点标会上的钟点（如 14:05），截止日期、里程碑、下次会议换算成具体日期（如 11月6日（周三））。"),
             Style = (Style)FindResource("Helper"), Margin = new Thickness(2, 0, 0, 12),
-        });
+        }, ("Text", () => L.T("纪要里所有时间都写真实时间：议题和要点标会上的钟点（如 14:05），截止日期、里程碑、下次会议换算成具体日期（如 11月6日（周三））。"))));
     }
 
     private UIElement SectionRow(NoteTemplate t, int index, bool mine)
@@ -166,33 +188,33 @@ public partial class TemplateWindow : Window
         else
         {
             var head = new DockPanel();
-            var del = new Button { Content = "删除", Style = (Style)FindResource("DeleteBtn"), Padding = new Thickness(8, 3, 10, 3), Margin = new Thickness(6, 0, 0, 0) };
+            var del = UiText.Bind(new Button { Content = L.T("删除"), Style = (Style)FindResource("DeleteBtn"), Padding = new Thickness(8, 3, 10, 3), Margin = new Thickness(6, 0, 0, 0) }, ("Content", () => L.T("删除")));
             del.Click += (_, _) => { t.Sections.RemoveAt(index); RenderDetail(); };
             DockPanel.SetDock(del, Dock.Right);
             head.Children.Add(del);
-            var up = new Button { Content = "↑", Style = (Style)FindResource("GhostBtn"), Foreground = Theme.Grey2, IsEnabled = index > 0, ToolTip = "上移" };
+            var up = UiText.Bind(new Button { Content = "↑", Style = (Style)FindResource("GhostBtn"), Foreground = Theme.Grey2, IsEnabled = index > 0, ToolTip = L.T("上移") }, ("ToolTip", () => L.T("上移")));
             up.Click += (_, _) => { (t.Sections[index - 1], t.Sections[index]) = (t.Sections[index], t.Sections[index - 1]); RenderDetail(); };
             DockPanel.SetDock(up, Dock.Right);
             head.Children.Add(up);
-            var title = Field(s.Title, v => s.Title = v, "这一部分的标题", width: 260, strong: true);
+            var title = Field(s.Title, v => s.Title = v, L.T("这一部分的标题"), width: 260, strong: true);
             title.Background = Brushes.White;
             head.Children.Add(title);
             box.Children.Add(head);
-            var what = Field(s.Instruction, v => s.Instruction = v, "AI 在这里写什么（一句话）", top: 8);
+            var what = Field(s.Instruction, v => s.Instruction = v, L.T("AI 在这里写什么（一句话）"), top: 8);
             what.Background = Brushes.White;
             box.Children.Add(what);
             var opts = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             var style = new ComboBox { MinWidth = 170, Margin = new Thickness(0, 0, 16, 0) };
             foreach (var (key, name) in Styles)
             {
-                var item = new ComboBoxItem { Content = name, Tag = key };
+                var item = new ComboBoxItem { Content = L.T(name), Tag = key };
                 style.Items.Add(item);
                 if (key == s.Style) style.SelectedItem = item;
             }
             style.SelectionChanged += (_, _) => s.Style = (style.SelectedItem as ComboBoxItem)?.Tag as string ?? "dot";
             opts.Children.Add(style);
-            opts.Children.Add(Switch("带负责人", s.Owner, v => s.Owner = v));
-            opts.Children.Add(Switch("带截止日期", s.Due, v => s.Due = v));
+            opts.Children.Add(Switch(L.T("带负责人"), s.Owner, v => s.Owner = v));
+            opts.Children.Add(Switch(L.T("带截止日期"), s.Due, v => s.Due = v));
             box.Children.Add(opts);
         }
         return new Border
@@ -204,11 +226,11 @@ public partial class TemplateWindow : Window
 
     private static IEnumerable<string> Tags(TemplateSection s)
     {
-        if (s.Style == "todo") yield return "待办";
-        if (s.Style == "check") yield return "已确定";
-        if (s.Style == "warn") yield return "需关注";
-        if (s.Owner) yield return "负责人";
-        if (s.Due) yield return "截止日期";
+        if (s.Style == "todo") yield return L.T("待办");
+        if (s.Style == "check") yield return L.T("已确定");
+        if (s.Style == "warn") yield return L.T("需关注");
+        if (s.Owner) yield return L.T("负责人");
+        if (s.Due) yield return L.T("截止日期");
     }
 
     // MARK: Pieces
@@ -299,22 +321,22 @@ public partial class TemplateWindow : Window
     private void Copy_Click(object sender, RoutedEventArgs e)
     {
         var source = draft ?? current;
-        var copy = source.CopyAsMine(source.BuiltIn ? source.Name + "（我的）" : source.Name + " 副本");
+        var copy = source.CopyAsMine(source.BuiltIn ? source.Name + L.T("（我的）") : source.Name + L.T(" 副本"));
         model.MyTemplates.Add(copy);
         model.SaveTemplates();
         Show(copy);
-        SavedText.Text = "已复制，可以修改了";
+        UiText.Set(SavedText, "Text", () => L.T("已复制，可以修改了"));
     }
 
     private void New_Click(object sender, RoutedEventArgs e)
     {
         var blank = new NoteTemplate
         {
-            Id = "my-" + Guid.NewGuid().ToString("N")[..8], Name = "新模板", Description = "",
+            Id = "my-" + Guid.NewGuid().ToString("N")[..8], Name = L.T("新模板"), Description = "",
             Sections =
             [
-                new() { Key = "conclusions", Title = "决策与结论", Style = "check", Instruction = "会上明确定下来的事项，每条一句" },
-                new() { Key = "todos", Title = "待办事项", Style = "todo", Owner = true, Due = true, Instruction = "有人认领的具体行动，写清负责人和截止日期" },
+                new() { Key = "conclusions", Title = L.T("决策与结论"), Style = "check", Instruction = L.T("会上明确定下来的事项，每条一句") },
+                new() { Key = "todos", Title = L.T("待办事项"), Style = "todo", Owner = true, Due = true, Instruction = L.T("有人认领的具体行动，写清负责人和截止日期") },
             ],
         };
         model.MyTemplates.Add(blank);
@@ -327,7 +349,7 @@ public partial class TemplateWindow : Window
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         if (draft == null) return;
-        draft.Name = NameBox.Text.Trim() is { Length: > 0 } n ? n : "未命名模板";
+        draft.Name = NameBox.Text.Trim() is { Length: > 0 } n ? n : L.T("未命名模板");
         // Every part needs a title and a key the AI can fill.
         draft.Sections = draft.Sections.Where(s => s.Title.Trim().Length > 0).ToList();
         var i = model.MyTemplates.FindIndex(t => t.Id == draft.Id);
@@ -335,13 +357,13 @@ public partial class TemplateWindow : Window
         model.SaveTemplates();
         var saved = draft;
         Show(saved);
-        SavedText.Text = "✓ 已保存，之后整理纪要就按它来";
+        UiText.Set(SavedText, "Text", () => L.T("✓ 已保存，之后整理纪要就按它来"));
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (draft == null) return;
-        if (!Dialog.Confirm(this, $"删除模板「{current.Name}」？", "正在用这个模板的会议会改用默认模板，已经写好的纪要不受影响。", "删除", danger: true)) return;
+        if (!Dialog.Confirm(this, L.F("删除模板「{0}」？", current.Name), L.T("正在用这个模板的会议会改用默认模板，已经写好的纪要不受影响。"), L.T("删除"), danger: true)) return;
         model.MyTemplates.RemoveAll(t => t.Id == current.Id);
         model.SaveTemplates();
         Show(NoteTemplates.Find(model.Settings.DefaultTemplateId, model.MyTemplates));

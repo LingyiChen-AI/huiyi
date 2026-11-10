@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using HuiYi.Audio;
@@ -111,7 +112,7 @@ public sealed class ListenEngine : IDisposable
         catch (Exception e)
         {
             Log.Debug($"listen: VAD failed {e.Message}");
-            Failed?.Invoke("语音检测模型加载失败");
+            Failed?.Invoke(L.T("语音检测模型加载失败"));
             return;
         }
 
@@ -197,7 +198,7 @@ public sealed class ListenEngine : IDisposable
         catch (Exception e)
         {
             Log.Debug($"listen: worker failed {e}");
-            Failed?.Invoke("识别出错：" + e.Message);
+            Failed?.Invoke(L.T("识别出错：") + e.Message);
         }
         finally
         {

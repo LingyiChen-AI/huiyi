@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Threading;
 using HuiYi.Audio;
@@ -10,8 +11,8 @@ namespace HuiYi.App;
 /// the macOS project this one follows.
 public static class Brand
 {
-    public const string Name = "会译";
-    public const string Tagline = "会议实时字幕与纪要";
+    public static string Name => L.Language.StartsWith("zh") ? L.T("会译") : "HuiYi";
+    public static string Tagline => L.T("会议实时字幕与纪要");
 }
 
 /// Wires the engines together and owns the windows. Engines raise events on worker threads; every
@@ -70,11 +71,15 @@ public sealed class AppModel
         catch { return [System.Globalization.CultureInfo.CurrentUICulture.Name]; }
     }
 
-    public AppModel()
+    public AppModel(bool preview = false)
     {
+        L.SetLanguage(Settings.UiLanguage);
         Routing = new MicRouting(Settings);
         // A recording kept for the after-meeting check outlives the app only if it crashed: drop it.
-        try { if (System.IO.Directory.Exists(Paths.Recordings)) System.IO.Directory.Delete(Paths.Recordings, true); } catch { }
+        if (!preview)
+        {
+            try { if (System.IO.Directory.Exists(Paths.Recordings)) System.IO.Directory.Delete(Paths.Recordings, true); } catch { }
+        }
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
@@ -82,11 +87,14 @@ public sealed class AppModel
         Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
         Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable
-            ? $"Google 翻译暂时被限流，整句译文改由 {Ai.Current?.Name} 提供"
-            : "Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译"));
-        if (Ai.State == AiClient.KeyState.Unchecked) _ = Ai.Check();
-        if (Models.Ready) loading = Task.Run(Load);
-        ApplySpeakKey();
+            ? L.F("Google 翻译暂时被限流，整句译文改由 {0} 提供", Ai.Current?.Name)
+            : L.T("Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译")));
+        if (!preview)
+        {
+            if (Ai.State == AiClient.KeyState.Unchecked) _ = Ai.Check();
+            if (Models.Ready) loading = Task.Run(Load);
+            ApplySpeakKey();
+        }
     }
 
     private void Ui(Action a)
@@ -133,7 +141,7 @@ public sealed class AppModel
         meeting.EndPending += p => Ui(() => EndPending?.Invoke(p));
         meeting.Redo = (audio, lines) => Prints() is { } vp ? MeetingRedo.Run(audio, lines, vp.Embed, rec.Recognize) : null;
         meeting.Redone += (id, relabelled, split) => Ui(() => Toast?.Invoke(
-            $"已用整场录音重新校对了发言人：{relabelled + split} 句有调整{(split > 0 ? $"（其中 {split} 句拆成了两个人）" : "")}，纪要会随之更新。"));
+            L.F("已用整场录音重新校对了发言人：{0} 句有调整{1}，纪要会随之更新。", relabelled + split, (split > 0 ? $"（其中 {split} 句拆成了两个人）" : ""))));
         speak.MyMic = Routing.MyMicId;
         speak.StateChanged += () => Ui(() => SpeakChanged?.Invoke());
         speak.Problem += m => Ui(() => Toast?.Invoke(m));
@@ -155,7 +163,7 @@ public sealed class AppModel
         {
             loading = null;
             Log.Debug($"app: recognizer failed {e.Message}");
-            Toast?.Invoke("识别模型加载失败：" + e.Message);
+            Toast?.Invoke(L.T("识别模型加载失败：") + e.Message);
             return false;
         }
         return Meeting != null;
@@ -210,11 +218,15 @@ public sealed class AppModel
     /// Who said a line of the live meeting ("发言人 2", a name, or 发言人) and their number, if shown.
     public (string Who, int? Number) SpeakerOf(string? lineId)
     {
-        if (lineId == null || LiveSessionId is not { } id || Store.Snapshot(id) is not { } s) return ("发言人", null);
+        if (lineId == null || LiveSessionId is not { } id || Store.Snapshot(id) is not { } s) return (L.T("发言人"), null);
         var line = s.Lines.FirstOrDefault(l => l.Id == lineId);
-        if (line == null) return ("发言人", null);
+        if (line == null) return (L.T("发言人"), null);
         var numbers = SpeakerLabels.Numbers(s.Lines);
-        return (SpeakerLabels.Who(line, numbers, SpeakerLabels.Names(s)), numbers.TryGetValue(lineId, out var n) ? n : null);
+        var names = SpeakerLabels.Names(s);
+        int? number = numbers.TryGetValue(lineId, out var n) ? n : null;
+        var label = line.Speaker == "me" ? L.T("我") : number is { } speaker
+            ? names.GetValueOrDefault(speaker) ?? L.F("发言人 {0}", speaker) : L.T("发言人");
+        return (label, number);
     }
 
     /// Names a voice in a meeting; every view of its notes redraws with the name.
@@ -254,7 +266,7 @@ public sealed class AppModel
 
     private async Task PressSpeak()
     {
-        if (!await EnsureEngines()) { Toast?.Invoke("请先完成识别模型下载"); return; }
+        if (!await EnsureEngines()) { Toast?.Invoke(L.T("请先完成识别模型下载")); return; }
         Speak?.Press();
     }
 
@@ -267,9 +279,9 @@ public sealed class AppModel
         return result switch
         {
             VirtualCable.InstallResult.Installed => null,
-            VirtualCable.InstallResult.NeedsRestart => "安装程序已经运行完。如果这里还显示没装上，重启电脑后就能用了。",
-            VirtualCable.InstallResult.Cancelled => "安装已取消。",
-            _ => "安装没成功：" + error + "。也可以去 vb-audio.com/Cable 手动下载安装。",
+            VirtualCable.InstallResult.NeedsRestart => L.T("安装程序已经运行完。如果这里还显示没装上，重启电脑后就能用了。"),
+            VirtualCable.InstallResult.Cancelled => L.T("安装已取消。"),
+            _ => L.T("安装没成功：") + error + L.T("。也可以去 vb-audio.com/Cable 手动下载安装。"),
         };
     }
 

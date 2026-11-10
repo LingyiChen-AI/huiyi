@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -38,11 +39,11 @@ public sealed class SpeakerNameWindow : Window
         var line = new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x55));
         var muted = new SolidColorBrush(Color.FromRgb(0x8E, 0x94, 0xA8));
 
-        box = new TextBox
+        box = UiText.Bind(new TextBox
         {
-            Style = (Style)Application.Current.FindResource("NightField"), Tag = "例如：张三、Daniel",
+            Style = (Style)Application.Current.FindResource("NightField"), Tag = L.T("例如：张三、Daniel"),
             Text = current, FontSize = 14, Margin = new Thickness(0, 10, 0, 0),
-        };
+        }, ("Tag", () => L.T("例如：张三、Daniel")));
         box.KeyDown += (_, e) =>
         {
             if (e.Key == Key.Enter) Commit(box.Text.Trim());
@@ -50,9 +51,9 @@ public sealed class SpeakerNameWindow : Window
         };
 
         var buttons = new DockPanel { Margin = new Thickness(0, 12, 0, 0), LastChildFill = false };
-        var ok = new Button { Content = "保存", Style = (Style)Application.Current.FindResource("PrimaryBtn"), Padding = new Thickness(16, 4, 16, 4) };
+        var ok = UiText.Bind(new Button { Content = L.T("保存"), Style = (Style)Application.Current.FindResource("PrimaryBtn"), Padding = new Thickness(16, 4, 16, 4) }, ("Content", () => L.T("保存")));
         ok.Click += (_, _) => Commit(box.Text.Trim());
-        var cancel = new Button { Content = "取消", Style = (Style)Application.Current.FindResource("NightBtn"), Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = UiText.Bind(new Button { Content = L.T("取消"), Style = (Style)Application.Current.FindResource("NightBtn"), Margin = new Thickness(0, 0, 8, 0) }, ("Content", () => L.T("取消")));
         cancel.Click += (_, _) => Close();
         DockPanel.SetDock(ok, Dock.Right);
         DockPanel.SetDock(cancel, Dock.Right);
@@ -60,28 +61,28 @@ public sealed class SpeakerNameWindow : Window
         buttons.Children.Add(cancel);
         if (current.Length > 0)
         {
-            var reset = new Button
+            var reset = UiText.Bind(new Button
             {
-                Content = $"恢复为发言人 {number}", Style = (Style)Application.Current.FindResource("GhostBtn"),
+                Content = L.F("恢复为发言人 {0}", number), Style = (Style)Application.Current.FindResource("GhostBtn"),
                 Foreground = muted, Margin = new Thickness(-6, 0, 0, 0),
-            };
+            }, ("Content", () => L.F("恢复为发言人 {0}", number)));
             reset.Click += (_, _) => Commit("");
             DockPanel.SetDock(reset, Dock.Left);
             buttons.Children.Add(reset);
         }
 
         var body = new StackPanel { Width = 280 };
-        body.Children.Add(new TextBlock
+        body.Children.Add(UiText.Bind(new TextBlock
         {
-            Text = $"给「发言人 {number}」起个名字", FontSize = 13, FontWeight = FontWeights.SemiBold,
+            Text = L.F("给「发言人 {0}」起个名字", number), FontSize = 13, FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(Color.FromRgb(0xF2, 0xF3, 0xF8)),
-        });
+        }, ("Text", () => L.F("给「发言人 {0}」起个名字", number))));
         body.Children.Add(box);
-        body.Children.Add(new TextBlock
+        body.Children.Add(UiText.Bind(new TextBlock
         {
-            Text = "这场会议里这个人说的话都会显示这个名字，纪要里也会用它。", FontSize = 11, Foreground = muted,
+            Text = L.T("这场会议里这个人说的话都会显示这个名字，纪要里也会用它。"), FontSize = 11, Foreground = muted,
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0),
-        });
+        }, ("Text", () => L.T("这场会议里这个人说的话都会显示这个名字，纪要里也会用它。"))));
         body.Children.Add(buttons);
         Content = new Border
         {

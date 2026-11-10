@@ -14,7 +14,7 @@
 
 ## Design
 
-会译 has its own look, deliberately unlike Cicada's: cool slate ground `#F5F6FA`, ink `#1E2235`, indigo `#4F5BD5` for actions and selection, green `#22B07D` for "on air", greys `#646B80` / `#9AA1B2`. The live panel is dark (`#1B1E2B`); the records window has a white sidebar grouped by day and notes split into cards; settings are tabbed pages; first run is a one-step-per-page wizard; the mark is a speech bubble (`Icons.cs`). Words: 发言人 (not 说话人), 实时面板, 悬浮字幕, 逐字稿, 同声传译. Colours live in `App.xaml` and `Theme.cs`. Copy is Chinese and short, at most one grey helper line. The product name is `Brand.Name` in `AppModel.cs`.
+会译 has its own look, deliberately unlike Cicada's: cool slate ground `#F5F6FA`, ink `#1E2235`, indigo `#4F5BD5` for actions and selection, green `#22B07D` for "on air", greys `#646B80` / `#9AA1B2`. The live panel is dark (`#1B1E2B`); the records window has a white sidebar grouped by day and notes split into cards; settings are tabbed pages; first run is a one-step-per-page wizard; the mark is a speech bubble (`Icons.cs`). Words: 发言人 (not 说话人), 实时面板, 悬浮字幕, 逐字稿, 同声传译. Colours live in `App.xaml` and `Theme.cs`. UI copy uses `HuiYi.Localization.L` and `Localization/Strings*.resx` for Simplified Chinese, Traditional Chinese, English, Japanese and Korean. Use `{local:Loc}` in XAML and `UiText.Set` / `UiText.Bind` for code-created labels so changes apply immediately. Keep copy short. API identifiers, speech preview sentences, AI prompts, transcripts and user-authored names/templates must keep their original values. The product name is `Brand.Name` in `AppModel.cs`.
 
 ## Commands
 

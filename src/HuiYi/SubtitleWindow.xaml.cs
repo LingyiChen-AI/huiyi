@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -35,7 +36,7 @@ public partial class SubtitleWindow : Window
 
     private void Idle()
     {
-        WhoText.Text = "收听中 · 有人说话时字幕会出现在这里";
+        UiText.Set(WhoText, "Text", () => L.T("收听中 · 有人说话时字幕会出现在这里"));
         Bar.BorderBrush = Theme.Primary;
         TranslationText.Text = "";
         SourceText.Text = "";
@@ -71,8 +72,9 @@ public partial class SubtitleWindow : Window
             Idle();
             return;
         }
-        var (who, number) = model.SpeakerOf(s.LineId);
-        WhoText.Text = s.Live ? $"{who} · 正在说" : who;
+        var (_, number) = model.SpeakerOf(s.LineId);
+        UiText.Set(WhoText, "Text", () => s.Live
+            ? L.F("{0} · 正在说", model.SpeakerOf(s.LineId).Who) : model.SpeakerOf(s.LineId).Who);
         Bar.BorderBrush = number is { } n ? Theme.Speaker(n) : Theme.Primary;
         var translation = model.Settings.TranslationOn ? Tail(s.Translation, 90) : "";
         TranslationText.Text = translation;

@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -39,7 +40,7 @@ public sealed class UpdateWindow : Window
     {
         this.model = model;
         this.updates = updates;
-        Title = "发现新版本";
+        UiText.Set(this, "Title", () => L.T("发现新版本"));
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -56,17 +57,17 @@ public sealed class UpdateWindow : Window
         var grey = new SolidColorBrush(Color.FromRgb(0x6B, 0x70, 0x80));
 
         // Title row: mark, 发现新版本, close.
-        var close = new Button
+        var close = UiText.Bind(new Button
         {
-            Style = (Style)Application.Current.FindResource("GhostBtn"), Padding = new Thickness(6, 2, 6, 2), ToolTip = "下次提醒",
+            Style = (Style)Application.Current.FindResource("GhostBtn"), Padding = new Thickness(6, 2, 6, 2), ToolTip = L.T("下次提醒"),
             Content = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, Foreground = grey },
-        };
+        }, ("ToolTip", () => L.T("下次提醒")));
         close.Click += (_, _) => Close();
         var titleRow = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
         titleRow.Children.Add(close);
         titleRow.Children.Add(new Image { Source = Icons.Mark(64, false), Width = 30, Height = 30, Margin = new Thickness(0, 0, 10, 0) });
-        titleRow.Children.Add(new TextBlock { Text = "发现新版本", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = ink, VerticalAlignment = VerticalAlignment.Center });
+        titleRow.Children.Add(UiText.Bind(new TextBlock { Text = L.T("发现新版本"), FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = ink, VerticalAlignment = VerticalAlignment.Center }, ("Text", () => L.T("发现新版本"))));
 
         // v0.1.4 ▷ v0.1.5
         var jump = new TextBlock { FontSize = 13, Margin = new Thickness(0, 16, 0, 0), FontFamily = new FontFamily("Consolas, Microsoft YaHei UI") };
@@ -75,16 +76,16 @@ public sealed class UpdateWindow : Window
         jump.Inlines.Add(new System.Windows.Documents.Run($"v{next}") { Foreground = Theme.Primary, FontWeight = FontWeights.Bold });
 
         notesHost.Margin = new Thickness(0, 10, 0, 0);
-        notesHost.Children.Add(new TextBlock { Text = "正在读取更新内容…", Foreground = grey, FontSize = 13 });
+        notesHost.Children.Add(UiText.Bind(new TextBlock { Text = L.T("正在读取更新内容…"), Foreground = grey, FontSize = 13 }, ("Text", () => L.T("正在读取更新内容…"))));
         var notes = new ScrollViewer { Content = notesHost, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
         bar = new ProgressBar { Height = 6, Minimum = 0, Maximum = 100, Margin = new Thickness(0, 18, 0, 0), Visibility = Visibility.Collapsed, Foreground = Theme.Primary };
         status = new TextBlock { FontSize = 12, Foreground = grey, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap };
-        if (model.IsListening) status.Text = "正在记录会议：更新会先结束本场会议（记录会保存），再重启会译。";
+        if (model.IsListening) UiText.Set(status, "Text", () => L.T("正在记录会议：更新会先结束本场会议（记录会保存），再重启会译。"));
 
-        later = new Button { Content = "下次提醒", Style = (Style)Application.Current.FindResource("Btn"), Padding = new Thickness(20, 7, 20, 7), Margin = new Thickness(0, 0, 10, 0), IsCancel = true };
+        later = UiText.Bind(new Button { Content = L.T("下次提醒"), Style = (Style)Application.Current.FindResource("Btn"), Padding = new Thickness(20, 7, 20, 7), Margin = new Thickness(0, 0, 10, 0), IsCancel = true }, ("Content", () => L.T("下次提醒")));
         later.Click += (_, _) => Close();
-        now = new Button { Content = "立即更新", Style = (Style)Application.Current.FindResource("PrimaryBtn"), Padding = new Thickness(20, 7, 20, 7), IsDefault = true };
+        now = UiText.Bind(new Button { Content = L.T("立即更新"), Style = (Style)Application.Current.FindResource("PrimaryBtn"), Padding = new Thickness(20, 7, 20, 7), IsDefault = true }, ("Content", () => L.T("立即更新")));
         now.Click += async (_, _) => await UpdateNow();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         buttons.Children.Add(later);
@@ -114,7 +115,7 @@ public sealed class UpdateWindow : Window
         notesHost.Children.Clear();
         if (lines.Count == 0)
         {
-            notesHost.Children.Add(new TextBlock { Text = "改进了使用体验，修复了一些问题。", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x4E)) });
+            notesHost.Children.Add(UiText.Bind(new TextBlock { Text = L.T("改进了使用体验，修复了一些问题。"), FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x4E)) }, ("Text", () => L.T("改进了使用体验，修复了一些问题。"))));
             return;
         }
         foreach (var line in lines)
@@ -135,24 +136,24 @@ public sealed class UpdateWindow : Window
     private async Task UpdateNow()
     {
         later.IsEnabled = now.IsEnabled = false;
-        now.Content = "下载中…";
+        UiText.Set(now, "Content", () => L.T("下载中…"));
         bar.Visibility = Visibility.Visible;
-        status.Text = "正在下载新版本… 0%";
+        UiText.Set(status, "Text", () => L.T("正在下载新版本… 0%"));
         var ok = await updates.Download(p => Dispatcher.BeginInvoke(() =>
         {
             bar.Value = p;
-            status.Text = $"正在下载新版本… {p}%";
+            UiText.Set(status, "Text", () => L.F("正在下载新版本… {0}%", p));
         }));
         if (!ok)
         {
             bar.Visibility = Visibility.Collapsed;
-            status.Text = "下载失败，请检查网络后再试。";
-            now.Content = "重试";
+            UiText.Set(status, "Text", () => L.T("下载失败，请检查网络后再试。"));
+            UiText.Set(now, "Content", () => L.T("重试"));
             later.IsEnabled = now.IsEnabled = true;
             return;
         }
         bar.Value = 100;
-        status.Text = "下载完成，正在安装，会译会自动重新打开…";
+        UiText.Set(status, "Text", () => L.T("下载完成，正在安装，会译会自动重新打开…"));
         await Task.Delay(600);
         ((App)Application.Current).RestartToUpdate();
     }

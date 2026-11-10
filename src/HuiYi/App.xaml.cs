@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -59,7 +60,7 @@ public partial class App : Application
             Log.Debug($"app: unhandled {ex.Exception}");
             ex.Handled = true;
         };
-        Model = new AppModel();
+        Model = new AppModel(preview: e.Args.Contains("--snapshot"));
         Model.StateChanged += UpdateTray;
         Model.Toast += ShowToast;
         Model.EndPending += OnEndPending;
@@ -73,6 +74,8 @@ public partial class App : Application
         string? Arg(string name) => Array.IndexOf(e.Args, name) is var i and >= 0 && i + 1 < e.Args.Length ? e.Args[i + 1] : null;
         var show = Arg("--show");
         Model.FeedFile = Arg("--feed");
+        if (Arg("--ui-language") is { } language) L.SetLanguage(language);
+        L.Changed += RefreshLanguage;
         if (Arg("--snapshot") is { } shots)
         {
             // --snapshot <folder>: render every window to PNG off screen, then quit.
@@ -91,6 +94,13 @@ public partial class App : Application
         else if (!background) OpenMain();
         if (e.Args.Contains("--listen")) _ = ToggleListening();
         StartUpdateChecks();
+    }
+
+    private void RefreshLanguage()
+    {
+        UpdateTrayText();
+        mainWindow?.Refresh();
+        if (tray?.ContextMenu is { } menu) FillMenu(menu);
     }
 
     private const string OpenSignal = @"Local\HuiYi.open";
@@ -175,19 +185,19 @@ public partial class App : Application
             return mi;
         }
         var listening = Model.IsListening;
-        Item(listening ? "结束本场会议" : "开始收听", () => _ = ToggleListening());
-        Item(Model.Settings.Display == DisplayMode.Notes ? "打开实时面板" : "打开悬浮字幕", ShowLive, listening);
-        var translate = Item("翻译字幕", () => Model.SetTranslation(!Model.Settings.TranslationOn));
+        Item(listening ? L.T("结束本场会议") : L.T("开始收听"), () => _ = ToggleListening());
+        Item(Model.Settings.Display == DisplayMode.Notes ? L.T("打开实时面板") : L.T("打开悬浮字幕"), ShowLive, listening);
+        var translate = Item(L.T("翻译字幕"), () => Model.SetTranslation(!Model.Settings.TranslationOn));
         translate.IsCheckable = false;
         translate.IsChecked = Model.Settings.TranslationOn;
         menu.Items.Add(new Separator());
-        Item("会议记录", OpenMain);
-        Item("纪要模板", () => OpenTemplates());
-        Item("设置", OpenSettings);
+        Item(L.T("会议记录"), OpenMain);
+        Item(L.T("纪要模板"), () => OpenTemplates());
+        Item(L.T("设置"), OpenSettings);
         menu.Items.Add(new Separator());
-        if (Updates.ReadyVersion is { } next) Item($"重启并更新到 {next}", RestartToUpdate);
-        else if (Updates.AvailableVersion is { } found) Item($"发现新版本 {found}", () => UpdateWindow.ShowFor(Model, Updates));
-        Item($"退出{Brand.Name}", Quit);
+        if (Updates.ReadyVersion is { } next) Item(L.F("重启并更新到 {0}", next), RestartToUpdate);
+        else if (Updates.AvailableVersion is { } found) Item(L.F("发现新版本 {0}", found), () => UpdateWindow.ShowFor(Model, Updates));
+        Item(L.F("退出{0}", Brand.Name), Quit);
     }
 
     private DateTime lastTrayClick = DateTime.MinValue;
@@ -262,14 +272,20 @@ public partial class App : Application
         if (tray == null) return;
         var live = Model.IsListening;
         tray.Icon = Icons.Tray(live);
-        tray.ToolTipText = live ? $"{Brand.Name} · 收听中（单击打开面板，右键结束会议）"
-            : Model.Settings.TrayClickStarts ? $"{Brand.Name} · 单击开始收听" : $"{Brand.Name} · 单击打开面板";
+        UpdateTrayText();
         if (!live)
         {
             subtitles?.Hide();
             notesWindow?.OnStopped();
         }
         mainWindow?.Refresh();
+    }
+
+    private void UpdateTrayText()
+    {
+        if (tray == null) return;
+        tray.ToolTipText = Model.IsListening ? L.F("{0} · 收听中（单击打开面板，右键结束会议）", Brand.Name)
+            : Model.Settings.TrayClickStarts ? L.F("{0} · 单击开始收听", Brand.Name) : L.F("{0} · 单击打开面板", Brand.Name);
     }
 
     public void OpenMain()
@@ -316,7 +332,7 @@ public partial class App : Application
     {
         if (hintedHidden) return;
         hintedHidden = true;
-        ShowToast("面板已收起，会议仍在记录。单击通知区域的图标可重新打开。");
+        ShowToast(L.T("面板已收起，会议仍在记录。单击通知区域的图标可重新打开。"));
     }
 
     private void ShowToast(string message)
@@ -330,8 +346,8 @@ public partial class App : Application
         notesWindow?.ShowEndPending(p);
         if (p != null && Model.Settings.Display == DisplayMode.Subtitles)
         {
-            var why = p.Reason is MeetingEndWatch.Reason.AppLeft a ? $"{a.Name} 的会议似乎已结束" : "已经有一阵没人说话";
-            ShowToast($"{why}，稍后将自动结束本场记录。如需继续，请打开实时面板点「不结束，继续」。");
+            var why = p.Reason is MeetingEndWatch.Reason.AppLeft a ? L.F("{0} 的会议似乎已结束", a.Name) : L.T("已经有一阵没人说话");
+            ShowToast(L.F("{0}，稍后将自动结束本场记录。如需继续，请打开实时面板点「不结束，继续」。", why));
         }
     }
 

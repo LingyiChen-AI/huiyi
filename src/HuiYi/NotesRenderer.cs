@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,7 +34,7 @@ public static class NotesRenderer
     /// `names`: the meeting's speaker names (SpeakerLabels.Names): "发言人1" in the notes reads as the
     /// name given since, and owners keep their voice's colour.
     public static UIElement Build(MeetingNotes n, DateTime start, double fontSize = 14, bool cards = false,
-        IReadOnlyDictionary<int, string>? names = null)
+        IReadOnlyDictionary<int, string>? names = null, bool localizeHeadings = true)
     {
         if (names is { Count: > 0 }) n = SpeakerLabels.WithNames(n, names);
         var k = new Look(cards, fontSize, start.ToLocalTime(), names);
@@ -44,7 +45,7 @@ public static class NotesRenderer
         if (n.Topics.Count > 0) Timeline(root, n, k);
         // The template's parts in its order; each style has its own mark.
         foreach (var part in n.Parts().Where(p => p.Items.Count > 0))
-            Section(root, k, part.Title, part.Items.Count, panel =>
+            Section(root, k, localizeHeadings ? L.T(part.Title) : part.Title, part.Items.Count, panel =>
             {
                 for (var i = 0; i < part.Items.Count; i++)
                 {
@@ -60,7 +61,7 @@ public static class NotesRenderer
                 }
             });
         if (n.Terms.Count > 0)
-            Section(root, k, "人名与术语", n.Terms.Count, panel =>
+            Section(root, k, L.T("人名与术语"), n.Terms.Count, panel =>
             {
                 var wrap = new WrapPanel();
                 foreach (var t in NoteTerm.Ordered(n.Terms)) wrap.Children.Add(Term(k, t));
@@ -77,15 +78,15 @@ public static class NotesRenderer
         var inner = new StackPanel();
         if (n.Summary.Length > 0)
         {
-            inner.Children.Add(Label(k, "概要"));
+            inner.Children.Add(Label(k, L.T("概要")));
             inner.Children.Add(Para(k, n.Summary, k.Size + (k.Cards ? 1 : 0), k.Ink));
         }
         var counts = new List<string>();
-        if (n.Topics.Count > 0) counts.Add($"{n.Topics.Count} 个议题");
-        if (n.Conclusions.Count > 0) counts.Add($"{n.Conclusions.Count} 项结论");
-        if (n.Todos.Count > 0) counts.Add($"{n.Todos.Count} 项待办");
+        if (n.Topics.Count > 0) counts.Add(L.F("{0} 个议题", n.Topics.Count));
+        if (n.Conclusions.Count > 0) counts.Add(L.F("{0} 项结论", n.Conclusions.Count));
+        if (n.Todos.Count > 0) counts.Add(L.F("{0} 项待办", n.Todos.Count));
         var dated = n.Todos.Count(t => t.Due != null);
-        if (dated > 0) counts.Add($"{dated} 项有截止日期");
+        if (dated > 0) counts.Add(L.F("{0} 项有截止日期", dated));
         if (counts.Count > 0)
         {
             var row = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
@@ -146,18 +147,18 @@ public static class NotesRenderer
             row.Children.Add(body);
             list.Children.Add(row);
         }
-        Section(root, k, "议题", n.Topics.Count, panel => panel.Children.Add(list));
+        Section(root, k, L.T("议题"), n.Topics.Count, panel => panel.Children.Add(list));
     }
 
     /// "Why": the question, then each cause; weakly supported ones fade.
     private static UIElement Causes(Look k, Fishbone f)
     {
         var box = new StackPanel();
-        box.Children.Add(new TextBlock
+        box.Children.Add(UiText.Bind(new TextBlock
         {
-            Text = "原因分析 · " + f.Question, FontSize = k.Size - 1, FontWeight = FontWeights.SemiBold, Foreground = k.Ink,
+            Text = L.T("原因分析 · ") + f.Question, FontSize = k.Size - 1, FontWeight = FontWeights.SemiBold, Foreground = k.Ink,
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4),
-        });
+        }, ("Text", () => L.T("原因分析 · ") + f.Question)));
         foreach (var b in f.Branches)
         {
             var tb = Para(k, "", k.Size - 1, b.Support == 0 ? k.Faint : k.Ink, top: 3);
@@ -216,18 +217,18 @@ public static class NotesRenderer
         if (due != null)
         {
             line.Inlines.Add(new Run(" "));
-            line.Inlines.Add(new InlineUIContainer(Chip(k, "截止 " + due, Theme.Warn, k.Cards ? Frozen(0xFB, 0xF0, 0xE2) : Frozen(0x3A, 0x2F, 0x22), small: true))
+            line.Inlines.Add(new InlineUIContainer(Chip(k, L.T("截止 ") + due, Theme.Warn, k.Cards ? Frozen(0xFB, 0xF0, 0xE2) : Frozen(0x3A, 0x2F, 0x22), small: true))
                 { BaselineAlignment = BaselineAlignment.Center });
         }
         Grid.SetColumn(line, 1);
         g.Children.Add(line);
         if (t is { } time)
         {
-            var when = new TextBlock
+            var when = UiText.Bind(new TextBlock
             {
-                Text = k.At(time), FontSize = 11, Foreground = k.Faint, ToolTip = "会上提到的时间",
+                Text = k.At(time), FontSize = 11, Foreground = k.Faint, ToolTip = L.T("会上提到的时间"),
                 Margin = new Thickness(12, (k.Size * 1.6 - 14) / 2, 0, 0), VerticalAlignment = VerticalAlignment.Top,
-            };
+            }, ("ToolTip", () => L.T("会上提到的时间")));
             Grid.SetColumn(when, 2);
             g.Children.Add(when);
         }
@@ -240,7 +241,7 @@ public static class NotesRenderer
         var tb = new TextBlock { FontSize = k.Size - 1, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
         tb.Inlines.Add(new Run(t.Name) { FontWeight = FontWeights.SemiBold, Foreground = k.Ink });
         if (t.Note.Length > 0) tb.Inlines.Add(new Run("  " + t.Note) { Foreground = k.Muted });
-        if (t.Heard.Count > 0) tb.Inlines.Add(new Run("\n识别成 " + string.Join("、", t.Heard)) { Foreground = k.Faint, FontSize = 11 });
+        if (t.Heard.Count > 0) tb.Inlines.Add(new Run(L.T("\n识别成 ") + string.Join("、", t.Heard)) { Foreground = k.Faint, FontSize = 11 });
         return new Border
         {
             Background = k.ChipBack, CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6),

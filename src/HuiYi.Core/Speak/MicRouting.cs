@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -145,7 +146,7 @@ public static class VirtualCable
         {
             Directory.CreateDirectory(dir);
             var zip = Path.Combine(dir, "pack.zip");
-            progress?.Report("正在下载 VB-CABLE…");
+            progress?.Report(L.T("正在下载 VB-CABLE…"));
             using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) })
             {
                 var bytes = await http.GetByteArrayAsync(Pack, ct);
@@ -153,17 +154,17 @@ public static class VirtualCable
                 if (hash != PackSha256)
                 {
                     Log.Debug($"vbcable: checksum mismatch {hash}");
-                    return (InstallResult.Failed, "下载的安装包校验不通过，已停止安装");
+                    return (InstallResult.Failed, L.T("下载的安装包校验不通过，已停止安装"));
                 }
                 await File.WriteAllBytesAsync(zip, bytes, ct);
             }
             var unpacked = Path.Combine(dir, "pack");
             ZipFile.ExtractToDirectory(zip, unpacked);
             var setup = Path.Combine(unpacked, "VBCABLE_Setup_x64.exe");
-            if (!File.Exists(setup)) return (InstallResult.Failed, "安装包里没有找到安装程序");
+            if (!File.Exists(setup)) return (InstallResult.Failed, L.T("安装包里没有找到安装程序"));
 
             var speakerBefore = DefaultDevices.DefaultSpeaker()?.Id;
-            progress?.Report("请在弹出的窗口里点「Install Driver」…");
+            progress?.Report(L.T("请在弹出的窗口里点「Install Driver」…"));
             Process? p;
             try
             {
@@ -173,7 +174,7 @@ public static class VirtualCable
             {
                 return (InstallResult.Cancelled, null); // UAC declined
             }
-            if (p == null) return (InstallResult.Failed, "安装程序没有启动");
+            if (p == null) return (InstallResult.Failed, L.T("安装程序没有启动"));
             await p.WaitForExitAsync(ct);
 
             // The endpoints can take a moment to appear after the driver loads.

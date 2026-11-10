@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -24,6 +25,7 @@ public partial class NotesWindow : Window
         this.model = model;
         InitializeComponent();
         LinesList.ItemsSource = lines;
+        PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
         SourceInitialized += (_, _) =>
         {
             Native.MakeNonActivating(this);
@@ -43,6 +45,13 @@ public partial class NotesWindow : Window
         model.StateChanged += RenderTranslate;
         clock.Tick += (_, _) => Tick();
         RenderTranslate();
+    }
+
+    private void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        OnLine("");
+        RenderNotes();
+        RenderSpeak();
     }
 
     /// The translation switch follows the setting (it can change from the tray or settings too);
@@ -86,7 +95,7 @@ public partial class NotesWindow : Window
         LinesScroll.Visibility = Visibility.Hidden;
         NotesScroll.Visibility = Visibility.Hidden;
         LiveDot.Visibility = Visibility.Collapsed;
-        StateText.Text = "未开始";
+        UiText.Set(StateText, "Text", () => L.T("未开始"));
         StateText.Foreground = Theme.NightMuted;
         OnAirPill.Background = Theme.NightRaised;
         ClockText.Text = DateTime.Now.ToString("HH:mm");
@@ -100,8 +109,8 @@ public partial class NotesWindow : Window
 
     private void RenderFrom() =>
         ReadyText.Text = model.Settings.ListenMic
-            ? "点「开始会议」后，会译同时收听电脑里的声音和你的麦克风，实时出字幕、整理纪要。"
-            : "点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。";
+            ? L.T("点「开始会议」后，会译同时收听电脑里的声音和你的麦克风，实时出字幕、整理纪要。")
+            : L.T("点「开始会议」后，会译开始收听电脑里的声音，实时出字幕、整理纪要。");
 
     private async void Start_Click(object sender, RoutedEventArgs e)
     {
@@ -132,7 +141,7 @@ public partial class NotesWindow : Window
             TabLines.IsChecked = true;
         }
         LiveDot.Visibility = Visibility.Visible;
-        StateText.Text = "收听中";
+        UiText.Set(StateText, "Text", () => L.T("收听中"));
         StateText.Foreground = OnAirText;
         OnAirPill.Background = OnAirFill;
         StopBtn.Visibility = Visibility.Visible;
@@ -172,7 +181,7 @@ public partial class NotesWindow : Window
     {
         clock.Stop();
         LiveDot.Visibility = Visibility.Collapsed;
-        StateText.Text = model.Ai.HasKey ? "已结束 · 正在整理纪要" : "已结束";
+        UiText.Set(StateText, "Text", () => model.Ai.HasKey ? L.T("已结束 · 正在整理纪要") : L.T("已结束"));
         StateText.Foreground = Theme.NightMuted;
         OnAirPill.Background = Theme.NightRaised;
         StopBtn.Visibility = Visibility.Collapsed;
@@ -189,8 +198,8 @@ public partial class NotesWindow : Window
         if (pending != null)
         {
             var left = Math.Max(0, (int)(pending.Deadline - DateTime.Now).TotalSeconds);
-            var why = pending.Reason is MeetingEndWatch.Reason.AppLeft a ? $"看起来 {a.Name} 的会议已经结束" : "已经有一阵没人说话了";
-            EndText.Text = $"{why}，{left} 秒后自动结束本场记录。";
+            var why = pending.Reason is MeetingEndWatch.Reason.AppLeft a ? L.F("看起来 {0} 的会议已经结束", a.Name) : L.T("已经有一阵没人说话了");
+            UiText.Set(EndText, "Text", () => L.F("{0}，{1} 秒后自动结束本场记录。", why, left));
         }
     }
 
@@ -208,7 +217,7 @@ public partial class NotesWindow : Window
         e.Handled = true;
         var number = vm.Number!.Value;
         var voice = vm.Voice!.Value;
-        var current = vm.Who == $"发言人 {number}" ? "" : vm.Who;
+        var current = vm.HasName ? vm.Who : "";
         // Screen pixels → DIPs, so the box lands under the name at any display scale.
         var at = chip.PointToScreen(new Point(0, chip.ActualHeight + 2));
         if (PresentationSource.FromVisual(this)?.CompositionTarget is { } target) at = target.TransformFromDevice.Transform(at);
@@ -245,7 +254,7 @@ public partial class NotesWindow : Window
             if (last?.Dst is { } d && dst.StartsWith(d)) dst = dst[d.Length..].TrimStart();
             LiveDst.Text = model.Settings.TranslationOn ? dst : "";
             LiveDst.Visibility = LiveDst.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-            LiveWho.Text = "正在说…";
+            UiText.Set(LiveWho, "Text", () => L.T("正在说…"));
             if (atBottom) LinesScroll.ScrollToEnd();
         }
         else
@@ -261,19 +270,20 @@ public partial class NotesWindow : Window
             ? new System.Windows.Controls.TextBlock
             {
                 FontSize = 13, Foreground = Theme.NightMuted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
-                Text = model.Ai.HasKey ? "聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。"
-                                         : "在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。",
+                Text = model.Ai.HasKey ? L.T("聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。")
+                                         : L.T("在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。"),
             }
             : NotesRenderer.Build(n.Notes, (n.ShownId is { } shown ? model.Store.Get(shown)?.StartedAt : null) ?? DateTime.Now,
-                names: n.ShownId is { } named && model.Store.Snapshot(named) is { } s ? SpeakerLabels.Names(s) : null);
-        NotesState.Text = n.Status switch
+                names: n.ShownId is { } named && model.Store.Snapshot(named) is { } s ? SpeakerLabels.Names(s) : null,
+                localizeHeadings: model.TemplateFor(n.ShownId is { } templateSession ? model.Store.Get(templateSession) : null).BuiltIn);
+        UiText.Set(NotesState, "Text", () => n.Status switch
         {
-            NotesEngine.State.Updating => "纪要整理中…",
-            NotesEngine.State.RateLimited => "请求太多，稍后再试",
-            NotesEngine.State.InvalidKey => "AI 服务的 key 不可用",
-            NotesEngine.State.Failed => "纪要这次没刷新",
+            NotesEngine.State.Updating => L.T("纪要整理中…"),
+            NotesEngine.State.RateLimited => L.T("请求太多，稍后再试"),
+            NotesEngine.State.InvalidKey => L.T("AI 服务的 key 不可用"),
+            NotesEngine.State.Failed => L.T("纪要这次没刷新"),
             _ => "",
-        };
+        });
     }
 
     private void RenderSpeak()
@@ -281,17 +291,17 @@ public partial class NotesWindow : Window
         var on = model.Settings.SpeakEnabled;
         SpeakBar.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         if (!on) return;
-        var key = model.Settings.SpeakKey == SpeakKey.RightAlt ? "右 Alt" : "右 Ctrl";
+        var key = model.Settings.SpeakKey == SpeakKey.RightAlt ? L.T("右 Alt") : L.T("右 Ctrl");
         var state = model.Speak?.Status ?? SpeakEngine.State.Idle;
         SpeakDot.Fill = state == SpeakEngine.State.Idle ? Theme.NightMuted : Theme.Primary;
-        SpeakText.Text = state switch
+        UiText.Set(SpeakText, "Text", () => state switch
         {
-            SpeakEngine.State.Recording => "录音中 · 松开按键后翻译",
-            SpeakEngine.State.Working => "正在翻译…",
-            SpeakEngine.State.Speaking => "正在播报给对方",
-            _ => !VirtualCable.Installed ? "同声传译：需要先安装虚拟麦克风（设置 › 同声传译）"
-                : $"同声传译：按住 {key} 说，松开后译成{Languages.ChineseName(model.Speak?.Target() ?? "en")}播报",
-        };
+            SpeakEngine.State.Recording => L.T("录音中 · 松开按键后翻译"),
+            SpeakEngine.State.Working => L.T("正在翻译…"),
+            SpeakEngine.State.Speaking => L.T("正在播报给对方"),
+            _ => !VirtualCable.Installed ? L.T("同声传译：需要先安装虚拟麦克风（设置 › 同声传译）")
+                : L.F("同声传译：按住 {0} 说，松开后译成{1}播报", key, L.T(Languages.ChineseName(model.Speak?.Target() ?? "en"))),
+        });
     }
 
     private void Tab_Checked(object sender, RoutedEventArgs e)

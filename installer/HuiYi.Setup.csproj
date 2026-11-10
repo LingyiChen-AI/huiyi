@@ -19,6 +19,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\src\HuiYi.Core\Localization\L.cs" Link="Localization\L.cs" />
+    <EmbeddedResource Include="..\src\HuiYi.Core\Localization\Strings*.resx" Link="Localization\%(Filename)%(Extension)">
+      <WithCulture>false</WithCulture>
+      <LogicalName>HuiYi.Localization.%(Filename).resources</LogicalName>
+    </EmbeddedResource>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <EmbeddedResource Include="$(VelopackSetup)" LogicalName="VelopackSetup.exe" Condition="'$(VelopackSetup)' != ''" />
   </ItemGroup>

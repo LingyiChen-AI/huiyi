@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,7 +21,8 @@ public partial class SetupWindow : Window
         this.model = model;
         InitializeComponent();
         pages = [Page0, Page1, Page2, Page3];
-        Title = $"{Brand.Name} · 开始使用";
+        PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
+        UiText.Set(this, "Title", () => L.F("{0} · 开始使用", L.T("会译")));
         Heading.Text = Brand.Name;
         Icon = Icons.Mark(64, false);
         Logo.Source = Icons.Mark(80, true);
@@ -41,6 +43,12 @@ public partial class SetupWindow : Window
         if (!model.Models.Ready) _ = Download();
     }
 
+    private void LanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        Heading.Text = Brand.Name;
+        RenderSteps();
+    }
+
     /// Developer snapshot: open on a given step.
     public void ShowStep(int step) => Go(step);
 
@@ -49,7 +57,7 @@ public partial class SetupWindow : Window
         page = Math.Clamp(to, 0, pages.Length - 1);
         for (var i = 0; i < pages.Length; i++) pages[i].Visibility = i == page ? Visibility.Visible : Visibility.Collapsed;
         BackBtn.Visibility = page == 0 ? Visibility.Collapsed : Visibility.Visible;
-        NextBtn.Content = page == pages.Length - 1 ? "完成" : page >= 2 ? "下一步（可跳过）" : "下一步";
+        UiText.Set(NextBtn, "Content", () => page == pages.Length - 1 ? L.T("完成") : page >= 2 ? L.T("下一步（可跳过）") : L.T("下一步"));
         RenderSteps();
         RenderModels();
     }
@@ -76,7 +84,7 @@ public partial class SetupWindow : Window
             row.Children.Add(dot);
             row.Children.Add(new TextBlock
             {
-                Text = StepNames[i], FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
+                Text = L.T(StepNames[i]), FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
                 Foreground = current ? Brushes.White : Theme.NightMuted, FontWeight = current ? FontWeights.SemiBold : FontWeights.Normal,
             });
             Steps.Children.Add(row);
@@ -87,13 +95,13 @@ public partial class SetupWindow : Window
     {
         var ready = model.Models.Ready;
         if (ready) ModelProgress.Value = 1;
-        if (ready) ModelText.Text = "✓ 模型已就绪";
-        else if (download == null) ModelText.Text = "尚未下载";
+        if (ready) UiText.Set(ModelText, "Text", () => L.T("✓ 模型已就绪"));
+        else if (download == null) UiText.Set(ModelText, "Text", () => L.T("尚未下载"));
         ModelBtn.Visibility = ready || download != null ? Visibility.Collapsed : Visibility.Visible;
         TryBtn.IsEnabled = ready;
         // The first step can't be skipped: nothing works without the models.
         NextBtn.IsEnabled = page != 0 || ready;
-        DoneHint.Text = page == 0 && !ready ? "下载完成后才能继续" : "";
+        UiText.Set(DoneHint, "Text", () => page == 0 && !ready ? L.T("下载完成后才能继续") : "");
     }
 
     private async Task Download()
@@ -103,18 +111,18 @@ public partial class SetupWindow : Window
         var progress = new Progress<(long Done, long Total)>(p =>
         {
             ModelProgress.Value = (double)p.Done / p.Total;
-            ModelText.Text = $"下载中  {p.Done / 1_048_576} / {p.Total / 1_048_576} MB";
+            UiText.Set(ModelText, "Text", () => L.F("下载中  {0} / {1} MB", p.Done / 1_048_576, p.Total / 1_048_576));
         });
         try
         {
             await model.Models.Download(progress, download.Token);
-            ModelText.Text = "正在加载模型…";
+            UiText.Set(ModelText, "Text", () => L.T("正在加载模型…"));
             await model.EnsureEngines();
         }
         catch (OperationCanceledException) { }
         catch (Exception e)
         {
-            ModelText.Text = "下载失败：" + (e.InnerException?.Message ?? e.Message) + "。请检查网络后点「重新下载」。";
+            UiText.Set(ModelText, "Text", () => L.T("下载失败：") + (e.InnerException?.Message ?? e.Message) + L.T("。请检查网络后点「重新下载」。"));
         }
         download = null;
         RenderModels();
@@ -126,15 +134,15 @@ public partial class SetupWindow : Window
     private async void Try_Click(object sender, RoutedEventArgs e)
     {
         await ((App)Application.Current).ToggleListening();
-        TryBtn.Content = model.IsListening ? "停止收听" : "开始收听";
+        UiText.Set(TryBtn, "Content", () => model.IsListening ? L.T("停止收听") : L.T("开始收听"));
         TryBtn.Style = (Style)FindResource(model.IsListening ? "OnAirBtn" : "PrimaryBtn");
-        if (model.IsListening) TryDst.Text = "收听中…现在播放一段视频";
+        if (model.IsListening) UiText.Set(TryDst, "Text", () => L.T("收听中…现在播放一段视频"));
     }
 
     private void OnSubtitle(MeetingController.Subtitle s)
     {
         if (s.Source.Length == 0) return;
-        TryDst.Text = s.Translation.Length > 0 ? (s.Translation.Length > 80 ? "…" + s.Translation[^80..] : s.Translation) : "（译文稍后出现）";
+        UiText.Set(TryDst, "Text", () => s.Translation.Length > 0 ? (s.Translation.Length > 80 ? "…" + s.Translation[^80..] : s.Translation) : L.T("（译文稍后出现）"));
         TrySrc.Text = s.Source.Length > 120 ? "…" + s.Source[^120..] : s.Source;
     }
 
@@ -145,7 +153,7 @@ public partial class SetupWindow : Window
 
     private void FillPresets()
     {
-        foreach (var p in Quick) SetupPreset.Items.Add(new ComboBoxItem { Content = p.Name, Tag = p.Id });
+        foreach (var p in Quick) SetupPreset.Items.Add(UiText.Bind(new ComboBoxItem { Content = L.T(p.Name), Tag = p.Id }, ("Content", () => L.T(p.Name))));
         var current = model.Settings.ActiveProvider()?.Preset;
         SetupPreset.SelectedItem = SetupPreset.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == current)
                                    ?? SetupPreset.Items.Cast<ComboBoxItem>().First(i => (string)i.Tag == "ucloud");
@@ -156,15 +164,15 @@ public partial class SetupWindow : Window
     private void RenderKey()
     {
         var ai = model.Ai;
-        KeyText.Text = ai.Current?.Preset != Chosen.Id ? Chosen.Hint ?? "" : ai.State switch
+        UiText.Set(KeyText, "Text", () => ai.Current?.Preset != Chosen.Id ? L.T(Chosen.Hint ?? "") : ai.State switch
         {
-            AiClient.KeyState.Ok => $"✓ {ai.Describe} 可用",
-            AiClient.KeyState.Checking => "验证中…",
-            AiClient.KeyState.Invalid => "这个 key 不可用",
-            AiClient.KeyState.Unreachable => ai.CheckError ?? "暂时连不上，请检查网络",
-            AiClient.KeyState.Unchecked => "已保存",
-            _ => Chosen.Hint ?? "",
-        };
+            AiClient.KeyState.Ok => L.F("✓ {0} 可用", ai.Describe),
+            AiClient.KeyState.Checking => L.T("验证中…"),
+            AiClient.KeyState.Invalid => L.T("这个 key 不可用"),
+            AiClient.KeyState.Unreachable => ai.CheckError ?? L.T("暂时连不上，请检查网络"),
+            AiClient.KeyState.Unchecked => L.T("已保存"),
+            _ => L.T(Chosen.Hint ?? ""),
+        });
         KeyText.Foreground = ai.Current?.Preset == Chosen.Id && ai.State is AiClient.KeyState.Invalid or AiClient.KeyState.Unreachable
             ? Theme.Warn : Theme.Grey;
     }
@@ -198,12 +206,12 @@ public partial class SetupWindow : Window
     {
         if (installing) return;
         var ok = VirtualCable.Installed;
-        CableText.Text = ok ? "✓ 已安装 VB-CABLE 虚拟麦克风" : "还没有虚拟麦克风";
-        CableHelp.Text = ok ? "" : "从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。";
+        UiText.Set(CableText, "Text", () => ok ? L.T("✓ 已安装 VB-CABLE 虚拟麦克风") : L.T("还没有虚拟麦克风"));
+        UiText.Set(CableHelp, "Text", () => ok ? "" : L.T("从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。"));
         CableHelp.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
         CableBtn.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
         CableBtn.IsEnabled = true;
-        CableBtn.Content = "一键安装";
+        UiText.Set(CableBtn, "Content", () => L.T("一键安装"));
     }
 
     private bool installing;
@@ -212,7 +220,7 @@ public partial class SetupWindow : Window
     {
         installing = true;
         CableBtn.IsEnabled = false;
-        CableBtn.Content = "安装中…";
+        UiText.Set(CableBtn, "Content", () => L.T("安装中…"));
         var message = await model.InstallCable(new Progress<string>(m => CableHelp.Text = m));
         installing = false;
         RenderCable();

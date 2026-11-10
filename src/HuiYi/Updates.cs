@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Net.Http;
 using System.Text.Json;
 using Velopack;
@@ -36,33 +37,35 @@ public sealed class Updates
     /// Downloaded and waiting to be applied.
     public string? ReadyVersion => ready?.TargetFullRelease.Version.ToString();
 
-    public string Status { get; private set; } = "";
+    private Func<string> status = () => "";
+    public string Status => status();
+    private void SetStatus(Func<string> message) => status = L.Capture(message);
 
     /// Asks GitHub whether there is a newer version. Downloads nothing. True when there is one.
     public async Task<bool> Check()
     {
         if (manager == null || !Installed)
         {
-            Status = "当前不是安装版（开发版），不能自动更新";
+            SetStatus(() => L.T("当前不是安装版（开发版），不能自动更新"));
             Changed?.Invoke();
             return false;
         }
         if (checking) return available != null;
         checking = true;
-        Status = "正在检查更新…";
+        SetStatus(() => L.T("正在检查更新…"));
         Changed?.Invoke();
         try
         {
             var info = await manager.CheckForUpdatesAsync();
             available = info ?? available;
-            Status = info != null ? $"发现新版本 {AvailableVersion}" : available != null ? $"发现新版本 {AvailableVersion}" : "已是最新版本";
+            SetStatus(() => info != null ? L.F("发现新版本 {0}", AvailableVersion) : available != null ? L.F("发现新版本 {0}", AvailableVersion) : L.T("已是最新版本"));
             if (info != null) Log.Debug($"updates: {AvailableVersion} available");
             return available != null;
         }
         catch (Exception e)
         {
             Log.Debug($"updates: check failed {e.Message}");
-            Status = "检查更新失败，请检查网络后再试";
+            SetStatus(() => L.T("检查更新失败，请检查网络后再试"));
             return false;
         }
         finally
@@ -88,14 +91,14 @@ public sealed class Updates
                 progress(percent);
             });
             ready = available;
-            Status = $"新版本 {ReadyVersion} 已下载";
+            SetStatus(() => L.F("新版本 {0} 已下载", ReadyVersion));
             Log.Debug($"updates: {ReadyVersion} downloaded");
             return true;
         }
         catch (Exception e)
         {
             Log.Debug($"updates: download failed {e.Message}");
-            Status = "下载失败，请检查网络后再试";
+            SetStatus(() => L.T("下载失败，请检查网络后再试"));
             return false;
         }
         finally

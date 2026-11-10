@@ -1,8 +1,9 @@
 <Window x:Class="HuiYi.App.NotesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:HuiYi.App"
         Foreground="#E8EAF2" FontFamily="Microsoft YaHei UI, Segoe UI"
-        Title="实时面板" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="{local:Loc Key='实时面板'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ShowActivated="False" ResizeMode="CanResizeWithGrip"
         Width="400" Height="640" MinWidth="320" MinHeight="320">
     <Window.Resources>
@@ -38,20 +39,20 @@
                     <Border x:Name="OnAirPill" Background="#2C3148" CornerRadius="9" Padding="8,2">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="LiveDot" Width="7" Height="7" Fill="#FF5C6C" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock x:Name="StateText" Text="收听中" Foreground="#E8EAF2" FontSize="12"/>
+                            <TextBlock x:Name="StateText" Text="{local:Loc Key='收听中'}" Foreground="#E8EAF2" FontSize="12"/>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="ClockText" Text="00:00" Foreground="#8E94A8" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     <Border x:Name="Shared" Background="#3A3F55" CornerRadius="3" Padding="6,1" Margin="10,0,0,0" Visibility="Collapsed"
-                            ToolTip="截图、录屏和屏幕共享里看不到这个窗口（设置 › 字幕里可以改）" VerticalAlignment="Center">
-                        <TextBlock Text="对方看不到" Foreground="#E8EAF2" FontSize="11"/>
+                            ToolTip="{local:Loc Key='截图、录屏和屏幕共享里看不到这个窗口（设置 › 字幕里可以改）'}" VerticalAlignment="Center">
+                        <TextBlock Text="{local:Loc Key='对方看不到'}" Foreground="#E8EAF2" FontSize="11"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="StartBtn" Content="开始新会议" Style="{StaticResource PrimaryBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
-                    <Button x:Name="StopBtn" Content="结束会议" Style="{StaticResource NightBtn}" Click="Stop_Click"/>
-                    <Button Content="收起" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"
-                            Foreground="#8E94A8" ToolTip="收起面板，继续在后台收听" Click="Hide_Click" Margin="4,0,0,0"/>
+                    <Button x:Name="StartBtn" Content="{local:Loc Key='开始新会议'}" Style="{StaticResource PrimaryBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
+                    <Button x:Name="StopBtn" Content="{local:Loc Key='结束会议'}" Style="{StaticResource NightBtn}" Click="Stop_Click"/>
+                    <Button Content="{local:Loc Key='收起'}" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"
+                            Foreground="#8E94A8" ToolTip="{local:Loc Key='收起面板，继续在后台收听'}" Click="Hide_Click" Margin="4,0,0,0"/>
                 </StackPanel>
             </Grid>
 
@@ -60,8 +61,8 @@
                 <StackPanel>
                     <TextBlock x:Name="EndText" TextWrapping="Wrap" FontSize="13" Foreground="#F3C995"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button Content="不结束，继续" Style="{StaticResource NightBtn}" Click="KeepGoing_Click"/>
-                        <Button Content="现在结束" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"
+                        <Button Content="{local:Loc Key='不结束，继续'}" Style="{StaticResource NightBtn}" Click="KeepGoing_Click"/>
+                        <Button Content="{local:Loc Key='现在结束'}" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"
                                 Foreground="#F3C995" Margin="6,0,0,0" Click="Stop_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -69,13 +70,13 @@
 
             <!-- Segmented switch -->
             <DockPanel Grid.Row="2" Margin="14,0,14,8">
-                <CheckBox x:Name="TranslateSwitch" DockPanel.Dock="Right" Content="翻译" FontSize="12" Style="{StaticResource SwitchNight}"
-                          VerticalAlignment="Center" Margin="10,0,0,0" ToolTip="把对方说的话译成你的语言" Click="Translate_Click"/>
+                <CheckBox x:Name="TranslateSwitch" DockPanel.Dock="Right" Content="{local:Loc Key='翻译'}" FontSize="12" Style="{StaticResource SwitchNight}"
+                          VerticalAlignment="Center" Margin="10,0,0,0" ToolTip="{local:Loc Key='把对方说的话译成你的语言'}" Click="Translate_Click"/>
                 <TextBlock x:Name="NotesState" DockPanel.Dock="Right" Foreground="#8E94A8" FontSize="12" VerticalAlignment="Center"/>
                 <Border Background="#252939" CornerRadius="5" Padding="2" HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton x:Name="TabLines" Content="逐字稿" GroupName="tab" Style="{StaticResource SegNight}" IsChecked="True" Checked="Tab_Checked"/>
-                        <RadioButton x:Name="TabNotes" Content="纪要" GroupName="tab" Style="{StaticResource SegNight}" Checked="Tab_Checked"/>
+                        <RadioButton x:Name="TabLines" Content="{local:Loc Key='逐字稿'}" GroupName="tab" Style="{StaticResource SegNight}" IsChecked="True" Checked="Tab_Checked"/>
+                        <RadioButton x:Name="TabNotes" Content="{local:Loc Key='纪要'}" GroupName="tab" Style="{StaticResource SegNight}" Checked="Tab_Checked"/>
                     </StackPanel>
                 </Border>
             </DockPanel>
@@ -96,7 +97,7 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <!-- Click the speaker to name them (for the whole meeting). -->
                                                 <Border x:Name="whoChip" CornerRadius="4" Padding="4,0,4,1" Margin="-4,0,0,0" Background="Transparent"
-                                                        Cursor="Hand" ToolTip="点击给这位发言人改名" MouseLeftButtonUp="Who_Click">
+                                                        Cursor="Hand" ToolTip="{local:Loc Key='点击给这位发言人改名'}" MouseLeftButtonUp="Who_Click">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding Who}" Foreground="{Binding WhoBrush}" FontSize="11" FontWeight="SemiBold"/>
                                                         <TextBlock x:Name="pen" Text="✎" Foreground="{Binding WhoBrush}" FontSize="10" Margin="4,0,0,0" Opacity="0"/>
@@ -133,7 +134,7 @@
                             </StackPanel>
                         </Border>
                         <TextBlock x:Name="EmptyHint" FontSize="13" Foreground="#6E7488" TextWrapping="Wrap" Margin="2,16,2,0"
-                                   Text="电脑里有人说话时，逐字稿会一句句出现在这里。"/>
+                                   Text="{local:Loc Key='电脑里有人说话时，逐字稿会一句句出现在这里。'}"/>
                     </StackPanel>
                 </ScrollViewer>
                 <ScrollViewer x:Name="NotesScroll" VerticalScrollBarVisibility="Auto" Padding="14,4,14,4" Visibility="Collapsed">
@@ -163,7 +164,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
-                        <TextBlock Text="准备好了就开始" FontSize="18" FontWeight="SemiBold" Foreground="#F4F5FA" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                        <TextBlock Text="{local:Loc Key='准备好了就开始'}" FontSize="18" FontWeight="SemiBold" Foreground="#F4F5FA" HorizontalAlignment="Center" Margin="0,12,0,0"/>
                         <TextBlock x:Name="ReadyText" FontSize="12.5" Foreground="#9AA0B4" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="300" Margin="0,8,0,22" LineHeight="20"/>
                         <Button Click="Start_Click" HorizontalAlignment="Center" Cursor="Hand">
                             <Button.Template>
@@ -180,7 +181,7 @@
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
                                             <Ellipse Width="8" Height="8" Fill="#FF6B78" VerticalAlignment="Center" Margin="0,0,9,0"/>
-                                            <TextBlock Text="开始会议" FontSize="14.5" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{local:Loc Key='开始会议'}" FontSize="14.5" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>

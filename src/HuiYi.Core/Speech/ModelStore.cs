@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Security.Cryptography;
 
 namespace HuiYi.Speech;
@@ -111,7 +112,7 @@ public sealed class ModelStore
                     Log.Debug($"models: {f.RelativePath} from {new Uri(url).Host} failed: {e.Message}");
                 }
             }
-            if (!ok) throw new IOException($"下载 {f.RelativePath} 失败", last);
+            if (!ok) throw new IOException(L.F("下载 {0} 失败", f.RelativePath), last);
             doneBefore += f.Size;
         }
     }

@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -69,11 +70,11 @@ public sealed class Dialog : Window
             Padding = new Thickness(18, 6, 18, 6), IsDefault = true,
         };
         ok.Click += (_, _) => { confirmed = true; Close(); };
-        var cancel = new Button
+        var cancel = UiText.Bind(new Button
         {
-            Content = "取消", Style = (Style)Application.Current.FindResource("Btn"), Padding = new Thickness(18, 6, 18, 6),
+            Content = L.T("取消"), Style = (Style)Application.Current.FindResource("Btn"), Padding = new Thickness(18, 6, 18, 6),
             Margin = new Thickness(0, 0, 8, 0), IsCancel = true,
-        };
+        }, ("Content", () => L.T("取消")));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 22, 0, 0) };
         buttons.Children.Add(cancel);
         buttons.Children.Add(ok);

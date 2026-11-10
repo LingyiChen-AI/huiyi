@@ -1,3 +1,4 @@
+using HuiYi.Localization;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
@@ -21,7 +22,7 @@ public partial class MainWindow : Window
     {
         this.model = model;
         InitializeComponent();
-        Title = $"{Brand.Name} · 会议记录";
+        UiText.Set(this, "Title", () => L.F("{0} · 会议记录", L.T("会译")));
         Icon = Icons.Mark(64, false);
         Logo.Source = Icons.Mark(52, false);
         AppName.Text = Brand.Name;
@@ -30,6 +31,7 @@ public partial class MainWindow : Window
         Width = Math.Min(Width, area.Width * 0.92);
         Height = Math.Min(Height, area.Height * 0.92);
         LinesList.ItemsSource = lines;
+        PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
         model.Store.Changed += () => Dispatcher.BeginInvoke(RefreshList);
         model.NotesChanged += () =>
         {
@@ -38,9 +40,12 @@ public partial class MainWindow : Window
         Refresh();
     }
 
+    private void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Refresh();
+
     public void Refresh()
     {
-        ListenBtn.Content = model.IsListening ? "● 收听中 · 点击结束" : "开始收听";
+        AppName.Text = Brand.Name;
+        UiText.Set(ListenBtn, "Content", () => model.IsListening ? L.T("● 收听中 · 点击结束") : L.T("开始收听"));
         ListenBtn.Style = (Style)FindResource(model.IsListening ? "OnAirBtn" : "PrimaryBtn");
         LiveBtn.Visibility = model.IsListening ? Visibility.Visible : Visibility.Collapsed;
         TranslateOn.IsChecked = model.Settings.TranslationOn;
@@ -58,10 +63,10 @@ public partial class MainWindow : Window
     {
         var d = startedUtc.ToLocalTime().Date;
         var today = DateTime.Today;
-        if (d == today) return "今天";
-        if (d == today.AddDays(-1)) return "昨天";
-        if (d > today.AddDays(-7)) return "最近 7 天";
-        return d.Year == today.Year ? $"{d.Month} 月" : $"{d.Year} 年 {d.Month} 月";
+        if (d == today) return L.T("今天");
+        if (d == today.AddDays(-1)) return L.T("昨天");
+        if (d > today.AddDays(-7)) return L.T("最近 7 天");
+        return d.Year == today.Year ? L.F("{0} 月", d.Month) : L.F("{0} 年 {1} 月", d.Year, d.Month);
     }
 
     private void RefreshList()
@@ -71,8 +76,8 @@ public partial class MainWindow : Window
         var rows = model.Store.All
             .Where(s => q.Length == 0 || s.DisplayTitle.Contains(q, StringComparison.OrdinalIgnoreCase)
                         || s.Lines.Any(l => l.Src.Contains(q, StringComparison.OrdinalIgnoreCase) || (l.Dst?.Contains(q) ?? false)))
-            .Select(s => new SessionRow(s.Id, (s.Id == model.LiveSessionId ? "● " : "") + s.DisplayTitle,
-                $"{s.StartedAt.ToLocalTime():HH:mm} · {Minutes(s)} · {s.Lines.Count} 句", GroupOf(s.StartedAt)))
+            .Select(s => new SessionRow(s.Id, (s.Id == model.LiveSessionId ? "● " : "") + DisplayTitle(s),
+                L.F("{0:HH:mm} · {1} · {2} 句", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count), GroupOf(s.StartedAt)))
             .ToList();
         var keep = selected;
         var view = new System.Windows.Data.ListCollectionView(rows);
@@ -93,7 +98,7 @@ public partial class MainWindow : Window
     private static string Minutes(Session s)
     {
         var m = (int)Math.Round(s.Duration.TotalMinutes);
-        return m < 1 ? "不到 1 分钟" : $"{m} 分钟";
+        return m < 1 ? L.T("不到 1 分钟") : L.F("{0} 分钟", m);
     }
 
     private void Session_Selected(object sender, SelectionChangedEventArgs e)
@@ -109,8 +114,8 @@ public partial class MainWindow : Window
         selected = id;
         Detail.Visibility = Visibility.Visible;
         EmptyText.Visibility = Visibility.Collapsed;
-        if (!TitleBox.IsKeyboardFocused) TitleBox.Text = s.DisplayTitle;
-        MetaText.Text = $"{s.StartedAt.ToLocalTime():yyyy年M月d日 HH:mm} · 时长 {Minutes(s)} · {s.Lines.Count} 句{(s.Id == model.LiveSessionId ? " · 正在记录" : "")}";
+        if (!TitleBox.IsKeyboardFocused) TitleBox.Text = DisplayTitle(s);
+        UiText.Set(MetaText, "Text", () => L.F("{0:yyyy年M月d日 HH:mm} · 时长 {1} · {2} 句{3}", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count, (s.Id == model.LiveSessionId ? " · 正在记录" : "")));
         if (switched) lines.Clear();
         if (model.Store.Snapshot(id) is { } snap)
         {
@@ -119,20 +124,21 @@ public partial class MainWindow : Window
         }
         RenderTemplateBox(s);
         var generating = model.Notes.GeneratingId == id;
-        NotesBtn.Content = generating ? "整理中…" : s.Notes is { IsEmpty: false } ? "重新整理纪要" : "生成纪要";
+        UiText.Set(NotesBtn, "Content", () => generating ? L.T("整理中…") : s.Notes is { IsEmpty: false } ? L.T("重新整理纪要") : L.T("生成纪要"));
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
-        NotesState.Text = generating ? "AI 正在通读整场会议…" : s.Notes?.UpdatedAt is { } at ? $"纪要更新于 {at.ToLocalTime():M月d日 HH:mm}" : "";
+        UiText.Set(NotesState, "Text", () => generating ? L.T("AI 正在通读整场会议…") : s.Notes?.UpdatedAt is { } at ? L.F("纪要更新于 {0:M月d日 HH:mm}", at.ToLocalTime()) : "");
         NotesHost.Content = s.Notes is { IsEmpty: false } n
-            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s))
+            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s), localizeHeadings: model.TemplateFor(s).BuiltIn)
             : new Border
             {
                 Style = (Style)FindResource("Panel"),
-                Child = new TextBlock
+                Child = UiText.Bind(new TextBlock
                 {
                     Style = (Style)FindResource("Helper"), FontSize = 13, Margin = new Thickness(0),
-                    Text = model.Ai.HasKey ? "这场会议还没有纪要，点右上角「生成纪要」。"
-                                             : "在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。",
-                },
+                    Text = model.Ai.HasKey ? L.T("这场会议还没有纪要，点右上角「生成纪要」。")
+                                             : L.T("在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。"),
+                }, ("Text", () => model.Ai.HasKey ? L.T("这场会议还没有纪要，点右上角「生成纪要」。")
+                                             : L.T("在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。"))),
             };
         if (!keepTab && switched)
         {
@@ -155,14 +161,14 @@ public partial class MainWindow : Window
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 4) };
             row.Children.Add(new System.Windows.Shapes.Ellipse { Width = 8, Height = 8, Fill = Theme.Speaker(number), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
-            row.Children.Add(new TextBlock { Text = $"发言人 {number}", Foreground = Theme.Grey2, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+            row.Children.Add(UiText.Bind(new TextBlock { Text = L.F("发言人 {0}", number), Foreground = Theme.Grey2, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) }, ("Text", () => L.F("发言人 {0}", number))));
             var guess = s.VoiceNames?.ContainsKey(voice.ToString()) == true ? null : s.VoiceGuesses?.GetValueOrDefault(voice.ToString());
-            var box = new TextBox
+            var box = UiText.Bind(new TextBox
             {
-                Style = (Style)FindResource("Field"), Tag = "起个名字",
+                Style = (Style)FindResource("Field"), Tag = L.T("起个名字"),
                 Text = names.GetValueOrDefault(number, ""), Width = 110, Padding = new Thickness(7, 3, 7, 3), FontSize = 12,
-                ToolTip = guess != null ? $"AI 根据「{guess.Evidence}」猜的名字，可以改" : "输入名字，回车保存",
-            };
+                ToolTip = guess != null ? L.F("AI 根据「{0}」猜的名字，可以改", guess.Evidence) : L.T("输入名字，回车保存"),
+            }, ("Tag", () => L.T("起个名字")), ("ToolTip", () => guess != null ? L.F("AI 根据「{0}」猜的名字，可以改", guess.Evidence) : L.T("输入名字，回车保存")));
             void Save()
             {
                 var t = box.Text.Trim();
@@ -213,10 +219,10 @@ public partial class MainWindow : Window
         var chosen = model.TemplateFor(s).Id;
         foreach (var t in model.Templates)
         {
-            var item = new ComboBoxItem
+            var item = UiText.Bind(new ComboBoxItem
             {
-                Content = t.Id == model.Settings.DefaultTemplateId ? $"{t.Name}（默认）" : t.Name, Tag = t.Id, ToolTip = t.Description,
-            };
+                Content = t.Id == model.Settings.DefaultTemplateId ? L.F("{0}（默认）", t.BuiltIn ? L.T(t.Name) : t.Name) : t.BuiltIn ? L.T(t.Name) : t.Name, Tag = t.Id, ToolTip = t.BuiltIn ? L.T(t.Description) : t.Description,
+            }, ("Content", () => t.Id == model.Settings.DefaultTemplateId ? L.F("{0}（默认）", t.BuiltIn ? L.T(t.Name) : t.Name) : t.BuiltIn ? L.T(t.Name) : t.Name));
             TemplateBox.Items.Add(item);
             if (t.Id == chosen) TemplateBox.SelectedItem = item;
         }
@@ -233,7 +239,7 @@ public partial class MainWindow : Window
         model.Store.SetTemplate(selected, tid == model.Settings.DefaultTemplateId ? null : tid);
         if (selected == model.LiveSessionId)
         {
-            NotesState.Text = "下一次更新起按新模板整理";
+            UiText.Set(NotesState, "Text", () => L.T("下一次更新起按新模板整理"));
             model.Notes.UpdateNow();
             return;
         }
@@ -264,7 +270,7 @@ public partial class MainWindow : Window
     {
         if (selected == null || model.Store.Get(selected) is not { } s) return;
         var name = string.Concat(s.DisplayTitle.Split(Path.GetInvalidFileNameChars()));
-        var dlg = new SaveFileDialog { FileName = name + ".md", Filter = "Markdown|*.md|文本|*.txt" };
+        var dlg = new SaveFileDialog { FileName = name + ".md", Filter = L.T("Markdown|*.md|文本|*.txt") };
         if (dlg.ShowDialog(this) == true)
         {
             File.WriteAllText(dlg.FileName, TranscriptExport.Markdown(s));
@@ -275,8 +281,8 @@ public partial class MainWindow : Window
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (selected == null || selected == model.LiveSessionId) return;
-        var title = model.Store.Get(selected)?.DisplayTitle ?? "这场会议";
-        if (!Dialog.Confirm(this, $"删除「{title}」？", "逐字稿和纪要会一起删掉，删除后无法恢复。", "删除", danger: true)) return;
+        var title = model.Store.Get(selected)?.DisplayTitle ?? L.T("这场会议");
+        if (!Dialog.Confirm(this, L.F("删除「{0}」？", title), L.T("逐字稿和纪要会一起删掉，删除后无法恢复。"), L.T("删除"), danger: true)) return;
         model.Store.Delete(selected);
         selected = null;
         RefreshList();
@@ -295,6 +301,16 @@ public partial class MainWindow : Window
     {
         if (selected == null || model.Store.Get(selected) is not { } s) return;
         var t = TitleBox.Text.Trim();
-        if (t.Length > 0 && t != s.DisplayTitle) model.Store.Rename(selected, t);
+        if (t.Length > 0 && t != DisplayTitle(s)) model.Store.Rename(selected, t);
+    }
+
+    private static string DisplayTitle(Session session)
+    {
+        if ((session.Renamed ?? !session.Title.StartsWith("会议 ")) || L.Language == "zh-CN") return session.DisplayTitle;
+        var date = session.StartedAt.ToLocalTime();
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(L.Language);
+        return !string.IsNullOrEmpty(session.Notes?.Title)
+            ? date.ToString("m", culture) + " " + session.Notes.Title
+            : L.F("会议 {0}", date.ToString("g", culture));
     }
 }

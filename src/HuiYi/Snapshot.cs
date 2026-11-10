@@ -31,6 +31,8 @@ public static class Snapshot
         }
         var settings = new SettingsWindow(model);
         Save(settings, folder, "settings", keepOpen: true);
+        settings.Pages.SelectedIndex = 4;
+        Save(settings, folder, "settings-general", keepOpen: true);
         settings.Pages.SelectedIndex = 1;
         Save(settings, folder, "settings-ai", keepOpen: true);
         // An open drop-down lives in its own popup: render its list on its own.

@@ -108,7 +108,7 @@ public static class NotesPrompt
         localStart.AddSeconds(seconds).ToString("HH:mm", CultureInfo.InvariantCulture);
 
     public static string Build(MeetingNotes notes, IReadOnlyList<TranscriptLine> lines, int from, string language, bool final,
-        IReadOnlyDictionary<int, string>? names = null, NoteTemplate? template = null, DateTime? meetingStart = null)
+        IReadOnlyDictionary<int, string>? names = null, NoteTemplate? template = null, DateTime? meetingStart = null, string? transcript = null)
     {
         template ??= NoteTemplates.BuiltIn[0];
         var start = (meetingStart ?? DateTime.Now).ToLocalTime();
@@ -147,7 +147,7 @@ public static class NotesPrompt
         if (context < from)
             p.Append("Already covered (context only):\n" + string.Join("\n", Enumerable.Range(context, from - context).Select(Line)) + "\n\n");
         p.Append($"{(final ? "Transcript" : "New lines")} (id, mm:ss since the start, speaker 对方=the other side / 你=me / a name or 发言人N=one person on the other side, told apart by voice and possibly wrong / 未识别=someone on the other side not identified, text). Speech recognition makes mistakes, often in names: correct them from context, and write a public figure's name as the news spells it.\n");
-        p.Append(string.Join("\n", Enumerable.Range(from, lines.Count - from).Select(Line)));
+        p.Append(transcript ?? string.Join("\n", Enumerable.Range(from, lines.Count - from).Select(Line)));
         if (template.Topics)
         {
             if (final && lines.Count > 0)
@@ -485,19 +485,33 @@ public sealed class NotesEngine
             if (!based.IsEmpty && (based.TemplateId ?? NoteTemplates.DefaultId) != template.Id) based = new MeetingNotes();
             var from = final ? 0 : Math.Min(based.Covered, lines.Count);
             var lang = Language();
-            var prompt = NotesPrompt.Build(based, lines, from, lang, final,
-                SpeakerLabels.Names(new Session { Lines = lines, VoiceNames = session.VoiceNames, VoiceGuesses = session.VoiceGuesses }),
-                template, session.StartedAt);
+            var names = SpeakerLabels.Names(new Session { Lines = lines, VoiceNames = session.VoiceNames, VoiceGuesses = session.VoiceGuesses });
             var started = DateTime.Now;
+            // Avoid constructing an unbounded live prompt from accumulated notes or transcript.
+            var estimate = lines.Skip(Math.Max(0, from - 2)).Sum(l => (long)l.Src.Length + 100)
+                + (final ? 0 : JsonSerializer.Serialize(based, Json.Options).Length);
+            var prompt = estimate <= NotesBatch.MaxPromptChars
+                ? NotesPrompt.Build(based, lines, from, lang, final, names, template, session.StartedAt) : null;
             MeetingNotes? next = null;
-            for (var attempt = 1; attempt <= (final ? 2 : 1); attempt++)
+            if (prompt == null || prompt.Length > NotesBatch.MaxPromptChars)
             {
-                var raw = await ai.Chat(prompt, $"Update the notes. Write them in {lang}.", AiClient.Priority.Notes,
-                    json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90));
-                var parsed = NotesPrompt.Parse(raw, lines.Select(l => l.T).ToList(), lines.FirstOrDefault()?.T ?? 0, template);
-                if (parsed == null) break;
-                if (NotesPrompt.Written(parsed, lang)) { next = parsed; break; }
-                Log.Debug($"notes: reply not in {lang} (attempt {attempt}), dropped");
+                next = await NotesBatch.Generate(lines, lang, names, template, session.StartedAt,
+                    p => ai.Chat(p, $"Update the notes. Write them in {lang}. Keep the entire JSON under 4500 characters.",
+                        AiClient.Priority.Notes, json: true, maxTokens: 2000, timeout: TimeSpan.FromSeconds(90)),
+                    finalChat: p => ai.Chat(p, $"Update the notes. Write them in {lang}.",
+                        AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)));
+            }
+            else
+            {
+                for (var attempt = 1; attempt <= (final ? 2 : 1); attempt++)
+                {
+                    var raw = await ai.Chat(prompt, $"Update the notes. Write them in {lang}.", AiClient.Priority.Notes,
+                        json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90));
+                    var parsed = NotesPrompt.Parse(raw, lines.Select(l => l.T).ToList(), lines.FirstOrDefault()?.T ?? 0, template);
+                    if (parsed == null) break;
+                    if (NotesPrompt.Written(parsed, lang)) { next = parsed; break; }
+                    Log.Debug($"notes: reply not in {lang} (attempt {attempt}), dropped");
+                }
             }
             if (next == null)
             {

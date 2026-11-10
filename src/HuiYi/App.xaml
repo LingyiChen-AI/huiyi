@@ -50,14 +50,33 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
+                        <Grid>
                         <Border x:Name="b" Background="Transparent" CornerRadius="5" Padding="10,6,14,6">
                             <DockPanel>
+                                <TextBlock x:Name="submenuArrow" DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="10" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="16,0,0,0" Visibility="Collapsed"/>
                                 <TextBlock x:Name="check" DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                            FontSize="12" Foreground="{StaticResource Primary}" VerticalAlignment="Center" Margin="16,0,0,0" Visibility="Collapsed"/>
                                 <ContentPresenter ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
                             </DockPanel>
                         </Border>
+                        <Popup x:Name="PART_Popup" Placement="Right" PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                               IsOpen="{TemplateBinding IsSubmenuOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
+                               HorizontalOffset="-2" VerticalOffset="-4">
+                            <Border Background="White" BorderBrush="#DDE1EA" BorderThickness="1" CornerRadius="8" Padding="4" Margin="0,0,6,6">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.16" Color="#1B1460"/>
+                                </Border.Effect>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" MaxHeight="420">
+                                    <ItemsPresenter MinWidth="180" MaxWidth="300" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                        </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="submenuArrow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="check" Property="Visibility" Value="Visible"/>
                             </Trigger>

@@ -31,11 +31,43 @@
                     <Button x:Name="LiveBtn" Content="{local:Loc Key='打开实时面板 ›'}" Style="{StaticResource GhostBtn}" HorizontalAlignment="Left"
                             Margin="-6,6,0,0" Visibility="Collapsed" Click="Live_Click"/>
                     <Grid Margin="0,12,0,0">
-                        <TextBox x:Name="SearchBox" Style="{StaticResource Field}" Padding="28,7,8,7" TextChanged="Search_Changed"/>
+                        <TextBox x:Name="SearchBox" Style="{StaticResource Field}" Padding="28,7,8,7" TextChanged="Search_Changed" KeyDown="Search_KeyDown"/>
                         <TextBlock Text="⌕" Foreground="#9AA1B2" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
                         <TextBlock x:Name="SearchHint" Text="{local:Loc Key='搜索标题或内容'}" Foreground="#A9AFBD" FontSize="13" Margin="31,0,0,0"
                                    VerticalAlignment="Center" IsHitTestVisible="False"/>
                     </Grid>
+                    <Border Background="#F0F1F6" CornerRadius="7" Padding="2" Margin="0,10,0,0">
+                        <Border.Resources>
+                            <Style x:Key="ScopeTab" TargetType="RadioButton" BasedOn="{StaticResource Seg}">
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="tab" Background="Transparent" CornerRadius="5" Padding="5,6" Margin="1">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="tab" Property="Background" Value="White"/>
+                                                    <Setter Property="Foreground" Value="#4F5BD5"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Border.Resources>
+                        <UniformGrid Columns="3">
+                            <RadioButton Content="{local:Loc Key='未归档'}" Tag="0" GroupName="archiveScope" Style="{StaticResource ScopeTab}" IsChecked="True" Checked="LibraryScope_Checked" ToolTip="{local:Loc Key='未归档'}"/>
+                            <RadioButton Content="{local:Loc Key='全部'}" Tag="1" GroupName="archiveScope" Style="{StaticResource ScopeTab}" Checked="LibraryScope_Checked" ToolTip="{local:Loc Key='包含归档'}"/>
+                            <RadioButton Content="{local:Loc Key='已归档'}" Tag="2" GroupName="archiveScope" Style="{StaticResource ScopeTab}" Checked="LibraryScope_Checked" ToolTip="{local:Loc Key='仅看归档'}"/>
+                        </UniformGrid>
+                    </Border>
+                    <DockPanel Margin="4,14,0,0">
+                        <Button DockPanel.Dock="Right" Content="＋" Width="26" FontSize="17" Padding="2" Style="{StaticResource GhostBtn}" Foreground="#646B80" ToolTip="{local:Loc Key='新建分组'}" AutomationProperties.Name="{local:Loc Key='新建分组'}" Click="NewGroup_Click"/>
+                        <TextBlock Text="{local:Loc Key='分组'}" Foreground="#9AA1B2" FontSize="11" VerticalAlignment="Center"/>
+                    </DockPanel>
                 </StackPanel>
                 <!-- What the tray menu offers, here too: the translation switch and settings. -->
                 <Border DockPanel.Dock="Bottom" BorderBrush="#EEF0F5" BorderThickness="0,1,0,0" Margin="4,8,6,0" Padding="0,12,0,0">
@@ -47,85 +79,136 @@
                                   ToolTip="{local:Loc Key='把对方说的话实时翻译成你的语言'}" Click="Translate_Click"/>
                     </DockPanel>
                 </Border>
-                <ListBox x:Name="SessionList" BorderThickness="0" Background="Transparent" SelectionChanged="Session_Selected"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.GroupStyle>
-                        <GroupStyle>
-                            <GroupStyle.HeaderTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" Foreground="#9AA1B2" Margin="6,12,0,4"/>
-                                </DataTemplate>
-                            </GroupStyle.HeaderTemplate>
-                        </GroupStyle>
-                    </ListBox.GroupStyle>
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
+                <TreeView x:Name="SessionList" BorderThickness="0" Background="Transparent" SelectedItemChanged="Session_Selected"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <TreeView.Resources>
+                        <Style TargetType="TreeViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                            <EventSetter Event="ContextMenuOpening" Handler="TreeMenu_Opening"/>
+                            <Setter Property="ContextMenu"><Setter.Value><ContextMenu/></Setter.Value></Setter>
                             <Setter Property="Template">
                                 <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border x:Name="b" Background="Transparent" CornerRadius="5" Padding="10,8" Margin="0,1,6,1" Cursor="Hand">
-                                            <ContentPresenter/>
-                                        </Border>
+                                    <ControlTemplate TargetType="TreeViewItem">
+                                        <StackPanel>
+                                            <Border x:Name="surface" Background="Transparent" CornerRadius="5" Margin="0,1,5,1" Padding="3,6,4,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/></Grid.ColumnDefinitions>
+                                                    <ToggleButton x:Name="expander" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" Visibility="Hidden" Width="16" Height="24" Cursor="Hand" VerticalAlignment="Center">
+                                                        <ToggleButton.Template>
+                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                <TextBlock x:Name="arrow" Text="›" FontSize="17" Foreground="#9AA1B2" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin=".5,.5"/>
+                                                                <ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter></Trigger></ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </ToggleButton.Template>
+                                                    </ToggleButton>
+                                                    <ContentPresenter Grid.Column="1" ContentSource="Header" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="2" Content="⋯" FontSize="17" Foreground="#9AA1B2" Style="{StaticResource GhostBtn}" Padding="1" Width="23" VerticalAlignment="Center" Click="TreeMenu_Click" ToolTip="{local:Loc Key='更多操作'}" AutomationProperties.Name="{local:Loc Key='更多操作'}"/>
+                                                </Grid>
+                                            </Border>
+                                            <ItemsPresenter x:Name="children" Margin="28,0,0,0"/>
+                                        </StackPanel>
                                         <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="b" Property="Background" Value="#F5F6FA"/>
-                                            </Trigger>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="b" Property="Background" Value="#ECEEFC"/>
-                                            </Trigger>
+                                            <Trigger Property="IsExpanded" Value="False"><Setter TargetName="children" Property="Visibility" Value="Collapsed"/></Trigger>
+                                            <DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter TargetName="expander" Property="Visibility" Value="Visible"/></DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="surface" Property="Background" Value="#F5F6FA"/></Trigger>
+                                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="surface" Property="Background" Value="#ECEEFC"/></Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
                         </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel>
-                                <TextBlock Text="{Binding Title}" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Meta}" FontSize="11" Foreground="#9AA1B2" Margin="0,3,0,0"/>
+                        <HierarchicalDataTemplate DataType="{x:Type local:SessionGroupNode}" ItemsSource="{Binding Children}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="21"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="#9AA1B2" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="#646B80" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Count}" FontSize="11" Foreground="#9AA1B2" Margin="6,0,5,0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </HierarchicalDataTemplate>
+                        <DataTemplate DataType="{x:Type local:SessionRow}">
+                            <StackPanel Margin="1,1,0,1">
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Background="#EEF0F5" CornerRadius="3" Padding="4,1" Margin="5,0,0,0" VerticalAlignment="Center">
+                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Archived}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                        <TextBlock Text="{local:Loc Key='已归档'}" FontSize="10" Foreground="#646B80"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Title}" FontSize="12" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                                </DockPanel>
+                                <TextBlock Text="{Binding Meta}" FontSize="11" Foreground="#9AA1B2" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </TreeView.Resources>
+                </TreeView>
             </DockPanel>
         </Border>
 
         <!-- One meeting -->
         <Grid Grid.Column="1">
             <StackPanel x:Name="EmptyText" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
-                <TextBlock Text="{local:Loc Key='还没有会议记录'}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                <TextBlock Style="{StaticResource Helper}" TextAlignment="Center" Margin="0,6,0,0"
+                <TextBlock x:Name="EmptyTitle" Text="{local:Loc Key='还没有会议记录'}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="EmptyHint" Style="{StaticResource Helper}" TextAlignment="Center" Margin="0,6,0,0"
                            Text="{local:Loc Key='点左上角「开始收听」，或单击任务栏通知区域的图标。会议里听到的内容会整理在这里。'}"/>
             </StackPanel>
             <DockPanel x:Name="Detail" Visibility="Collapsed" Margin="28,20,28,16">
                 <StackPanel DockPanel.Dock="Top">
-                    <DockPanel>
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                            <Button x:Name="NotesBtn" Content="{local:Loc Key='生成纪要'}" Style="{StaticResource PrimaryBtn}" Click="Generate_Click" Margin="0,0,8,0"/>
-                            <Button Content="{local:Loc Key='导出 Markdown'}" Style="{StaticResource Btn}" Click="Export_Click" Margin="0,0,8,0"/>
-                            <Button Content="{local:Loc Key='删除'}" Style="{StaticResource DeleteBtn}" ToolTip="{local:Loc Key='删除这场会议'}" Click="Delete_Click"/>
-                        </StackPanel>
-                        <TextBox x:Name="TitleBox" Style="{StaticResource TitleField}" FontSize="21" Margin="-7,0,16,0"
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TitleBox" Style="{StaticResource TitleField}" FontSize="22" Margin="-7,0,16,0"
                                  Foreground="#1E2235" LostFocus="Title_LostFocus" KeyDown="Title_KeyDown" ToolTip="{local:Loc Key='点击修改标题'}"/>
-                    </DockPanel>
-                    <TextBlock x:Name="MetaText" Foreground="#9AA1B2" FontSize="12" Margin="0,4,0,12"/>
-                    <WrapPanel x:Name="SpeakersPanel" Margin="0,0,0,10" Visibility="Collapsed"/>
-                    <DockPanel Margin="0,0,0,12">
-                        <ComboBox x:Name="TemplateBox" DockPanel.Dock="Right" MinWidth="190" MaxDropDownHeight="420" Margin="12,0,0,0"
-                                  ToolTip="{local:Loc Key='这场会议的纪要模板：换了就按新模板重新整理'}" SelectionChanged="Template_Changed"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{local:Loc Key='模板'}" Foreground="#646B80" FontSize="12" VerticalAlignment="Center" Margin="16,0,0,0"/>
-                        <TextBlock x:Name="NotesState" DockPanel.Dock="Right" Foreground="#9AA1B2" FontSize="12" VerticalAlignment="Center"/>
-                        <Border Background="#E8EBF2" CornerRadius="5" Padding="2" HorizontalAlignment="Left">
+                        <Button Grid.Column="1" Content="{local:Loc Key='导出 Markdown'}" Style="{StaticResource GhostBtn}" Click="Export_Click" VerticalAlignment="Center"/>
+                    </Grid>
+                    <Grid Margin="0,4,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="MetaText" Foreground="#9AA1B2" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                        <Border x:Name="SpeakersPanel" Grid.Column="1" Margin="16,0,0,0" Visibility="Collapsed" MaxWidth="270">
+                            <Button Style="{StaticResource GhostBtn}" Padding="6,3" Click="Speakers_Click" ToolTip="{local:Loc Key='管理发言人'}" AutomationProperties.Name="{local:Loc Key='管理发言人'}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="SpeakersCount" FontSize="12" Foreground="#646B80" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SpeakersPreview" FontSize="12" Foreground="#9AA1B2" MaxWidth="130" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <TextBlock Text="⌄" Foreground="#9AA1B2" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Border>
+                    </Grid>
+                    <Grid x:Name="HeaderToolbar" Margin="0,0,0,12" SizeChanged="HeaderToolbar_SizeChanged">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="#E8EBF2" CornerRadius="5" Padding="2" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="TabNotes" Content="{local:Loc Key='纪要'}" GroupName="d" Style="{StaticResource Seg}" IsChecked="True" Checked="Tab_Checked"/>
                                 <RadioButton x:Name="TabLines" Content="{local:Loc Key='逐字稿'}" GroupName="d" Style="{StaticResource Seg}" Checked="Tab_Checked"/>
                             </StackPanel>
                         </Border>
-                    </DockPanel>
+                        <StackPanel x:Name="NotesTools" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="{local:Loc Key='模板'}" Foreground="#9AA1B2" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox x:Name="TemplateBox" Width="180" MinWidth="120" MaxDropDownHeight="420"
+                                      ToolTip="{local:Loc Key='这场会议的纪要模板：换了就按新模板重新整理'}" SelectionChanged="Template_Changed"/>
+                            <Button x:Name="NotesBtn" Content="{local:Loc Key='生成纪要'}" Style="{StaticResource PrimaryBtn}" Click="Generate_Click" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock x:Name="LibraryError" Foreground="#D9822B" FontSize="12" TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,8"/>
                 </StackPanel>
-                <Grid>
+                <DockPanel>
+                    <StackPanel x:Name="SearchNavigation" DockPanel.Dock="Top" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,8">
+                        <TextBlock x:Name="SearchCount" VerticalAlignment="Center" Foreground="#646B80" Margin="0,0,10,0"/>
+                        <Button Content="↑" Style="{StaticResource GhostBtn}" Click="PreviousMatch_Click" Padding="9,3" ToolTip="{local:Loc Key='上一个匹配'}" AutomationProperties.Name="{local:Loc Key='上一个匹配'}"/>
+                        <Button Content="↓" Style="{StaticResource GhostBtn}" Click="NextMatch_Click" Padding="9,3" ToolTip="{local:Loc Key='下一个匹配'}" AutomationProperties.Name="{local:Loc Key='下一个匹配'}"/>
+                    </StackPanel>
+                    <Grid>
                     <ScrollViewer x:Name="NotesScroll" VerticalScrollBarVisibility="Auto">
                         <ContentControl x:Name="NotesHost" Margin="0,0,6,0"/>
                     </ScrollViewer>
@@ -144,8 +227,8 @@
                                                 <TextBlock Text="{Binding Time}" Foreground="#9AA1B2" FontSize="11" Margin="0,2,0,0"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="{Binding Src}" FontSize="14" TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding Dst}" Visibility="{Binding DstVisibility}" Foreground="#646B80" FontSize="13" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                                <local:SelectableText Text="{Binding Src}" FontSize="14"/>
+                                                <local:SelectableText Text="{Binding Dst}" Visibility="{Binding DstVisibility}" Foreground="#646B80" FontSize="13" Margin="0,3,0,0"/>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
@@ -153,7 +236,8 @@
                             </ItemsControl>
                         </ScrollViewer>
                     </Border>
-                </Grid>
+                    </Grid>
+                </DockPanel>
             </DockPanel>
         </Grid>
     </Grid>

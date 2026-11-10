@@ -8,8 +8,6 @@ using Microsoft.Win32;
 
 namespace HuiYi.App;
 
-public sealed record SessionRow(string Id, string Title, string Meta, string Group);
-
 /// The meeting records: every meeting with its notes and bilingual transcript. Rename, write the
 /// notes again, export to Markdown, delete.
 public partial class MainWindow : Window
@@ -17,11 +15,20 @@ public partial class MainWindow : Window
     private readonly AppModel model;
     private readonly ObservableCollection<LineVM> lines = [];
     private string? selected;
+    private bool refreshingList;
+    private int searchRevision;
+    private readonly List<(SelectableText Box, System.Windows.Documents.TextRange Range, bool Notes)> searchMatches = [];
+    private int searchIndex = -1;
+    private string appliedQuery = "";
+    private string? appliedSession;
+    private readonly System.Windows.Threading.DispatcherTimer searchTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
 
     public MainWindow(AppModel model)
     {
         this.model = model;
         InitializeComponent();
+        searchTimer.Tick += (_, _) => { searchTimer.Stop(); RefreshList(); };
+        Closed += (_, _) => searchTimer.Stop();
         UiText.Set(this, "Title", () => L.F("{0} · 会议记录", L.T("会译")));
         Icon = Icons.Mark(64, false);
         Logo.Source = Icons.Mark(52, false);
@@ -33,10 +40,7 @@ public partial class MainWindow : Window
         LinesList.ItemsSource = lines;
         PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
         model.Store.Changed += () => Dispatcher.BeginInvoke(RefreshList);
-        model.NotesChanged += () =>
-        {
-            if (selected != null) ShowDetail(selected, keepTab: true);
-        };
+        model.NotesChanged += RefreshSelectedDetails;
         Refresh();
     }
 
@@ -58,40 +62,38 @@ public partial class MainWindow : Window
 
     private void Translate_Click(object sender, RoutedEventArgs e) => model.SetTranslation(TranslateOn.IsChecked == true);
 
-    /// 今天 / 昨天 / 本周 / 更早, for the sidebar's group headings.
-    private static string GroupOf(DateTime startedUtc)
-    {
-        var d = startedUtc.ToLocalTime().Date;
-        var today = DateTime.Today;
-        if (d == today) return L.T("今天");
-        if (d == today.AddDays(-1)) return L.T("昨天");
-        if (d > today.AddDays(-7)) return L.T("最近 7 天");
-        return d.Year == today.Year ? L.F("{0} 月", d.Month) : L.F("{0} 年 {1} 月", d.Year, d.Month);
-    }
-
     private void RefreshList()
     {
         var q = SearchBox.Text.Trim();
         SearchHint.Visibility = q.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         var rows = model.Store.All
-            .Where(s => q.Length == 0 || s.DisplayTitle.Contains(q, StringComparison.OrdinalIgnoreCase)
-                        || s.Lines.Any(l => l.Src.Contains(q, StringComparison.OrdinalIgnoreCase) || (l.Dst?.Contains(q) ?? false)))
+            .Where(InLibraryScope)
+            .Where(s => SessionSearch.Matches(s, q) || (q.Length > 0 && DisplayTitle(s).Contains(q, StringComparison.OrdinalIgnoreCase)))
             .Select(s => new SessionRow(s.Id, (s.Id == model.LiveSessionId ? "● " : "") + DisplayTitle(s),
-                L.F("{0:HH:mm} · {1} · {2} 句", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count), GroupOf(s.StartedAt)))
+                L.F("{0:MM-dd HH:mm} · {1} · {2} 句", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count))
+                { Archived = model.Store.IsArchived(s.Id) })
             .ToList();
         var keep = selected;
-        var view = new System.Windows.Data.ListCollectionView(rows);
-        view.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(SessionRow.Group)));
-        SessionList.ItemsSource = view;
-        EmptyText.Visibility = rows.Count == 0 && q.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        refreshingList = true;
+        BuildMeetingTree(rows, q);
+        EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RenderLibraryEmpty(q);
         var row = rows.FirstOrDefault(r => r.Id == keep) ?? rows.FirstOrDefault();
         if (row == null)
         {
+            selected = null;
+            lines.Clear();
+            refreshingList = false;
+            searchRevision++;
+            foreach (var box in searchMatches.Select(m => m.Box).Distinct()) box.Highlight("");
+            searchMatches.Clear();
+            SearchNavigation.Visibility = Visibility.Collapsed;
             Detail.Visibility = Visibility.Collapsed;
             return;
         }
         // A new list drops the selection; selecting the same meeting again keeps its tab.
-        SessionList.SelectedItem = row;
+        row.IsSelected = true;
+        refreshingList = false;
         ShowDetail(row.Id, keepTab: true);
     }
 
@@ -101,9 +103,9 @@ public partial class MainWindow : Window
         return m < 1 ? L.T("不到 1 分钟") : L.F("{0} 分钟", m);
     }
 
-    private void Session_Selected(object sender, SelectionChangedEventArgs e)
+    private void Session_Selected(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
-        if (SessionList.SelectedItem is SessionRow r) ShowDetail(r.Id, keepTab: false);
+        if (!refreshingList && e.NewValue is SessionRow r) ShowDetail(r.Id, keepTab: false);
     }
 
     private void ShowDetail(string id, bool keepTab)
@@ -111,22 +113,23 @@ public partial class MainWindow : Window
         var s = model.Store.Get(id);
         if (s == null) { Detail.Visibility = Visibility.Collapsed; return; }
         var switched = selected != id;
+        if (switched) LibraryError.Visibility = Visibility.Collapsed;
         selected = id;
         Detail.Visibility = Visibility.Visible;
         EmptyText.Visibility = Visibility.Collapsed;
         if (!TitleBox.IsKeyboardFocused) TitleBox.Text = DisplayTitle(s);
-        UiText.Set(MetaText, "Text", () => L.F("{0:yyyy年M月d日 HH:mm} · 时长 {1} · {2} 句{3}", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count, (s.Id == model.LiveSessionId ? " · 正在记录" : "")));
+        UiText.Set(MetaText, "Text", () => L.F("{0:yyyy年M月d日 HH:mm} · 时长 {1} · {2} 句{3}", s.StartedAt.ToLocalTime(), Minutes(s), s.Lines.Count, (s.Id == model.LiveSessionId ? " · 正在记录" : "")) + LibraryMeta(s.Id));
         if (switched) lines.Clear();
         if (model.Store.Snapshot(id) is { } snap)
         {
             LineVM.Sync(lines, snap);
-            RenderSpeakers(snap, switched);
+            RenderSpeakers(snap);
         }
         RenderTemplateBox(s);
         var generating = model.Notes.GeneratingId == id;
         UiText.Set(NotesBtn, "Content", () => generating ? L.T("整理中…") : s.Notes is { IsEmpty: false } ? L.T("重新整理纪要") : L.T("生成纪要"));
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
-        UiText.Set(NotesState, "Text", () => generating ? L.T("AI 正在通读整场会议…") : s.Notes?.UpdatedAt is { } at ? L.F("纪要更新于 {0:M月d日 HH:mm}", at.ToLocalTime()) : "");
+        UiText.Set(NotesBtn, "ToolTip", () => generating ? L.T("AI 正在通读整场会议…") : s.Notes?.UpdatedAt is { } at ? L.F("纪要更新于 {0:M月d日 HH:mm}", at.ToLocalTime()) : "");
         NotesHost.Content = s.Notes is { IsEmpty: false } n
             ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s), localizeHeadings: model.TemplateFor(s).BuiltIn)
             : new Border
@@ -145,45 +148,33 @@ public partial class MainWindow : Window
             if (s.Notes is { IsEmpty: false }) TabNotes.IsChecked = true;
             else TabLines.IsChecked = true;
         }
+        QueueSearch();
     }
 
-    /// 发言人 1、发言人 2…, each with its name: type one to name that voice in this meeting (empty: back
-    /// to the number). The AI's guesses show as the name until the user changes it.
-    private void RenderSpeakers(Session s, bool rebuild)
+    private SpeakersWindow? speakersWindow;
+
+    private void RenderSpeakers(Session session)
     {
-        var voices = SpeakerLabels.VoiceNumbers(s.Lines).OrderBy(kv => kv.Value).ToList();
-        // Don't pull the box away from someone typing a name.
-        if (!rebuild && SpeakersPanel.IsKeyboardFocusWithin) return;
-        SpeakersPanel.Children.Clear();
+        var voices = SpeakerLabels.VoiceNumbers(session.Lines);
         SpeakersPanel.Visibility = voices.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
-        var names = SpeakerLabels.Names(s);
-        foreach (var (voice, number) in voices)
+        UiText.Set(SpeakersCount, "Text", () => L.F("发言人 · {0} 人", voices.Count));
+        var names = SpeakerLabels.Names(session);
+        UiText.Set(SpeakersPreview, "Text", () => string.Join(" · ", voices.OrderBy(v => v.Value).Take(3)
+            .Select(v => names.GetValueOrDefault(v.Value) ?? L.F("发言人 {0}", v.Value)))
+            + (voices.Count > 3 ? $"  +{voices.Count - 3}" : ""));
+    }
+
+    private void Speakers_Click(object sender, RoutedEventArgs e)
+    {
+        if (selected == null) return;
+        if (speakersWindow is { IsVisible: true } open && open.SessionId == selected)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 4) };
-            row.Children.Add(new System.Windows.Shapes.Ellipse { Width = 8, Height = 8, Fill = Theme.Speaker(number), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
-            row.Children.Add(UiText.Bind(new TextBlock { Text = L.F("发言人 {0}", number), Foreground = Theme.Grey2, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) }, ("Text", () => L.F("发言人 {0}", number))));
-            var guess = s.VoiceNames?.ContainsKey(voice.ToString()) == true ? null : s.VoiceGuesses?.GetValueOrDefault(voice.ToString());
-            var box = UiText.Bind(new TextBox
-            {
-                Style = (Style)FindResource("Field"), Tag = L.T("起个名字"),
-                Text = names.GetValueOrDefault(number, ""), Width = 110, Padding = new Thickness(7, 3, 7, 3), FontSize = 12,
-                ToolTip = guess != null ? L.F("AI 根据「{0}」猜的名字，可以改", guess.Evidence) : L.T("输入名字，回车保存"),
-            }, ("Tag", () => L.T("起个名字")), ("ToolTip", () => guess != null ? L.F("AI 根据「{0}」猜的名字，可以改", guess.Evidence) : L.T("输入名字，回车保存")));
-            void Save()
-            {
-                var t = box.Text.Trim();
-                if (t != names.GetValueOrDefault(number, "")) model.RenameVoice(s.Id, voice, t);
-            }
-            box.LostFocus += (_, _) => Save();
-            box.KeyDown += (_, e) =>
-            {
-                if (e.Key != Key.Enter) return;
-                Save();
-                Keyboard.ClearFocus();
-            };
-            row.Children.Add(box);
-            SpeakersPanel.Children.Add(row);
+            open.Activate();
+            return;
         }
+        speakersWindow?.Close();
+        speakersWindow = new SpeakersWindow(model, selected) { Owner = this };
+        speakersWindow.Show();
     }
 
     public void ShowTab(bool notes)
@@ -200,7 +191,84 @@ public partial class MainWindow : Window
         LinesScroll.Visibility = notes ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private void Search_Changed(object sender, TextChangedEventArgs e) => RefreshList();
+    private void Search_Changed(object sender, TextChangedEventArgs e)
+    {
+        searchTimer.Stop();
+        if (SearchBox.Text.Trim().Length == 0) RefreshList();
+        else searchTimer.Start();
+    }
+
+    private void QueueSearch()
+    {
+        var revision = ++searchRevision;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+        {
+            if (revision != searchRevision) return;
+            var query = SearchBox.Text.Trim();
+            var relocate = query != appliedQuery || selected != appliedSession;
+            var previousIndex = searchIndex;
+            if (query.Length == 0)
+            {
+                foreach (var box in searchMatches.Select(m => m.Box).Distinct()) box.Highlight("");
+                searchMatches.Clear();
+                searchIndex = -1;
+                appliedQuery = query;
+                appliedSession = selected;
+                SearchNavigation.Visibility = Visibility.Collapsed;
+                return;
+            }
+            searchMatches.Clear();
+            searchIndex = -1;
+            // Generate transcript containers even when the notes tab is currently displayed.
+            var previous = LinesScroll.Visibility;
+            LinesScroll.Visibility = Visibility.Visible;
+            LinesScroll.UpdateLayout();
+            foreach (var box in SelectableText.Descendants(NotesHost))
+                foreach (var range in box.Highlight(query)) searchMatches.Add((box, range, true));
+            foreach (var box in SelectableText.Descendants(LinesList))
+                foreach (var range in box.Highlight(query)) searchMatches.Add((box, range, false));
+            LinesScroll.Visibility = previous;
+            appliedQuery = query;
+            appliedSession = selected;
+            SearchNavigation.Visibility = Visibility.Visible;
+            if (searchMatches.Count > 0 && relocate) MoveSearch(1);
+            else
+            {
+                searchIndex = searchMatches.Count == 0 ? -1 : Math.Clamp(previousIndex, 0, searchMatches.Count - 1);
+                SearchCount.Text = searchMatches.Count == 0 ? "0 / 0" : $"{searchIndex + 1} / {searchMatches.Count}";
+            }
+        }));
+    }
+
+    private void MoveSearch(int direction)
+    {
+        if (searchMatches.Count == 0) return;
+        searchIndex = (searchIndex + direction + searchMatches.Count) % searchMatches.Count;
+        var match = searchMatches[searchIndex];
+        ShowTab(match.Notes);
+        UpdateLayout();
+        var rect = match.Range.Start.GetCharacterRect(System.Windows.Documents.LogicalDirection.Forward);
+        if (rect.IsEmpty) match.Box.BringIntoView();
+        else match.Box.BringIntoView(rect);
+        SearchCount.Text = $"{searchIndex + 1} / {searchMatches.Count}";
+    }
+
+    private void PreviousMatch_Click(object sender, RoutedEventArgs e) => MoveSearch(-1);
+    private void NextMatch_Click(object sender, RoutedEventArgs e) => MoveSearch(1);
+
+    private void Search_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        if (searchTimer.IsEnabled)
+        {
+            searchTimer.Stop();
+            RefreshList();
+            e.Handled = true;
+            return;
+        }
+        MoveSearch(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? -1 : 1);
+        e.Handled = true;
+    }
 
     private async void Listen_Click(object sender, RoutedEventArgs e)
     {
@@ -239,7 +307,7 @@ public partial class MainWindow : Window
         model.Store.SetTemplate(selected, tid == model.Settings.DefaultTemplateId ? null : tid);
         if (selected == model.LiveSessionId)
         {
-            UiText.Set(NotesState, "Text", () => L.T("下一次更新起按新模板整理"));
+            UiText.Set(NotesBtn, "ToolTip", () => L.T("下一次更新起按新模板整理"));
             model.Notes.UpdateNow();
             return;
         }
@@ -278,14 +346,23 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Delete_Click(object sender, RoutedEventArgs e)
+    private void DeleteSession(string id)
     {
-        if (selected == null || selected == model.LiveSessionId) return;
-        var title = model.Store.Get(selected)?.DisplayTitle ?? L.T("这场会议");
-        if (!Dialog.Confirm(this, L.F("删除「{0}」？", title), L.T("逐字稿和纪要会一起删掉，删除后无法恢复。"), L.T("删除"), danger: true)) return;
-        model.Store.Delete(selected);
-        selected = null;
+        if (id == model.Store.LiveId || model.Store.Get(id) is not { } session) return;
+        if (!Dialog.Confirm(this, L.F("删除「{0}」？", session.DisplayTitle), L.T("逐字稿和纪要会一起删掉，删除后无法恢复。"), L.T("删除"), danger: true)) return;
+        LibraryAction(() => model.Store.Delete(id));
+        if (selected == id && model.Store.Get(id) == null) selected = null;
         RefreshList();
+    }
+
+    private void HeaderToolbar_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (NotesTools == null) return;
+        var compact = e.NewSize.Width < 650;
+        Grid.SetRow(NotesTools, compact ? 1 : 0);
+        Grid.SetColumn(NotesTools, compact ? 0 : 1);
+        Grid.SetColumnSpan(NotesTools, compact ? 2 : 1);
+        NotesTools.Margin = compact ? new Thickness(0, 8, 0, 0) : new Thickness(0);
     }
 
     private void Title_LostFocus(object sender, RoutedEventArgs e) => SaveTitle();

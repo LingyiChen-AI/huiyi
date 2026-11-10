@@ -67,7 +67,7 @@ public static class NotesRenderer
                 foreach (var t in NoteTerm.Ordered(n.Terms)) wrap.Children.Add(Term(k, t));
                 panel.Children.Add(wrap);
             });
-        return root;
+        return SelectableText.MakeSelectable(root);
     }
 
     // MARK: Parts

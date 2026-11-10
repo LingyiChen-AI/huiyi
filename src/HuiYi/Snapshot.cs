@@ -23,6 +23,8 @@ public static class Snapshot
         Save(main, folder, "main-notes", keepOpen: true);
         main.ShowTab(notes: false);
         Save(main, folder, "main-lines");
+        if (latest != null) Save(new SpeakersWindow(model, latest.Id), folder, "speakers");
+        Save(new GroupNameWindow(model.Store), folder, "group-new");
         // The AI page needs a service to show (snapshots work on a copy of the settings too).
         if (model.Settings.Providers.Count == 0)
         {

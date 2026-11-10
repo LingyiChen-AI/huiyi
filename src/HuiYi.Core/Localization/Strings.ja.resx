@@ -1809,4 +1809,163 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="（其中 {0} 句拆成了两个人）" xml:space="preserve">
     <value>（うち {0} 文を 2 人の発言に分割）</value>
   </data>
+  <data name="管理发言人" xml:space="preserve">
+    <value>発言者を管理</value>
+  </data>
+  <data name="发言人 · {0} 人" xml:space="preserve">
+    <value>発言者 · {0} 人</value>
+  </data>
+  <data name="搜索发言人或姓名" xml:space="preserve">
+    <value>発言者・名前を検索</value>
+  </data>
+  <data name="回车或离开输入框保存，留空恢复默认名称。" xml:space="preserve">
+    <value>Enter またはフォーカスを移して保存。空欄で既定の名前に戻します。</value>
+  </data>
+  <data name="没有匹配的发言人" xml:space="preserve">
+    <value>一致する発言者はいません</value>
+  </data>
+  <data name="关闭" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="上一个匹配" xml:space="preserve">
+    <value>前の一致</value>
+  </data>
+  <data name="下一个匹配" xml:space="preserve">
+    <value>次の一致</value>
+  </data>
+  <data name="查看与搜索范围" xml:space="preserve">
+    <value>表示・検索範囲</value>
+  </data>
+  <data name="未归档" xml:space="preserve">
+    <value>未アーカイブ</value>
+  </data>
+  <data name="包含归档" xml:space="preserve">
+    <value>アーカイブを含む</value>
+  </data>
+  <data name="仅看归档" xml:space="preserve">
+    <value>アーカイブのみ</value>
+  </data>
+  <data name="管理分组" xml:space="preserve">
+    <value>グループ管理</value>
+  </data>
+  <data name="筛选分组" xml:space="preserve">
+    <value>グループで絞り込む</value>
+  </data>
+  <data name="分组" xml:space="preserve">
+    <value>グループ</value>
+  </data>
+  <data name="移动到分组" xml:space="preserve">
+    <value>グループに移動</value>
+  </data>
+  <data name="归档" xml:space="preserve">
+    <value>アーカイブ</value>
+  </data>
+  <data name="全部分组" xml:space="preserve">
+    <value>すべてのグループ</value>
+  </data>
+  <data name="未分组" xml:space="preserve">
+    <value>未分類</value>
+  </data>
+  <data name="已归档" xml:space="preserve">
+    <value>アーカイブ済み</value>
+  </data>
+  <data name="没有匹配的会议" xml:space="preserve">
+    <value>一致する会議がありません</value>
+  </data>
+  <data name="暂无已归档会议" xml:space="preserve">
+    <value>アーカイブされた会議はありません</value>
+  </data>
+  <data name="这个分组还没有会议" xml:space="preserve">
+    <value>このグループには会議がありません</value>
+  </data>
+  <data name="试试其他关键词，或调整分组与归档范围。" xml:space="preserve">
+    <value>別のキーワードやグループ・アーカイブ範囲をお試しください。</value>
+  </data>
+  <data name="恢复" xml:space="preserve">
+    <value>復元</value>
+  </data>
+  <data name="会议结束后可归档" xml:space="preserve">
+    <value>会議終了後にアーカイブできます</value>
+  </data>
+  <data name="恢复到原分组" xml:space="preserve">
+    <value>元のグループに復元</value>
+  </data>
+  <data name="归档后可在「仅看归档」中找回" xml:space="preserve">
+    <value>「アーカイブのみ」から復元できます</value>
+  </data>
+  <data name="保存失败，请检查数据目录的写入权限后重试。" xml:space="preserve">
+    <value>保存できませんでした。データフォルダーの書き込み権限を確認して再試行してください。</value>
+  </data>
+  <data name="会议或分组已变更，请重新选择。" xml:space="preserve">
+    <value>会議またはグループが変更されました。もう一度選択してください。</value>
+  </data>
+  <data name="新建分组" xml:space="preserve">
+    <value>新規グループ</value>
+  </data>
+  <data name="分组名称" xml:space="preserve">
+    <value>グループ名</value>
+  </data>
+  <data name="例如：项目周会、客户沟通" xml:space="preserve">
+    <value>例：週次会議、お客様との打ち合わせ</value>
+  </data>
+  <data name="删除分组" xml:space="preserve">
+    <value>グループを削除</value>
+  </data>
+  <data name="{0} 场会议" xml:space="preserve">
+    <value>{0} 件の会議</value>
+  </data>
+  <data name="保存名称" xml:space="preserve">
+    <value>名前を保存</value>
+  </data>
+  <data name="创建分组" xml:space="preserve">
+    <value>グループを作成</value>
+  </data>
+  <data name="请输入分组名称" xml:space="preserve">
+    <value>グループ名を入力してください</value>
+  </data>
+  <data name="分组名称已存在" xml:space="preserve">
+    <value>このグループ名は既に使われています</value>
+  </data>
+  <data name="删除分组「{0}」后，组内会议将移到「未分组」。" xml:space="preserve">
+    <value>「{0}」を削除すると、会議は「未分類」に移動します。</value>
+  </data>
+  <data name="会议操作" xml:space="preserve">
+    <value>会議の操作</value>
+  </data>
+  <data name="新建后将会议移入此分组。" xml:space="preserve">
+    <value>作成後、この会議を新しいグループに移動します。</value>
+  </data>
+  <data name="查看范围" xml:space="preserve">
+    <value>表示範囲</value>
+  </data>
+  <data name="新建" xml:space="preserve">
+    <value>新規</value>
+  </data>
+  <data name="还没有分组" xml:space="preserve">
+    <value>グループがありません</value>
+  </data>
+  <data name="创建第一个分组，整理你的会议。" xml:space="preserve">
+    <value>最初のグループを作成して会議を整理しましょう。</value>
+  </data>
+  <data name="按项目或主题整理会议" xml:space="preserve">
+    <value>プロジェクトやテーマ別に会議を整理</value>
+  </data>
+  <data name="{0} 个分组" xml:space="preserve">
+    <value>{0} 個のグループ</value>
+  </data>
+  <data name="重命名分组" xml:space="preserve">
+    <value>グループ名の変更</value>
+  </data>
+  <data name="全部" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="更多操作" xml:space="preserve">
+    <value>その他の操作</value>
+  </data>
+  <data name="请先移出或删除分组内的会议（含归档）。" xml:space="preserve">
+    <value>アーカイブ済みを含む会議を先に移動または削除してください。</value>
+  </data>
+  <data name="删除分组「{0}」？" xml:space="preserve">
+    <value>グループ「{0}」を削除しますか？</value>
+  </data>
 </root>

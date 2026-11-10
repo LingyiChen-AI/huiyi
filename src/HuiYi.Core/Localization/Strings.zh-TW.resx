@@ -1809,4 +1809,163 @@
   <data name="＋ 添加服务" xml:space="preserve">
     <value>＋ 添加服務</value>
   </data>
+  <data name="管理发言人" xml:space="preserve">
+    <value>管理發言人</value>
+  </data>
+  <data name="发言人 · {0} 人" xml:space="preserve">
+    <value>發言人 · {0} 人</value>
+  </data>
+  <data name="搜索发言人或姓名" xml:space="preserve">
+    <value>搜尋發言人或姓名</value>
+  </data>
+  <data name="回车或离开输入框保存，留空恢复默认名称。" xml:space="preserve">
+    <value>按 Enter 或離開輸入框儲存，留空恢復預設名稱。</value>
+  </data>
+  <data name="没有匹配的发言人" xml:space="preserve">
+    <value>沒有相符的發言人</value>
+  </data>
+  <data name="关闭" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="上一个匹配" xml:space="preserve">
+    <value>上一個符合項目</value>
+  </data>
+  <data name="下一个匹配" xml:space="preserve">
+    <value>下一個符合項目</value>
+  </data>
+  <data name="查看与搜索范围" xml:space="preserve">
+    <value>查看與搜尋範圍</value>
+  </data>
+  <data name="未归档" xml:space="preserve">
+    <value>未封存</value>
+  </data>
+  <data name="包含归档" xml:space="preserve">
+    <value>包含封存</value>
+  </data>
+  <data name="仅看归档" xml:space="preserve">
+    <value>只看封存</value>
+  </data>
+  <data name="管理分组" xml:space="preserve">
+    <value>管理群組</value>
+  </data>
+  <data name="筛选分组" xml:space="preserve">
+    <value>篩選群組</value>
+  </data>
+  <data name="分组" xml:space="preserve">
+    <value>群組</value>
+  </data>
+  <data name="移动到分组" xml:space="preserve">
+    <value>移至群組</value>
+  </data>
+  <data name="归档" xml:space="preserve">
+    <value>封存</value>
+  </data>
+  <data name="全部分组" xml:space="preserve">
+    <value>全部群組</value>
+  </data>
+  <data name="未分组" xml:space="preserve">
+    <value>未分組</value>
+  </data>
+  <data name="已归档" xml:space="preserve">
+    <value>已封存</value>
+  </data>
+  <data name="没有匹配的会议" xml:space="preserve">
+    <value>沒有相符的會議</value>
+  </data>
+  <data name="暂无已归档会议" xml:space="preserve">
+    <value>尚無已封存的會議</value>
+  </data>
+  <data name="这个分组还没有会议" xml:space="preserve">
+    <value>這個群組還沒有會議</value>
+  </data>
+  <data name="试试其他关键词，或调整分组与归档范围。" xml:space="preserve">
+    <value>試試其他關鍵字，或調整群組與封存範圍。</value>
+  </data>
+  <data name="恢复" xml:space="preserve">
+    <value>還原</value>
+  </data>
+  <data name="会议结束后可归档" xml:space="preserve">
+    <value>會議結束後可封存</value>
+  </data>
+  <data name="恢复到原分组" xml:space="preserve">
+    <value>還原至原群組</value>
+  </data>
+  <data name="归档后可在「仅看归档」中找回" xml:space="preserve">
+    <value>封存後可在「只看封存」中找回</value>
+  </data>
+  <data name="保存失败，请检查数据目录的写入权限后重试。" xml:space="preserve">
+    <value>儲存失敗，請檢查資料目錄的寫入權限後重試。</value>
+  </data>
+  <data name="会议或分组已变更，请重新选择。" xml:space="preserve">
+    <value>會議或群組已變更，請重新選擇。</value>
+  </data>
+  <data name="新建分组" xml:space="preserve">
+    <value>新增群組</value>
+  </data>
+  <data name="分组名称" xml:space="preserve">
+    <value>群組名稱</value>
+  </data>
+  <data name="例如：项目周会、客户沟通" xml:space="preserve">
+    <value>例如：專案週會、客戶溝通</value>
+  </data>
+  <data name="删除分组" xml:space="preserve">
+    <value>刪除群組</value>
+  </data>
+  <data name="{0} 场会议" xml:space="preserve">
+    <value>{0} 場會議</value>
+  </data>
+  <data name="保存名称" xml:space="preserve">
+    <value>儲存名稱</value>
+  </data>
+  <data name="创建分组" xml:space="preserve">
+    <value>建立群組</value>
+  </data>
+  <data name="请输入分组名称" xml:space="preserve">
+    <value>請輸入群組名稱</value>
+  </data>
+  <data name="分组名称已存在" xml:space="preserve">
+    <value>群組名稱已存在</value>
+  </data>
+  <data name="删除分组「{0}」后，组内会议将移到「未分组」。" xml:space="preserve">
+    <value>刪除群組「{0}」後，群組內的會議將移至「未分組」。</value>
+  </data>
+  <data name="会议操作" xml:space="preserve">
+    <value>會議操作</value>
+  </data>
+  <data name="新建后将会议移入此分组。" xml:space="preserve">
+    <value>建立後將會議移入此群組。</value>
+  </data>
+  <data name="查看范围" xml:space="preserve">
+    <value>查看範圍</value>
+  </data>
+  <data name="新建" xml:space="preserve">
+    <value>新增</value>
+  </data>
+  <data name="还没有分组" xml:space="preserve">
+    <value>還沒有群組</value>
+  </data>
+  <data name="创建第一个分组，整理你的会议。" xml:space="preserve">
+    <value>建立第一個群組，整理你的會議。</value>
+  </data>
+  <data name="按项目或主题整理会议" xml:space="preserve">
+    <value>依專案或主題整理會議</value>
+  </data>
+  <data name="{0} 个分组" xml:space="preserve">
+    <value>{0} 個群組</value>
+  </data>
+  <data name="重命名分组" xml:space="preserve">
+    <value>重新命名群組</value>
+  </data>
+  <data name="全部" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="更多操作" xml:space="preserve">
+    <value>更多操作</value>
+  </data>
+  <data name="请先移出或删除分组内的会议（含归档）。" xml:space="preserve">
+    <value>請先移出或刪除群組內的會議（含封存）。</value>
+  </data>
+  <data name="删除分组「{0}」？" xml:space="preserve">
+    <value>刪除群組「{0}」？</value>
+  </data>
 </root>

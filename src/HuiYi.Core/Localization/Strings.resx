@@ -1809,4 +1809,163 @@
   <data name="＋ 添加服务" xml:space="preserve">
     <value>＋ 添加服务</value>
   </data>
+  <data name="管理发言人" xml:space="preserve">
+    <value>管理发言人</value>
+  </data>
+  <data name="发言人 · {0} 人" xml:space="preserve">
+    <value>发言人 · {0} 人</value>
+  </data>
+  <data name="搜索发言人或姓名" xml:space="preserve">
+    <value>搜索发言人或姓名</value>
+  </data>
+  <data name="回车或离开输入框保存，留空恢复默认名称。" xml:space="preserve">
+    <value>回车或离开输入框保存，留空恢复默认名称。</value>
+  </data>
+  <data name="没有匹配的发言人" xml:space="preserve">
+    <value>没有匹配的发言人</value>
+  </data>
+  <data name="关闭" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="上一个匹配" xml:space="preserve">
+    <value>上一个匹配</value>
+  </data>
+  <data name="下一个匹配" xml:space="preserve">
+    <value>下一个匹配</value>
+  </data>
+  <data name="查看与搜索范围" xml:space="preserve">
+    <value>查看与搜索范围</value>
+  </data>
+  <data name="未归档" xml:space="preserve">
+    <value>未归档</value>
+  </data>
+  <data name="包含归档" xml:space="preserve">
+    <value>包含归档</value>
+  </data>
+  <data name="仅看归档" xml:space="preserve">
+    <value>仅看归档</value>
+  </data>
+  <data name="管理分组" xml:space="preserve">
+    <value>管理分组</value>
+  </data>
+  <data name="筛选分组" xml:space="preserve">
+    <value>筛选分组</value>
+  </data>
+  <data name="分组" xml:space="preserve">
+    <value>分组</value>
+  </data>
+  <data name="移动到分组" xml:space="preserve">
+    <value>移动到分组</value>
+  </data>
+  <data name="归档" xml:space="preserve">
+    <value>归档</value>
+  </data>
+  <data name="全部分组" xml:space="preserve">
+    <value>全部分组</value>
+  </data>
+  <data name="未分组" xml:space="preserve">
+    <value>未分组</value>
+  </data>
+  <data name="已归档" xml:space="preserve">
+    <value>已归档</value>
+  </data>
+  <data name="没有匹配的会议" xml:space="preserve">
+    <value>没有匹配的会议</value>
+  </data>
+  <data name="暂无已归档会议" xml:space="preserve">
+    <value>暂无已归档会议</value>
+  </data>
+  <data name="这个分组还没有会议" xml:space="preserve">
+    <value>这个分组还没有会议</value>
+  </data>
+  <data name="试试其他关键词，或调整分组与归档范围。" xml:space="preserve">
+    <value>试试其他关键词，或调整分组与归档范围。</value>
+  </data>
+  <data name="恢复" xml:space="preserve">
+    <value>恢复</value>
+  </data>
+  <data name="会议结束后可归档" xml:space="preserve">
+    <value>会议结束后可归档</value>
+  </data>
+  <data name="恢复到原分组" xml:space="preserve">
+    <value>恢复到原分组</value>
+  </data>
+  <data name="归档后可在「仅看归档」中找回" xml:space="preserve">
+    <value>归档后可在「仅看归档」中找回</value>
+  </data>
+  <data name="保存失败，请检查数据目录的写入权限后重试。" xml:space="preserve">
+    <value>保存失败，请检查数据目录的写入权限后重试。</value>
+  </data>
+  <data name="会议或分组已变更，请重新选择。" xml:space="preserve">
+    <value>会议或分组已变更，请重新选择。</value>
+  </data>
+  <data name="新建分组" xml:space="preserve">
+    <value>新建分组</value>
+  </data>
+  <data name="分组名称" xml:space="preserve">
+    <value>分组名称</value>
+  </data>
+  <data name="例如：项目周会、客户沟通" xml:space="preserve">
+    <value>例如：项目周会、客户沟通</value>
+  </data>
+  <data name="删除分组" xml:space="preserve">
+    <value>删除分组</value>
+  </data>
+  <data name="{0} 场会议" xml:space="preserve">
+    <value>{0} 场会议</value>
+  </data>
+  <data name="保存名称" xml:space="preserve">
+    <value>保存名称</value>
+  </data>
+  <data name="创建分组" xml:space="preserve">
+    <value>创建分组</value>
+  </data>
+  <data name="请输入分组名称" xml:space="preserve">
+    <value>请输入分组名称</value>
+  </data>
+  <data name="分组名称已存在" xml:space="preserve">
+    <value>分组名称已存在</value>
+  </data>
+  <data name="删除分组「{0}」后，组内会议将移到「未分组」。" xml:space="preserve">
+    <value>删除分组「{0}」后，组内会议将移到「未分组」。</value>
+  </data>
+  <data name="会议操作" xml:space="preserve">
+    <value>会议操作</value>
+  </data>
+  <data name="新建后将会议移入此分组。" xml:space="preserve">
+    <value>新建后将会议移入此分组。</value>
+  </data>
+  <data name="查看范围" xml:space="preserve">
+    <value>查看范围</value>
+  </data>
+  <data name="新建" xml:space="preserve">
+    <value>新建</value>
+  </data>
+  <data name="还没有分组" xml:space="preserve">
+    <value>还没有分组</value>
+  </data>
+  <data name="创建第一个分组，整理你的会议。" xml:space="preserve">
+    <value>创建第一个分组，整理你的会议。</value>
+  </data>
+  <data name="按项目或主题整理会议" xml:space="preserve">
+    <value>按项目或主题整理会议</value>
+  </data>
+  <data name="{0} 个分组" xml:space="preserve">
+    <value>{0} 个分组</value>
+  </data>
+  <data name="重命名分组" xml:space="preserve">
+    <value>重命名分组</value>
+  </data>
+  <data name="全部" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="更多操作" xml:space="preserve">
+    <value>更多操作</value>
+  </data>
+  <data name="请先移出或删除分组内的会议（含归档）。" xml:space="preserve">
+    <value>请先移出或删除分组内的会议（含归档）。</value>
+  </data>
+  <data name="删除分组「{0}」？" xml:space="preserve">
+    <value>删除分组「{0}」？</value>
+  </data>
 </root>

@@ -83,7 +83,7 @@ public static class Json
 
 /// One folder per meeting under %APPDATA%\HuiYi\Sessions\<id>\session.json. Thread-safe; the
 /// live session is saved at most every 2 s.
-public sealed class SessionStore
+public sealed partial class SessionStore
 {
     private readonly object gate = new();
     private readonly List<Session> sessions = [];
@@ -99,6 +99,7 @@ public sealed class SessionStore
         root = rootFolder ?? Paths.Sessions;
         Directory.CreateDirectory(root);
         Load();
+        LoadOrganization();
     }
 
     public string Folder(string id) => Path.Combine(root, id);
@@ -179,6 +180,12 @@ public sealed class SessionStore
                 sessions.Remove(s);
                 try { Directory.Delete(Folder(s.Id), true); } catch { }
                 id = null;
+                try { RemoveOrganization(s.Id); }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+                {
+                    // Ending capture must still notify listeners if sidecar cleanup needs a retry.
+                    Log.Debug($"store: organization cleanup failed {error.GetType().Name}");
+                }
             }
         }
         if (id != null) SaveNow(id);
@@ -234,9 +241,26 @@ public sealed class SessionStore
 
     public void Delete(string id)
     {
-        lock (gate) sessions.RemoveAll(s => s.Id == id);
-        try { Directory.Delete(Folder(id), true); } catch { }
-        Changed?.Invoke();
+        var removed = false;
+        try
+        {
+            lock (gate)
+            {
+                RequireSession(id);
+                if (LiveId == id) throw new InvalidOperationException("The live meeting cannot be deleted.");
+                // Resolve the known meeting before touching any path or sidecar entry.
+                var folder = Folder(id);
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                sessions.RemoveAll(s => s.Id == id);
+                dirty.Remove(id);
+                removed = true;
+                RemoveOrganization(id);
+            }
+        }
+        finally
+        {
+            if (removed) Changed?.Invoke();
+        }
     }
 
     private void ScheduleSave()

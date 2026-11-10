@@ -1809,4 +1809,163 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="（其中 {0} 句拆成了两个人）" xml:space="preserve">
     <value> (including {0} sentences split between two speakers)</value>
   </data>
+  <data name="管理发言人" xml:space="preserve">
+    <value>Manage speakers</value>
+  </data>
+  <data name="发言人 · {0} 人" xml:space="preserve">
+    <value>Speakers · {0}</value>
+  </data>
+  <data name="搜索发言人或姓名" xml:space="preserve">
+    <value>Search speakers or names</value>
+  </data>
+  <data name="回车或离开输入框保存，留空恢复默认名称。" xml:space="preserve">
+    <value>Press Enter or leave the field to save. Clear it to restore the default name.</value>
+  </data>
+  <data name="没有匹配的发言人" xml:space="preserve">
+    <value>No matching speakers</value>
+  </data>
+  <data name="关闭" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="上一个匹配" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="下一个匹配" xml:space="preserve">
+    <value>Next match</value>
+  </data>
+  <data name="查看与搜索范围" xml:space="preserve">
+    <value>Browse and search scope</value>
+  </data>
+  <data name="未归档" xml:space="preserve">
+    <value>Unarchived</value>
+  </data>
+  <data name="包含归档" xml:space="preserve">
+    <value>Include archived</value>
+  </data>
+  <data name="仅看归档" xml:space="preserve">
+    <value>Archived only</value>
+  </data>
+  <data name="管理分组" xml:space="preserve">
+    <value>Manage groups</value>
+  </data>
+  <data name="筛选分组" xml:space="preserve">
+    <value>Filter by group</value>
+  </data>
+  <data name="分组" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="移动到分组" xml:space="preserve">
+    <value>Move to group</value>
+  </data>
+  <data name="归档" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="全部分组" xml:space="preserve">
+    <value>All groups</value>
+  </data>
+  <data name="未分组" xml:space="preserve">
+    <value>Ungrouped</value>
+  </data>
+  <data name="已归档" xml:space="preserve">
+    <value>Archived</value>
+  </data>
+  <data name="没有匹配的会议" xml:space="preserve">
+    <value>No matching meetings</value>
+  </data>
+  <data name="暂无已归档会议" xml:space="preserve">
+    <value>No archived meetings</value>
+  </data>
+  <data name="这个分组还没有会议" xml:space="preserve">
+    <value>No meetings in this group</value>
+  </data>
+  <data name="试试其他关键词，或调整分组与归档范围。" xml:space="preserve">
+    <value>Try other keywords or change the group and archive filters.</value>
+  </data>
+  <data name="恢复" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="会议结束后可归档" xml:space="preserve">
+    <value>Archive after the meeting ends</value>
+  </data>
+  <data name="恢复到原分组" xml:space="preserve">
+    <value>Restore to the original group</value>
+  </data>
+  <data name="归档后可在「仅看归档」中找回" xml:space="preserve">
+    <value>Find archived meetings under Archived only</value>
+  </data>
+  <data name="保存失败，请检查数据目录的写入权限后重试。" xml:space="preserve">
+    <value>Could not save. Check write permissions for the data folder and try again.</value>
+  </data>
+  <data name="会议或分组已变更，请重新选择。" xml:space="preserve">
+    <value>The meeting or group has changed. Select it again.</value>
+  </data>
+  <data name="新建分组" xml:space="preserve">
+    <value>New group</value>
+  </data>
+  <data name="分组名称" xml:space="preserve">
+    <value>Group name</value>
+  </data>
+  <data name="例如：项目周会、客户沟通" xml:space="preserve">
+    <value>For example, Weekly sync or Customer calls</value>
+  </data>
+  <data name="删除分组" xml:space="preserve">
+    <value>Delete group</value>
+  </data>
+  <data name="{0} 场会议" xml:space="preserve">
+    <value>{0} meetings</value>
+  </data>
+  <data name="保存名称" xml:space="preserve">
+    <value>Save name</value>
+  </data>
+  <data name="创建分组" xml:space="preserve">
+    <value>Create group</value>
+  </data>
+  <data name="请输入分组名称" xml:space="preserve">
+    <value>Enter a group name</value>
+  </data>
+  <data name="分组名称已存在" xml:space="preserve">
+    <value>This group name already exists</value>
+  </data>
+  <data name="删除分组「{0}」后，组内会议将移到「未分组」。" xml:space="preserve">
+    <value>Deleting “{0}” moves its meetings to Ungrouped.</value>
+  </data>
+  <data name="会议操作" xml:space="preserve">
+    <value>Meeting actions</value>
+  </data>
+  <data name="新建后将会议移入此分组。" xml:space="preserve">
+    <value>The meeting will move into the new group.</value>
+  </data>
+  <data name="查看范围" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="新建" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="还没有分组" xml:space="preserve">
+    <value>No groups yet</value>
+  </data>
+  <data name="创建第一个分组，整理你的会议。" xml:space="preserve">
+    <value>Create your first group to organize your meetings.</value>
+  </data>
+  <data name="按项目或主题整理会议" xml:space="preserve">
+    <value>Organize meetings by project or topic</value>
+  </data>
+  <data name="{0} 个分组" xml:space="preserve">
+    <value>{0} groups</value>
+  </data>
+  <data name="重命名分组" xml:space="preserve">
+    <value>Rename group</value>
+  </data>
+  <data name="全部" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="更多操作" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="请先移出或删除分组内的会议（含归档）。" xml:space="preserve">
+    <value>Move or delete the meetings in this group first, including archived meetings.</value>
+  </data>
+  <data name="删除分组「{0}」？" xml:space="preserve">
+    <value>Delete group “{0}”?</value>
+  </data>
 </root>

@@ -1968,4 +1968,23 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="删除分组「{0}」？" xml:space="preserve">
     <value>Delete group “{0}”?</value>
   </data>
+  <data name="导入音视频" xml:space="preserve"><value>Import audio/video</value></data>
+  <data name="文件没有可识别的音轨" xml:space="preserve"><value>This file has no readable audio track</value></data>
+  <data name="文件中未识别到语音" xml:space="preserve"><value>No speech was detected in this file</value></data>
+  <data name="请输入有效的视频链接" xml:space="preserve"><value>Enter a valid video URL</value></data>
+  <data name="请先安装 FFmpeg 并将其加入 PATH，再导入视频链接" xml:space="preserve"><value>Install FFmpeg and add it to PATH before importing a video URL</value></data>
+  <data name="视频下载失败，请检查链接或网络" xml:space="preserve"><value>Download failed. Check the URL and connection</value></data>
+  <data name="粘贴视频链接，或选择本地文件" xml:space="preserve"><value>Paste a video URL or choose a local file</value></data>
+  <data name="选择本地文件" xml:space="preserve"><value>Choose local file</value></data>
+  <data name="识别链接" xml:space="preserve"><value>Transcribe URL</value></data>
+  <data name="使用本地模型识别，完成后可生成会议纪要" xml:space="preserve"><value>Transcribe on-device, then generate meeting notes</value></data>
+  <data name="音视频文件" xml:space="preserve"><value>Audio and video files</value></data>
+  <data name="所有文件" xml:space="preserve"><value>All files</value></data>
+  <data name="正在准备识别模型…" xml:space="preserve"><value>Preparing recognition model…</value></data>
+  <data name="正在下载音轨，首次使用会下载 yt-dlp…" xml:space="preserve"><value>Downloading audio. First use also downloads yt-dlp…</value></data>
+  <data name="正在识别音轨…" xml:space="preserve"><value>Transcribing audio…</value></data>
+  <data name="已取消导入" xml:space="preserve"><value>Import cancelled</value></data>
+  <data name="导入失败" xml:space="preserve"><value>Import failed</value></data>
+  <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>The website rejected the download (HTTP {0}). Try again later or import a downloaded file</value></data>
+  <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>Audio conversion failed. Check your FFmpeg installation</value></data>
 </root>

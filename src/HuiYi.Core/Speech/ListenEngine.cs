@@ -42,6 +42,13 @@ public sealed class ListenEngine : IDisposable
     private Thread? worker;
     private IAudioSource? source;
     private long total;
+    private TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private CancellationTokenSource cancellation = new();
+    /// Completes after queued audio and the trailing sentence have been decoded.
+    public Task Completion => completion.Task;
+    /// File EOF closes input without dropping queued speech.
+    public void CompleteInput() => queue?.CompleteAdding();
+    public void CancelInput() { cancellation.Cancel(); CompleteInput(); }
 
     public ListenEngine(Recognizer recognizer, ModelStore models)
     {
@@ -53,10 +60,18 @@ public sealed class ListenEngine : IDisposable
     {
         if (IsRunning) Stop();
         IsRunning = true;
+        completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellation = new();
         Interlocked.Exchange(ref total, 0);
         queue = new BlockingCollection<float[]>(new ConcurrentQueue<float[]>(), 2000);
         var q = queue;
-        worker = new Thread(() => Run(q)) { IsBackground = true, Name = "listen", Priority = ThreadPriority.AboveNormal };
+        var done = completion;
+        var token = cancellation.Token;
+        worker = new Thread(() =>
+        {
+            try { Run(q, token, audio.CanWait); }
+            finally { q.CompleteAdding(); done.TrySetResult(); }
+        }) { IsBackground = true, Name = "listen", Priority = ThreadPriority.AboveNormal };
         worker.Start();
         source = audio;
         source.Samples += Feed;
@@ -73,9 +88,15 @@ public sealed class ListenEngine : IDisposable
         // faster than real time waits instead, so tests hear all of it.
         if (source?.CanWait == true)
         {
-            try { q.Add(samples); } catch (InvalidOperationException) { }
+            try { q.Add(samples, cancellation.Token); }
+            catch (InvalidOperationException) { }
+            catch (OperationCanceledException) { }
         }
-        else if (!q.TryAdd(samples)) Debug.WriteLine("listen: queue full, dropped audio");
+        else
+        {
+            try { if (!q.TryAdd(samples)) Debug.WriteLine("listen: queue full, dropped audio"); }
+            catch (InvalidOperationException) { }
+        }
     }
 
     public void Stop()
@@ -94,7 +115,7 @@ public sealed class ListenEngine : IDisposable
         worker = null;
     }
 
-    private void Run(BlockingCollection<float[]> q)
+    private void Run(BlockingCollection<float[]> q, CancellationToken token, bool offline)
     {
         var config = new VadModelConfig();
         config.SileroVad.Model = models.Vad;
@@ -135,7 +156,7 @@ public sealed class ListenEngine : IDisposable
 
         try
         {
-            foreach (var chunk in q.GetConsumingEnumerable())
+            foreach (var chunk in q.GetConsumingEnumerable(token))
             {
                 Audio?.Invoke(chunk);
                 for (var i = 0; i < chunk.Length; i++) history[(fed + i) % history.Length] = chunk[i];
@@ -162,7 +183,7 @@ public sealed class ListenEngine : IDisposable
                     partialShown = false;
                 }
 
-                if (vad.IsSpeechDetected())
+                if (!offline && vad.IsSpeechDetected())
                 {
                     // Silero needs ~0.3 s of speech to say so: start the live line a little earlier.
                     if (speechStart < 0) speechStart = Math.Max(0, fed - (long)(0.6 * rate));
@@ -195,6 +216,7 @@ public sealed class ListenEngine : IDisposable
                 Finish(samples, start, false);
             }
         }
+        catch (OperationCanceledException) { }
         catch (Exception e)
         {
             Log.Debug($"listen: worker failed {e}");

@@ -1968,4 +1968,23 @@
   <data name="删除分组「{0}」？" xml:space="preserve">
     <value>刪除群組「{0}」？</value>
   </data>
+  <data name="导入音视频" xml:space="preserve"><value>匯入音訊影片</value></data>
+  <data name="文件没有可识别的音轨" xml:space="preserve"><value>檔案沒有可識別的音軌</value></data>
+  <data name="文件中未识别到语音" xml:space="preserve"><value>檔案中未識別到語音</value></data>
+  <data name="请输入有效的视频链接" xml:space="preserve"><value>請輸入有效的影片連結</value></data>
+  <data name="请先安装 FFmpeg 并将其加入 PATH，再导入视频链接" xml:space="preserve"><value>請先安裝 FFmpeg 並將其加入 PATH，再匯入影片連結</value></data>
+  <data name="视频下载失败，请检查链接或网络" xml:space="preserve"><value>影片下載失敗，請檢查連結或網路</value></data>
+  <data name="粘贴视频链接，或选择本地文件" xml:space="preserve"><value>貼上影片連結，或選擇本機檔案</value></data>
+  <data name="选择本地文件" xml:space="preserve"><value>選擇本機檔案</value></data>
+  <data name="识别链接" xml:space="preserve"><value>識別連結</value></data>
+  <data name="使用本地模型识别，完成后可生成会议纪要" xml:space="preserve"><value>使用本機模型識別，完成後可產生會議紀要</value></data>
+  <data name="音视频文件" xml:space="preserve"><value>音訊影片檔案</value></data>
+  <data name="所有文件" xml:space="preserve"><value>所有檔案</value></data>
+  <data name="正在准备识别模型…" xml:space="preserve"><value>正在準備識別模型…</value></data>
+  <data name="正在下载音轨，首次使用会下载 yt-dlp…" xml:space="preserve"><value>正在下載音軌，首次使用會下載 yt-dlp…</value></data>
+  <data name="正在识别音轨…" xml:space="preserve"><value>正在識別音軌…</value></data>
+  <data name="已取消导入" xml:space="preserve"><value>已取消匯入</value></data>
+  <data name="导入失败" xml:space="preserve"><value>匯入失敗</value></data>
+  <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>網站下載請求失敗（HTTP {0}），請稍後重試或下載檔案後匯入</value></data>
+  <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>音軌轉換失敗，請檢查 FFmpeg 是否安裝完整</value></data>
 </root>

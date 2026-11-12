@@ -1968,4 +1968,23 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="删除分组「{0}」？" xml:space="preserve">
     <value>グループ「{0}」を削除しますか？</value>
   </data>
+  <data name="导入音视频" xml:space="preserve"><value>音声・動画をインポート</value></data>
+  <data name="文件没有可识别的音轨" xml:space="preserve"><value>読み取れる音声トラックがありません</value></data>
+  <data name="文件中未识别到语音" xml:space="preserve"><value>音声が検出されませんでした</value></data>
+  <data name="请输入有效的视频链接" xml:space="preserve"><value>有効な動画URLを入力してください</value></data>
+  <data name="请先安装 FFmpeg 并将其加入 PATH，再导入视频链接" xml:space="preserve"><value>動画URLの読み込みには FFmpeg をインストールし PATH に追加してください</value></data>
+  <data name="视频下载失败，请检查链接或网络" xml:space="preserve"><value>ダウンロードに失敗しました。URLと接続を確認してください</value></data>
+  <data name="粘贴视频链接，或选择本地文件" xml:space="preserve"><value>動画URLを貼り付けるかファイルを選択</value></data>
+  <data name="选择本地文件" xml:space="preserve"><value>ファイルを選択</value></data>
+  <data name="识别链接" xml:space="preserve"><value>URLから文字起こし</value></data>
+  <data name="使用本地模型识别，完成后可生成会议纪要" xml:space="preserve"><value>ローカルモデルで文字起こし後、議事録を作成できます</value></data>
+  <data name="音视频文件" xml:space="preserve"><value>音声・動画ファイル</value></data>
+  <data name="所有文件" xml:space="preserve"><value>すべてのファイル</value></data>
+  <data name="正在准备识别模型…" xml:space="preserve"><value>認識モデルを準備中…</value></data>
+  <data name="正在下载音轨，首次使用会下载 yt-dlp…" xml:space="preserve"><value>音声をダウンロード中。初回は yt-dlp も取得します…</value></data>
+  <data name="正在识别音轨…" xml:space="preserve"><value>音声を文字起こし中…</value></data>
+  <data name="已取消导入" xml:space="preserve"><value>インポートをキャンセルしました</value></data>
+  <data name="导入失败" xml:space="preserve"><value>インポートに失敗しました</value></data>
+  <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>サイトのダウンロードに失敗しました（HTTP {0}）。後で再試行するか、保存したファイルをインポートしてください</value></data>
+  <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>音声変換に失敗しました。FFmpeg のインストールを確認してください</value></data>
 </root>

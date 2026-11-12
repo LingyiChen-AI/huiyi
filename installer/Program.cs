@@ -43,6 +43,7 @@ internal sealed class SetupForm : Form
 
     public SetupForm()
     {
+        SuspendLayout();
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         Text = L.T("安装 会译");
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -51,64 +52,134 @@ internal sealed class SetupForm : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
+        // Coordinates and padding below are authored at 96 DPI. Set this before the first layout
+        // so Windows scales fonts and controls together on high-DPI displays.
+        AutoScaleDimensions = new SizeF(96, 96);
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 374);
+        ClientSize = new Size(560, 400);
+        AutoSize = true;
+        AutoSizeMode = AutoSizeMode.GrowOnly;
 
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 1, RowCount = 8,
+            Padding = new Padding(28, 24, 28, 20), Margin = Padding.Empty,
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var i = 0; i < 8; i++)
+            layout.RowStyles.Add(new RowStyle(i == 6 ? SizeType.Percent : SizeType.AutoSize, i == 6 ? 100 : 0));
+        var header = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty,
+        };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 72));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         var logo = new PictureBox
         {
             Image = new Icon(Icon, 64, 64).ToBitmap(), SizeMode = PictureBoxSizeMode.Zoom,
-            Bounds = new Rectangle(32, 28, 56, 56),
+            Size = new Size(56, 56), Margin = new Padding(0, 0, 16, 0),
+        };
+        var heading = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty,
+        };
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var titleRow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top, AutoSize = true, WrapContents = true, Margin = Padding.Empty,
         };
         var title = new Label
         {
             Text = L.T("安装 会译"), Font = new Font(Font.FontFamily, 16f, FontStyle.Bold), ForeColor = Ink,
-            AutoSize = true, Location = new Point(102, 28),
+            AutoSize = true, Margin = new Padding(0, 0, 12, 0),
         };
         var versionLabel = new Label
         {
-            Text = L.F("版本 {0}.{1}.{2}", version.Major, version.Minor, version.Build), ForeColor = Grey, AutoSize = true,
-            Location = new Point(104 + TextRenderer.MeasureText(title.Text, title.Font).Width + 12, 38),
+            Text = L.F("版本 {0}.{1}.{2}", version.Major, version.Minor, version.Build), ForeColor = Grey,
+            AutoSize = true, Margin = new Padding(0, 9, 0, 0),
         };
+        titleRow.Controls.AddRange([title, versionLabel]);
         var subtitle = new Label
         {
             Text = L.T("Windows 上的 AI 会议助手：实时字幕与翻译、AI 纪要、同声传译"),
-            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(104, 66, 424, 44),
+            ForeColor = Grey, AutoSize = true, Dock = DockStyle.Top, Margin = new Padding(0, 8, 0, 0),
+            MaximumSize = new Size(432, 0),
         };
-
-        var where = new Label { Text = L.T("安装位置"), ForeColor = Ink, Font = new Font(Font, FontStyle.Bold), AutoSize = true, Location = new Point(32, 118) };
+        heading.Controls.Add(titleRow, 0, 0);
+        heading.Controls.Add(subtitle, 0, 1);
+        header.Controls.Add(logo, 0, 0);
+        header.Controls.Add(heading, 1, 0);
+        layout.Controls.Add(header, 0, 0);
+        var where = new Label
+        {
+            Text = L.T("安装位置"), ForeColor = Ink, Font = new Font(Font, FontStyle.Bold),
+            AutoSize = true, Margin = new Padding(0, 24, 0, 8),
+        };
+        layout.Controls.Add(where, 0, 1);
         existing = InstalledAt();
+        var pathRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty,
+        };
+        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         pathBox = new TextBox
         {
             Text = existing ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), PackId),
-            Bounds = new Rectangle(32, 144, 400, 28),
+            Dock = DockStyle.Fill, Margin = new Padding(0, 4, 10, 4),
         };
         browseBtn = FlatButton(L.T("浏览…"), false);
-        browseBtn.Bounds = new Rectangle(442, 142, 86, 30);
+        browseBtn.AutoSize = true;
+        browseBtn.MinimumSize = new Size(86, 32);
+        browseBtn.Margin = Padding.Empty;
         browseBtn.Click += (_, _) => Browse();
+        pathRow.Controls.Add(pathBox, 0, 0);
+        pathRow.Controls.Add(browseBtn, 1, 0);
+        layout.Controls.Add(pathRow, 0, 2);
         var help = new Label
         {
             Text = existing != null
                 ? L.T("已经安装在这里，将覆盖安装为这个版本。要换位置，请先在 Windows「设置 › 应用」里卸载会译。")
                 : L.T("程序约 300 MB；首次启动还会下载约 260 MB 的识别模型。装在当前用户下，不需要管理员权限，之后会自动更新。"),
-            ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 180, 496, 64),
+            ForeColor = Grey, AutoSize = true, Dock = DockStyle.Top, Margin = new Padding(0, 10, 0, 0),
+            MaximumSize = new Size(504, 0),
         };
+        layout.Controls.Add(help, 0, 3);
         if (existing != null)
         {
             pathBox.ReadOnly = true;
             browseBtn.Enabled = false;
         }
-
-        progress = new ProgressBar { Style = ProgressBarStyle.Marquee, Bounds = new Rectangle(32, 252, 496, 6), Visible = false };
-        statusLabel = new Label { ForeColor = Grey, AutoSize = false, Bounds = new Rectangle(32, 264, 496, 42) };
-
+        progress = new ProgressBar
+        {
+            Style = ProgressBarStyle.Marquee, Dock = DockStyle.Top, Height = 6,
+            Margin = new Padding(0, 18, 0, 0), Visible = false,
+        };
+        layout.Controls.Add(progress, 0, 4);
+        statusLabel = new Label
+        {
+            ForeColor = Grey, AutoSize = true, Dock = DockStyle.Top, Margin = new Padding(0, 10, 0, 0),
+            MaximumSize = new Size(504, 0),
+        };
+        layout.Controls.Add(statusLabel, 0, 5);
+        var actions = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.RightToLeft,
+            WrapContents = false, Margin = new Padding(0, 20, 0, 0),
+        };
         installBtn = FlatButton(existing != null ? L.T("更新") : L.T("安装"), true);
-        installBtn.Bounds = new Rectangle(428, 322, 100, 34);
+        installBtn.AutoSize = true;
+        installBtn.MinimumSize = new Size(100, 36);
+        installBtn.Margin = Padding.Empty;
         installBtn.Click += async (_, _) => await Install();
         cancelBtn = FlatButton(L.T("取消"), false);
-        cancelBtn.Bounds = new Rectangle(318, 322, 100, 34);
+        cancelBtn.AutoSize = true;
+        cancelBtn.MinimumSize = new Size(100, 36);
+        cancelBtn.Margin = new Padding(0, 0, 10, 0);
         cancelBtn.Click += (_, _) => Close();
+        actions.Controls.AddRange([installBtn, cancelBtn]);
+        layout.Controls.Add(actions, 0, 7);
         AcceptButton = installBtn;
-        // Open with the install button focused, not the path selected.
         Shown += (_, _) =>
         {
             ActiveControl = installBtn;
@@ -116,8 +187,8 @@ internal sealed class SetupForm : Form
             pathBox.SelectionLength = 0;
         };
         CancelButton = cancelBtn;
-
-        Controls.AddRange([logo, title, versionLabel, subtitle, where, pathBox, browseBtn, help, progress, statusLabel, cancelBtn, installBtn]);
+        Controls.Add(layout);
+        ResumeLayout(true);
     }
 
     private Button FlatButton(string text, bool primary)

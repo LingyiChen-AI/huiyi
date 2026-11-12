@@ -1997,4 +1997,6 @@
   <data name="识别成" xml:space="preserve"><value>識別成</value></data>
   <data name="事项" xml:space="preserve"><value>事項</value></data>
   <data name="截止时间" xml:space="preserve"><value>截止時間</value></data>
+  <data name="支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。" xml:space="preserve"><value>支援本機或區域網路 Ollama。填寫 http://localhost:11434 或自己的服務 URL，自動補全 /v1；點「取得模型清單」選擇已下載的模型。</value></data>
+  <data name="打开服务官网 ↗" xml:space="preserve"><value>開啟服務官網 ↗</value></data>
 </root>

@@ -221,6 +221,7 @@ public partial class SettingsWindow : Window
         UrlBox.IsReadOnly = false;
         var saved = AIKey.Read(providerId);
         UiText.Set(KeyHint, "Text", () => info.KeyOptional ? L.T("这个服务不需要 key") : saved != null ? L.F("已保存 {0}，留空则不修改", AIKey.Masked(saved)) : L.T("还没有填写"));
+        UiText.Set(KeyLink, "Content", () => info.KeyOptional ? L.T("打开服务官网 ↗") : L.T("去申请 key ↗"));
         KeyLink.Visibility = info.KeyUrl.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         UiText.Set(ModelHint, "Text", () => info.Models.Length > 0 ? L.T("可以从列表里选，也可以直接输入模型名") : L.T("直接输入模型名，或先填 key 再获取列表"));
     }
@@ -281,7 +282,8 @@ public partial class SettingsWindow : Window
     private bool ApplyEditor()
     {
         if (editing == null) return false;
-        var url = UrlBox.Text.Trim();
+        var info = ProviderPreset.Find(TagOf(PresetBox));
+        var url = info.NormalizeBaseUrl(UrlBox.Text);
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u) || u.Scheme is not ("http" or "https"))
         {
             UiText.Set(ModelHint, "Text", () => L.T("Base URL 不对，应该像 https://api.example.com/v1"));
@@ -292,6 +294,7 @@ public partial class SettingsWindow : Window
         editing.Preset = TagOf(PresetBox) is { Length: > 0 } preset ? preset : "custom";
         editing.Name = NameBox.Text.Trim() is { Length: > 0 } n ? n : editing.Info.Name;
         editing.BaseUrl = url.TrimEnd('/');
+        UrlBox.Text = editing.BaseUrl;
         editing.Model = ModelBox.Text.Trim();
         if (KeyBox.Password.Trim() is { Length: > 0 } key) AIKey.Save(editing.Id, key);
         KeyBox.Clear();

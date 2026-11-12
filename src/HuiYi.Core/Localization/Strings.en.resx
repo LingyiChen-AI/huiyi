@@ -1997,4 +1997,6 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="识别成" xml:space="preserve"><value>Recognized as</value></data>
   <data name="事项" xml:space="preserve"><value>Task</value></data>
   <data name="截止时间" xml:space="preserve"><value>Due date</value></data>
+  <data name="支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。" xml:space="preserve"><value>Use Ollama on this PC or your local network. Enter http://localhost:11434 or your server URL. /v1 is added automatically. Fetch the model list to choose a downloaded model.</value></data>
+  <data name="打开服务官网 ↗" xml:space="preserve"><value>Open service website ↗</value></data>
 </root>

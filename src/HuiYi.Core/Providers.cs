@@ -28,12 +28,23 @@ public sealed record ProviderPreset(
     Func<JsonObject>? Extras = null,
     double Spacing = 0.25,
     bool KeyOptional = false,
-    string? Hint = null)
+    string? Hint = null,
+    string? DefaultApiPath = null)
 {
     /// Ling's gateway answers fact-like prompts with a search essay; its replies are checked for that.
     public bool ChecksHijack => Id == "ling";
     /// Ming's voices (natural speech for speak-back) come with an Ant Ling key only.
     public bool HasMingVoices => Id == "ling";
+
+    /// Accept a server address as well as a full compatible API URL. Explicit paths stay intact.
+    public string NormalizeBaseUrl(string value)
+    {
+        var url = value.Trim().TrimEnd('/');
+        if (DefaultApiPath != null && Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && uri.AbsolutePath == "/" && uri.Query.Length == 0 && uri.Fragment.Length == 0)
+            return url + DefaultApiPath;
+        return url;
+    }
 
     private static JsonObject ThinkingOff() => new() { ["thinking"] = new JsonObject { ["type"] = "disabled" } };
 
@@ -75,7 +86,8 @@ public sealed record ProviderPreset(
         new("openrouter", "OpenRouter", "https://openrouter.ai/api/v1", [], "https://openrouter.ai/keys",
             Hint: "填好 key 后点「获取模型列表」"),
         new("ollama", "本地 Ollama", "http://localhost:11434/v1", [], "https://ollama.com/download",
-            KeyOptional: true, Hint: "本机运行的模型，不需要 key；点「获取模型列表」读取已下载的模型"),
+            KeyOptional: true, DefaultApiPath: "/v1",
+            Hint: "支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。"),
         new("custom", "自定义（OpenAI 兼容）", "", [], "",
             Hint: "任何兼容 OpenAI Chat Completions 的服务：填 Base URL、key 和模型名"),
     ];

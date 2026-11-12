@@ -171,7 +171,7 @@ public sealed class AiClient
             .OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    private static Uri BaseOf(AiProvider p) => new(p.BaseUrl.TrimEnd('/') + "/");
+    private static Uri BaseOf(AiProvider p) => new(p.Info.NormalizeBaseUrl(p.BaseUrl) + "/");
 
     private static JsonObject Body(AiProvider p, JsonArray messages, int maxTokens, bool json = false)
     {

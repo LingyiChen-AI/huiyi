@@ -145,6 +145,37 @@ public sealed class AiTests : IDisposable
         Assert.True(o.HasKey);
     }
 
+    [Theory]
+    [InlineData("http://localhost:11434", "http://localhost:11434/v1")]
+    [InlineData(" http://192.168.1.20:11434/ ", "http://192.168.1.20:11434/v1")]
+    [InlineData("http://[::1]:11434", "http://[::1]:11434/v1")]
+    [InlineData("https://models.example.com/ollama/v1/", "https://models.example.com/ollama/v1")]
+    [InlineData("https://models.example.com/custom-api", "https://models.example.com/custom-api")]
+    public void LocalServerAddressesAreCompletedWithoutChangingExplicitPaths(string input, string expected) =>
+        Assert.Equal(expected, ProviderPreset.Find("ollama").NormalizeBaseUrl(input));
+
+    [Fact]
+    public void OtherPlatformsKeepCustomBaseUrls() =>
+        Assert.Equal("http://localhost:8080", ProviderPreset.Find("custom").NormalizeBaseUrl("http://localhost:8080/"));
+
+    [Fact]
+    public async Task LocalModelListsAndChatWorkWithoutKeyAndWithoutApiSuffix()
+    {
+        var provider = ProviderPreset.Find("ollama").Create();
+        provider.BaseUrl = baseUrl[..^3];
+        provider.Model = "my-local-model:latest";
+        var client = new AiClient { Provider = () => provider };
+        client.Refresh();
+        reply = path => path.EndsWith("/models")
+            ? (200, """{"data":[{"id":"my-local-model:latest"}]}""") : (200, Completion("本地模型已连接"));
+        Assert.Equal(["my-local-model:latest"], await AiClient.ListModels(provider));
+        await client.Check();
+        Assert.Equal(AiClient.KeyState.Ok, client.State);
+        Assert.Equal("本地模型已连接", await client.Chat("内容", "指令", AiClient.Priority.Notes));
+        Assert.All(seen, request => Assert.Null(request.Auth));
+        Assert.Equal(["/v1/models", "/v1/chat/completions", "/v1/chat/completions"], seen.Select(r => r.Path));
+    }
+
     [Fact]
     public void PresetsAreWellFormed()
     {

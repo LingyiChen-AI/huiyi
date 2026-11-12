@@ -336,14 +336,39 @@ public partial class MainWindow : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (selected == null || model.Store.Get(selected) is not { } s) return;
-        var name = string.Concat(s.DisplayTitle.Split(Path.GetInvalidFileNameChars()));
-        var dlg = new SaveFileDialog { FileName = name + ".md", Filter = L.T("Markdown|*.md|文本|*.txt") };
-        if (dlg.ShowDialog(this) == true)
+        if (selected == null || sender is not Button button) return;
+        var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        foreach (var (label, extension) in new[] { ("Word 文档 (.docx)", ".docx"), ("Markdown (.md)", ".md"), ("文本 (.txt)", ".txt") })
         {
-            File.WriteAllText(dlg.FileName, TranscriptExport.Markdown(s));
+            var item = UiText.Bind(new MenuItem(), ("Header", () => L.T(label)));
+            item.Click += (_, _) => ExportTo(extension);
+            menu.Items.Add(item);
+        }
+        button.ContextMenu = menu;
+        menu.IsOpen = true;
+    }
+
+    private void ExportTo(string extension)
+    {
+        if (selected == null || model.Store.Snapshot(selected) is not { } s) return;
+        var name = string.Concat(s.DisplayTitle.Split(Path.GetInvalidFileNameChars()));
+        var filter = extension == ".docx" ? L.T("Word 文档 (.docx)") : extension == ".md" ? "Markdown (.md)" : L.T("文本 (.txt)");
+        var dlg = new SaveFileDialog { FileName = name + extension, Filter = filter + "|*" + extension, DefaultExt = extension, AddExtension = true };
+        if (dlg.ShowDialog(this) != true) return;
+        var temporary = dlg.FileName + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            if (extension == ".docx") File.WriteAllBytes(temporary, WordExport.Create(s));
+            else File.WriteAllText(temporary, TranscriptExport.Markdown(s));
+            File.Move(temporary, dlg.FileName, overwrite: true);
             Native.Open(Path.GetDirectoryName(dlg.FileName)!);
         }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Log.Debug($"export: failed {error.GetType().Name}");
+            Dialog.Confirm(this, L.T("导出失败"), L.T("请检查文件是否正被占用，以及保存位置是否可写。"), L.T("确定"));
+        }
+        finally { if (File.Exists(temporary)) { try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { } } }
     }
 
     private void DeleteSession(string id)

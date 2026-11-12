@@ -1987,4 +1987,14 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="导入失败" xml:space="preserve"><value>インポートに失敗しました</value></data>
   <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>サイトのダウンロードに失敗しました（HTTP {0}）。後で再試行するか、保存したファイルをインポートしてください</value></data>
   <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>音声変換に失敗しました。FFmpeg のインストールを確認してください</value></data>
+  <data name="导出 ▾" xml:space="preserve"><value>エクスポート ▾</value></data>
+  <data name="Word 文档 (.docx)" xml:space="preserve"><value>Word 文書 (.docx)</value></data>
+  <data name="Markdown (.md)" xml:space="preserve"><value>Markdown (.md)</value></data>
+  <data name="文本 (.txt)" xml:space="preserve"><value>テキスト (.txt)</value></data>
+  <data name="导出失败" xml:space="preserve"><value>エクスポートに失敗しました</value></data>
+  <data name="请检查文件是否正被占用，以及保存位置是否可写。" xml:space="preserve"><value>ファイルが開かれていないか、保存先に書き込めるか確認してください。</value></data>
+  <data name="时长" xml:space="preserve"><value>所要時間</value></data>
+  <data name="识别成" xml:space="preserve"><value>認識結果</value></data>
+  <data name="事项" xml:space="preserve"><value>タスク</value></data>
+  <data name="截止时间" xml:space="preserve"><value>期限</value></data>
 </root>

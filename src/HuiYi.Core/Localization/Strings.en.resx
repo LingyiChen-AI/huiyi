@@ -1987,4 +1987,14 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="导入失败" xml:space="preserve"><value>Import failed</value></data>
   <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>The website rejected the download (HTTP {0}). Try again later or import a downloaded file</value></data>
   <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>Audio conversion failed. Check your FFmpeg installation</value></data>
+  <data name="导出 ▾" xml:space="preserve"><value>Export ▾</value></data>
+  <data name="Word 文档 (.docx)" xml:space="preserve"><value>Word document (.docx)</value></data>
+  <data name="Markdown (.md)" xml:space="preserve"><value>Markdown (.md)</value></data>
+  <data name="文本 (.txt)" xml:space="preserve"><value>Text (.txt)</value></data>
+  <data name="导出失败" xml:space="preserve"><value>Export failed</value></data>
+  <data name="请检查文件是否正被占用，以及保存位置是否可写。" xml:space="preserve"><value>Check that the file is not open and the destination is writable.</value></data>
+  <data name="时长" xml:space="preserve"><value>Duration</value></data>
+  <data name="识别成" xml:space="preserve"><value>Recognized as</value></data>
+  <data name="事项" xml:space="preserve"><value>Task</value></data>
+  <data name="截止时间" xml:space="preserve"><value>Due date</value></data>
 </root>

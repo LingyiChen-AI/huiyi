@@ -1987,4 +1987,14 @@
   <data name="导入失败" xml:space="preserve"><value>匯入失敗</value></data>
   <data name="网站下载请求失败（HTTP {0}），请稍后重试或下载文件后导入" xml:space="preserve"><value>網站下載請求失敗（HTTP {0}），請稍後重試或下載檔案後匯入</value></data>
   <data name="音轨转换失败，请检查 FFmpeg 是否安装完整" xml:space="preserve"><value>音軌轉換失敗，請檢查 FFmpeg 是否安裝完整</value></data>
+  <data name="导出 ▾" xml:space="preserve"><value>匯出 ▾</value></data>
+  <data name="Word 文档 (.docx)" xml:space="preserve"><value>Word 文件 (.docx)</value></data>
+  <data name="Markdown (.md)" xml:space="preserve"><value>Markdown (.md)</value></data>
+  <data name="文本 (.txt)" xml:space="preserve"><value>文字 (.txt)</value></data>
+  <data name="导出失败" xml:space="preserve"><value>匯出失敗</value></data>
+  <data name="请检查文件是否正被占用，以及保存位置是否可写。" xml:space="preserve"><value>請檢查檔案是否正被佔用，以及儲存位置是否可寫。</value></data>
+  <data name="时长" xml:space="preserve"><value>時長</value></data>
+  <data name="识别成" xml:space="preserve"><value>識別成</value></data>
+  <data name="事项" xml:space="preserve"><value>事項</value></data>
+  <data name="截止时间" xml:space="preserve"><value>截止時間</value></data>
 </root>

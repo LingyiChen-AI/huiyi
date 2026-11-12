@@ -161,7 +161,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="TitleBox" Style="{StaticResource TitleField}" FontSize="22" Margin="-7,0,16,0"
                                  Foreground="#1E2235" LostFocus="Title_LostFocus" KeyDown="Title_KeyDown" ToolTip="{local:Loc Key='点击修改标题'}"/>
-                        <Button Grid.Column="1" Content="{local:Loc Key='导出 Markdown'}" Style="{StaticResource GhostBtn}" Click="Export_Click" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="{local:Loc Key='导出 ▾'}" Style="{StaticResource GhostBtn}" Click="Export_Click" VerticalAlignment="Center"/>
                     </Grid>
                     <Grid Margin="0,4,0,14">
                         <Grid.ColumnDefinitions>

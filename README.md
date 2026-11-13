@@ -1,4 +1,8 @@
 <p align="center">
+  <a href="https://linux.do/u/cturing/summary">💬 作者在 LINUX DO：@cturing</a>
+</p>
+
+<p align="center">
   <img src="assets/icon.svg" width="112" alt="会译">
 </p>
 

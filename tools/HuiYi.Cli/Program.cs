@@ -235,9 +235,57 @@ switch (cmd)
     }
     case "translate":
     {
-        var ai = new AiClient();
-        var t = new TranslationService(ai);
-        Console.WriteLine(await t.Translate(args[1], args[2], args[3], TranslationService.Kind.Sentence) ?? "(null)");
+        // translate <text> <source> <target>: the app's AI service (Google when HUIYI_KIND=draft or
+        // no service); HUIYI_GLOSSARY=<glossary.json> adds the glossary as the app does.
+        var ai = AppAi();
+        var t = new TranslationService(ai) { Terms = GlossaryFile() };
+        var kind = Environment.GetEnvironmentVariable("HUIYI_KIND") == "draft" ? TranslationService.Kind.Draft : TranslationService.Kind.Sentence;
+        Console.WriteLine($"[{(kind == TranslationService.Kind.Draft || !ai.Usable ? "google" : ai.Describe)}] "
+                          + (await t.Translate(args[1], args[2], args[3], kind) ?? "(null)"));
+        break;
+    }
+    case "aicheck":
+    {
+        // aicheck <glossary.json> <line>: the glossary's AI check on one line, with the app's AI service.
+        var g = new Glossary(args[1]);
+        var ai = AppAi();
+        var line = args[2];
+        var suspects = g.Suspects(line, null);
+        Console.WriteLine("suspects: " + (suspects.Count == 0 ? "(none: no AI call)" : string.Join(", ", suspects.Select(x => $"{x.Heard}→{x.Term}"))));
+        if (suspects.Count == 0) break;
+        var terms = g.ActiveTerms(null);
+        var reply = await ai.Chat(GlossaryAiCheck.Prompt(line, suspects, terms), "Judge each word.", AiClient.Priority.Notes, json: true, maxTokens: 300, temperature: 0);
+        Console.WriteLine("AI said:  " + reply.Replace("\n", " "));
+        var fixes = GlossaryAiCheck.Corrections(reply, suspects);
+        Console.WriteLine("taken:    " + (fixes == null ? "(nothing)" : string.Join(", ", fixes.Select(f => $"{f.From}→{f.To}"))));
+        break;
+    }
+    case "notes":
+    {
+        // notes <text file> [template]: one line of transcript per file line, notes written by the
+        // app's AI service; HUIYI_GLOSSARY adds the glossary. Prints the notes' summary and terms.
+        var tmp = Path.Combine(Path.GetTempPath(), "huiyi-cli-notes-" + Guid.NewGuid().ToString("N")[..6]);
+        var store = new SessionStore(tmp);
+        var ai = AppAi();
+        var engine = new NotesEngine(ai, store) { Terms = GlossaryFile(), Language = () => "Simplified Chinese" };
+        if (args.Length > 2) engine.Template = _ => NoteTemplates.Find(args[2], []);
+        var s = store.Begin();
+        var tt = 0.0;
+        foreach (var text in File.ReadAllLines(args[1]).Where(l => l.Trim().Length > 0))
+        {
+            var line = new TranscriptLine { Id = Guid.NewGuid().ToString("N")[..12], T = tt, End = tt + 5, Src = text.Trim(), SrcLang = "zh-CN" };
+            store.Mutate(s.Id, x => x.Lines.Add(line));
+            tt += 6;
+        }
+        store.End();
+        engine.Begin(s.Id);
+        await engine.Update(s.Id, final: true);
+        var n = store.Get(s.Id)?.Notes;
+        Console.WriteLine($"[{ai.Describe}] status {engine.Status}");
+        Console.WriteLine("summary: " + n?.Summary);
+        foreach (var t in n?.Terms ?? []) Console.WriteLine($"term:    {t.Name}  {t.Note}  heard: {string.Join("|", t.Heard)}");
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(n, Json.Options));
+        try { Directory.Delete(tmp, true); } catch { }
         break;
     }
     case "voices":
@@ -371,6 +419,18 @@ switch (cmd)
 }
 
 static string Tail(string s) => s.Length > 60 ? "…" + s[^60..] : s;
+
+// The app's own AI service (its settings and key store), for commands that call it.
+static AiClient AppAi()
+{
+    var settings = AppSettings.Load();
+    var ai = new AiClient { Provider = () => settings.ActiveProvider() };
+    ai.Refresh();
+    return ai;
+}
+
+static Glossary? GlossaryFile() =>
+    Environment.GetEnvironmentVariable("HUIYI_GLOSSARY") is { Length: > 0 } g ? new Glossary(g) : null;
 
 // HUIYI_GLOSSARY=<glossary.json>: recognition corrected against that glossary, as the app does.
 static Func<string, (string, IReadOnlyList<TermFix>)>? GlossaryFix() =>

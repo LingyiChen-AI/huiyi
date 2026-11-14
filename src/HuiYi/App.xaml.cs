@@ -40,7 +40,17 @@ public partial class App : Application
             else CopyFolder(Path.Combine(Paths.Roaming, "Sessions"), Path.Combine(copy, "Sessions"));
             Paths.Roaming = copy;
         }
-        single = new Mutex(true, e.Args.Contains("--snapshot") ? @"Local\HuiYi.snapshot" : @"Local\HuiYi.single", out var first);
+        // --data <folder>: settings, meetings and the glossary in that folder (tests, demos), running
+        // beside the real app; the models stay shared.
+        var dataAt = Array.IndexOf(e.Args, "--data");
+        var data = dataAt >= 0 && dataAt + 1 < e.Args.Length ? e.Args[dataAt + 1] : null;
+        if (data != null)
+        {
+            Directory.CreateDirectory(data);
+            Paths.Roaming = Path.GetFullPath(data);
+        }
+        single = new Mutex(true, e.Args.Contains("--snapshot") ? @"Local\HuiYi.snapshot"
+            : data != null ? @"Local\HuiYi.data." + Paths.Roaming.ToLowerInvariant().Replace('\\', '_').Replace(':', '_') : @"Local\HuiYi.single", out var first);
         if (!first)
         {
             // Already running (the desktop shortcut double-clicked again): ask that one to show the
@@ -54,7 +64,7 @@ public partial class App : Application
             Shutdown();
             return;
         }
-        if (!e.Args.Contains("--snapshot")) ListenForOpen();
+        if (!e.Args.Contains("--snapshot") && data == null) ListenForOpen();
         DispatcherUnhandledException += (_, ex) =>
         {
             Log.Debug($"app: unhandled {ex.Exception}");

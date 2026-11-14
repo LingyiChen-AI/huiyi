@@ -173,14 +173,14 @@ public sealed class AiClient
 
     private static Uri BaseOf(AiProvider p) => new(p.Info.NormalizeBaseUrl(p.BaseUrl) + "/");
 
-    private static JsonObject Body(AiProvider p, JsonArray messages, int maxTokens, bool json = false)
+    private static JsonObject Body(AiProvider p, JsonArray messages, int maxTokens, bool json = false, double temperature = 0.2)
     {
         var body = new JsonObject
         {
             ["model"] = p.Model,
             ["messages"] = messages,
             ["max_tokens"] = maxTokens,
-            ["temperature"] = 0.2,
+            ["temperature"] = temperature,
             ["stream"] = false,
         };
         // Only the parameters this platform knows: others reject what they don't.
@@ -193,14 +193,15 @@ public sealed class AiClient
     /// One chat completion. `content` goes in the system message, `instruction` is the fixed user
     /// message. Notes retry 429s with backoff; translation and speak-back fail fast so the caller can
     /// fall back to another translator.
+    /// `temperature`: 0 for a judgement that should not change from one call to the next.
     public async Task<string> Chat(string content, string instruction, Priority priority, bool json = false,
-        int maxTokens = 1024, TimeSpan? timeout = null, CancellationToken ct = default)
+        int maxTokens = 1024, TimeSpan? timeout = null, CancellationToken ct = default, double temperature = 0.2)
     {
         if (Current is not { } p || !HasKey) throw new AiException(AiFailure.NoKey);
         if (State == KeyState.Invalid) throw new AiException(AiFailure.InvalidKey);
         var body = Body(p, new JsonArray(
             new JsonObject { ["role"] = "system", ["content"] = content },
-            new JsonObject { ["role"] = "user", ["content"] = instruction }), maxTokens, json);
+            new JsonObject { ["role"] = "user", ["content"] = instruction }), maxTokens, json, temperature);
         var attempts = priority == Priority.Notes ? 4 : 1;
         var delay = 1.0;
         for (var attempt = 1; attempt <= attempts; attempt++)

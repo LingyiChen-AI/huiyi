@@ -93,7 +93,10 @@ public class GlossaryTests
                      new GlossaryTerm { Text = "伊丽静" });
         Assert.Equal("改好 gateway 配置", g.Pretranslate("改好 网关 配置", "en"));
         Assert.Equal("改好ゲートウェイ配置", g.Pretranslate("改好网关配置", "ja"));
-        Assert.Equal(["伊丽静 (keep this spelling)", "网关 → gateway"], g.Hints("伊丽静说网关要改", "en-US"));
+        Assert.Equal(["伊丽静 (a name or term: never leave Chinese characters in the translation — spell a name in pinyin, translate a term; the same way every time)", "网关 → gateway"], g.Hints("伊丽静说网关要改", "en-US"));
+        Assert.Equal(["伊丽静 (a name or term: write it the same way every time, in the target language's script)"], g.Hints("伊丽静", "ja"));
+        // No Korean translation: the English one gives the meaning.
+        Assert.Equal(["网关 (means \"gateway\": translate it with that meaning)"], g.Hints("网关", "ko"));
         Assert.Equal("gateway; ja=ゲートウェイ", GlossaryTerm.FormatTranslations(g.Terms[0].Translations));
     }
 
@@ -239,5 +242,31 @@ public class GlossaryTests
         Assert.Null(GlossaryAiCheck.Accept("今天天气不错", "今天天气很好", terms));
         // Quotes around the answer are ignored.
         Assert.NotNull(GlossaryAiCheck.Accept("对于犯成", "「对于帆船」", terms));
+    }
+
+    [Fact]
+    public void NotesGetTermsTheTranscriptStillMisspells()
+    {
+        // A meeting recorded before the term was added: only the misheard spelling is in it.
+        var g = Make(new GlossaryTerm { Text = "陈佩娜", Misheard = ["陈佩纳"], Note = "帆船世界冠军" },
+                     new GlossaryTerm { Text = "惜败" }, new GlossaryTerm { Text = "伊丽静" }, new GlossaryTerm { Text = "网关" });
+        var hints = g.ForNotes("叫陈佩纳那个女孩，一米洗败。伊丽静负责联系。", null);
+        Assert.Equal(["陈佩娜 (帆船世界冠军; the transcript writes it 陈佩纳)", "惜败 (the transcript writes it 洗败)", "伊丽静"], hints);
+    }
+
+    [Fact]
+    public void TheAiJudgesAndOnlyAClearNoChangesAWord()
+    {
+        (string, string)[] suspects = [("犯成", "帆船"), ("反弹", "访谈"), ("访他", "访谈")];
+        var fixes = GlossaryAiCheck.Corrections("{\"words\":[{\"n\":1,\"fits\":false},{\"n\":2,\"fits\":true},{\"n\":3}]}", suspects)!;
+        Assert.Equal([("犯成", "帆船")], fixes.Select(f => (f.From, f.To)));
+        // Text around the JSON, nonsense, numbers out of range: nothing changes.
+        Assert.Single(GlossaryAiCheck.Corrections("好的：{\"words\":[{\"n\":1,\"fits\":false},{\"n\":9,\"fits\":false}]}", suspects)!);
+        Assert.Null(GlossaryAiCheck.Corrections("不确定", suspects));
+        Assert.Null(GlossaryAiCheck.Corrections("{\"words\":[{\"n\":2,\"fits\":true}]}", suspects));
+        // The prompt shows each candidate as the whole line, before and after.
+        var prompt = GlossaryAiCheck.Prompt("我就去了现场采访他", [("访他", "访谈")], []);
+        Assert.Contains("as heard: 我就去了现场采访他", prompt);
+        Assert.Contains("changed:  我就去了现场采访谈", prompt);
     }
 }

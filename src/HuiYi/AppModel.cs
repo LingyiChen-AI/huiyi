@@ -246,9 +246,9 @@ public sealed class AppModel
         var suspects = Glossary.Suspects(text, template);
         if (suspects.Count == 0) return null;
         var terms = Glossary.ActiveTerms(template);
-        var reply = await Ai.Chat(GlossaryAiCheck.Prompt(text, suspects, terms), "Correct the line.", AiClient.Priority.Notes,
-            maxTokens: 400, timeout: TimeSpan.FromSeconds(20));
-        var fixes = GlossaryAiCheck.Accept(text, reply, terms.Select(t => t.Text));
+        var reply = await Ai.Chat(GlossaryAiCheck.Prompt(text, suspects, terms), "Judge each word.", AiClient.Priority.Notes,
+            json: true, maxTokens: 300, timeout: TimeSpan.FromSeconds(20), temperature: 0);
+        var fixes = GlossaryAiCheck.Corrections(reply, suspects);
         Log.Debug($"glossary: AI check on {suspects.Count} suspect(s), {(fixes == null ? "no change taken" : $"{fixes.Count} correction(s)")}");
         return fixes;
     }

@@ -248,9 +248,16 @@ public sealed class Glossary
                 .OrderByDescending(t => t.Text.Length).Select(t => t.Clone()).ToList();
     }
 
-    /// For the AI translator: "网关 → gateway" (or "伊丽静 (keep this spelling)") for each term in the text.
+    /// For the AI translator, one hint per term in the text: its fixed translation ("网关 → gateway");
+    /// else the meaning from another language's translation; else that it is a name to render the
+    /// same way every time. Never "keep this spelling": the model then left 伊丽静 in Chinese in an
+    /// English subtitle, and 压测 in Chinese in a Japanese one (2026-11-14, deepseek-chat).
     public List<string> Hints(string text, string target) =>
-        In(text).Select(t => t.TranslationFor(target) is { } tr ? $"{t.Text} → {tr}" : $"{t.Text} (keep this spelling)").ToList();
+        In(text).Select(t => t.TranslationFor(target) is { } tr ? $"{t.Text} → {tr}"
+            : t.Translations.Values.FirstOrDefault() is { } meaning ? $"{t.Text} (means \"{meaning}\": translate it with that meaning)"
+            : t.Text.Any(Pinyin.IsHan) && !(target.StartsWith("zh") || target.StartsWith("ja"))
+                ? $"{t.Text} (a name or term: never leave Chinese characters in the translation — spell a name in pinyin, translate a term; the same way every time)"
+                : $"{t.Text} (a name or term: write it the same way every time, in the target language's script)").ToList();
 
     /// For a translator that takes no instructions (Google): each term with a fixed translation for
     /// the target is put in already translated, so it comes back as written.
@@ -261,9 +268,25 @@ public sealed class Glossary
         return text;
     }
 
-    /// For the notes: every active term the transcript mentions, with its note.
-    public List<string> ForNotes(string transcript, string? template) =>
-        In(transcript, template).Take(40).Select(t => t.Note.Length > 0 ? $"{t.Text} ({t.Note})" : t.Text).ToList();
+    /// For the notes: every active term the transcript mentions — spelled right, or still the way
+    /// it was misheard (a meeting recorded before the term was added, a sound-alike), then with how
+    /// the transcript writes it, so the notes use the right spelling.
+    public List<string> ForNotes(string transcript, string? template)
+    {
+        var heard = FixerFor(template).Fix(transcript).Fixes.GroupBy(f => f.To)
+            .ToDictionary(g => g.Key, g => g.Select(f => f.From).Distinct().ToList());
+        List<GlossaryTerm> active;
+        lock (gate) active = terms.Where(t => Active(t, template)).Select(t => t.Clone()).ToList();
+        return active.Where(t => transcript.Contains(t.Text, StringComparison.OrdinalIgnoreCase) || heard.ContainsKey(t.Text))
+            .OrderByDescending(t => heard.ContainsKey(t.Text)).ThenByDescending(t => t.Text.Length).Take(40)
+            .Select(t =>
+            {
+                var parts = new List<string>();
+                if (t.Note.Length > 0) parts.Add(t.Note);
+                if (heard.TryGetValue(t.Text, out var as_)) parts.Add("the transcript writes it " + string.Join(" / ", as_));
+                return parts.Count > 0 ? $"{t.Text} ({string.Join("; ", parts)})" : t.Text;
+            }).ToList();
+    }
 
     private static string Replace(string text, string from, string to)
     {
@@ -515,23 +538,60 @@ public static class Pinyin
 }
 
 /// The optional AI check (设置 › 词库): a line with words that sound close to a glossary term goes
-/// to the AI, which may only change those words into the glossary's spellings. Anything else it
-/// changes is not taken.
+/// to the AI, which only judges, word by word, whether the word as written fits the sentence. The
+/// words it says don't fit are replaced here with the term. Asking it to rewrite the line instead,
+/// it changed 巨大的反弹 (a backlash) into 巨大的访谈 even when told that exact case was right
+/// (deepseek-chat, 2026-11-14); as a yes/no judgement it kept it.
 public static class GlossaryAiCheck
 {
     public static string Prompt(string line, IReadOnlyList<(string Heard, string Term)> suspects, IEnumerable<GlossaryTerm> terms)
     {
+        // Each candidate as the whole line before and after: a window cut by sound can straddle two
+        // words (采访他 holds 访他), so a word asked about alone looks wrong when the line is fine.
         var names = terms.Select(t => t.Note.Length > 0 ? $"{t.Text} ({t.Note})" : t.Text).Take(60);
-        return "A line of a meeting transcript, from speech recognition, which mishears names and terms.\n"
+        var items = suspects.Select((s, i) => $"{i + 1}. as heard: {line}\n   changed:  {Replace1(line, s.Heard, s.Term)}");
+        return "A line of a meeting transcript from speech recognition, which sometimes writes a glossary term as another word that sounds alike.\n"
                + "The user's glossary: " + string.Join("; ", names) + "\n"
-               + "Possibly misheard here: " + string.Join("; ", suspects.Select(s => $"{s.Heard} → {s.Term}?")) + "\n"
-               + "Return the line with only the misheard glossary words corrected to the glossary's spelling. "
-               + "Change nothing else: not punctuation, not other words. If nothing was misheard, return the line unchanged.\n"
-               + "Line: " + line;
+               + "For each pair below: is the changed line what the speaker really said, the line as heard being a mishearing? "
+               + "Answer fits = true when the line as heard already makes good sense (keep it — most do); fits = false only when the changed line is clearly right and the heard one is not.\n"
+               + string.Join("\n", items) + "\n"
+               + "Reply with JSON only: {\"words\":[{\"n\":1,\"fits\":true}, ...]}";
+    }
+
+    private static string Replace1(string text, string from, string to)
+    {
+        var at = text.IndexOf(from, StringComparison.Ordinal);
+        return at < 0 ? text : text[..at] + to + text[(at + from.Length)..];
+    }
+
+    /// The corrections the AI's verdicts allow: each suspect it judged not to fit becomes its term.
+    public static List<LineFix>? Corrections(string reply, IReadOnlyList<(string Heard, string Term)> suspects)
+    {
+        try
+        {
+            var start = reply.IndexOf('{');
+            var end = reply.LastIndexOf('}');
+            if (start < 0 || end <= start) return null;
+            using var doc = System.Text.Json.JsonDocument.Parse(reply[start..(end + 1)]);
+            var fixes = new List<LineFix>();
+            foreach (var w in doc.RootElement.GetProperty("words").EnumerateArray())
+            {
+                var n = w.GetProperty("n").GetInt32();
+                if (n < 1 || n > suspects.Count) continue;
+                // Anything but a clear false keeps the word.
+                if (w.TryGetProperty("fits", out var fits) && fits.ValueKind == System.Text.Json.JsonValueKind.False)
+                {
+                    var (heard, term) = suspects[n - 1];
+                    if (!fixes.Any(f => f.From == heard)) fixes.Add(new LineFix { From = heard, To = term });
+                }
+            }
+            return fixes.Count > 0 ? fixes : null;
+        }
+        catch (Exception) { return null; }
     }
 
     /// The AI's corrections, if every change it made turns a stretch into a glossary term; null when
-    /// it changed anything else (or nothing).
+    /// it changed anything else (or nothing). (For a reply that rewrites the line.)
     public static List<LineFix>? Accept(string before, string after, IEnumerable<string> termTexts)
     {
         after = after.Trim().Trim('"', '“', '”', '「', '」');

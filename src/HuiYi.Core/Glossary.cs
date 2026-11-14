@@ -552,10 +552,12 @@ public static class GlossaryAiCheck
         var items = suspects.Select((s, i) => $"{i + 1}. as heard: {line}\n   changed:  {Replace1(line, s.Heard, s.Term)}");
         return "A line of a meeting transcript from speech recognition, which sometimes writes a glossary term as another word that sounds alike.\n"
                + "The user's glossary: " + string.Join("; ", names) + "\n"
-               + "For each pair below: is the changed line what the speaker really said, the line as heard being a mishearing? "
-               + "Answer fits = true when the line as heard already makes good sense (keep it — most do); fits = false only when the changed line is clearly right and the heard one is not.\n"
+               + "These candidates were picked only because a few syllables sound alike; in real meetings nine in ten are NOT mishearings, "
+               + "just ordinary words that happen to sound a little like a term. "
+               + "For each pair below, answer misheard = true ONLY if you are certain the speaker said the glossary term: the line as heard is nonsense there "
+               + "and the changed line is obviously what was meant. Otherwise misheard = false.\n"
                + string.Join("\n", items) + "\n"
-               + "Reply with JSON only: {\"words\":[{\"n\":1,\"fits\":true}, ...]}";
+               + "Reply with JSON only: {\"words\":[{\"n\":1,\"misheard\":false}, ...]}";
     }
 
     private static string Replace1(string text, string from, string to)
@@ -578,8 +580,8 @@ public static class GlossaryAiCheck
             {
                 var n = w.GetProperty("n").GetInt32();
                 if (n < 1 || n > suspects.Count) continue;
-                // Anything but a clear false keeps the word.
-                if (w.TryGetProperty("fits", out var fits) && fits.ValueKind == System.Text.Json.JsonValueKind.False)
+                // Only a clear "misheard": true changes the word.
+                if (w.TryGetProperty("misheard", out var misheard) && misheard.ValueKind == System.Text.Json.JsonValueKind.True)
                 {
                     var (heard, term) = suspects[n - 1];
                     if (!fixes.Any(f => f.From == heard)) fixes.Add(new LineFix { From = heard, To = term });

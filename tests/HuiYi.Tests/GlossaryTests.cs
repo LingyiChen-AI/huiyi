@@ -258,12 +258,12 @@ public class GlossaryTests
     public void TheAiJudgesAndOnlyAClearNoChangesAWord()
     {
         (string, string)[] suspects = [("犯成", "帆船"), ("反弹", "访谈"), ("访他", "访谈")];
-        var fixes = GlossaryAiCheck.Corrections("{\"words\":[{\"n\":1,\"fits\":false},{\"n\":2,\"fits\":true},{\"n\":3}]}", suspects)!;
+        var fixes = GlossaryAiCheck.Corrections("{\"words\":[{\"n\":1,\"misheard\":true},{\"n\":2,\"misheard\":false},{\"n\":3}]}", suspects)!;
         Assert.Equal([("犯成", "帆船")], fixes.Select(f => (f.From, f.To)));
         // Text around the JSON, nonsense, numbers out of range: nothing changes.
-        Assert.Single(GlossaryAiCheck.Corrections("好的：{\"words\":[{\"n\":1,\"fits\":false},{\"n\":9,\"fits\":false}]}", suspects)!);
+        Assert.Single(GlossaryAiCheck.Corrections("好的：{\"words\":[{\"n\":1,\"misheard\":true},{\"n\":9,\"misheard\":true}]}", suspects)!);
         Assert.Null(GlossaryAiCheck.Corrections("不确定", suspects));
-        Assert.Null(GlossaryAiCheck.Corrections("{\"words\":[{\"n\":2,\"fits\":true}]}", suspects));
+        Assert.Null(GlossaryAiCheck.Corrections("{\"words\":[{\"n\":2,\"misheard\":false}]}", suspects));
         // The prompt shows each candidate as the whole line, before and after.
         var prompt = GlossaryAiCheck.Prompt("我就去了现场采访他", [("访他", "访谈")], []);
         Assert.Contains("as heard: 我就去了现场采访他", prompt);

@@ -77,9 +77,9 @@
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
                                        Text="{local:Loc Key='留空就是通用词条，所有会议都用。填一个分组名（如「支付项目」），可以在左侧分组标题上设置只在哪些模板的会议里用。'}"/>
 
-                            <CheckBox x:Name="EnabledBox" Style="{StaticResource Switch}" Content="{local:Loc Key='启用这个词条'}" Margin="0,18,0,0"
+                            <CheckBox x:Name="EnabledBox" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='启用这个词条'}" Margin="0,18,0,0"
                                       Checked="Field_Changed" Unchecked="Field_Changed"/>
-                            <CheckBox x:Name="ExactBox" Style="{StaticResource Switch}" Content="{local:Loc Key='只替换列出的写法，不按读音猜'}" Margin="0,10,0,0"
+                            <CheckBox x:Name="ExactBox" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='只替换列出的写法，不按读音猜'}" Margin="0,10,0,0"
                                       Checked="Field_Changed" Unchecked="Field_Changed"/>
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
                                        Text="{local:Loc Key='默认还会按读音纠正：两个字的词要读音完全相同，三个字以上可以有 zh/z、n/l、前后鼻音这类口音差别。'}"/>

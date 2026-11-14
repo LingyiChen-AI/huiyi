@@ -59,16 +59,16 @@
                                         IsSnapToTickEnabled="True" ValueChanged="Font_Changed"/>
                                 <TextBlock x:Name="FontText" Text="{local:Loc Key='悬浮字幕字号'}" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <CheckBox x:Name="Capturable" Style="{StaticResource Switch}" Content="{local:Loc Key='共享屏幕时，对对方隐藏实时面板和字幕'}" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="Capturable" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='共享屏幕时，对对方隐藏实时面板和字幕'}" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap" Text="{local:Loc Key='打开后截图、录屏和屏幕共享里都看不到它们，只有你自己看得到（窗口上会标「对方看不到」）。默认关闭，可以正常截图。'}"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="{local:Loc Key='发言人'}" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="VoicesOn" Style="{StaticResource Switch}" Content="{local:Loc Key='按声音区分不同发言人（发言人 1、发言人 2…）'}" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="VoicesOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='按声音区分不同发言人（发言人 1、发言人 2…）'}" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='同一个声音说过两句后开始编号（之前的句子会一起补上）；太短的话（如“嗯”“好的”）不计入。'}"/>
-                            <CheckBox x:Name="RedoOn" Style="{StaticResource Switch}" Content="{local:Loc Key='会议结束后，用整场录音重新校对发言人'}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="RedoOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='会议结束后，用整场录音重新校对发言人'}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap" Text="{local:Loc Key='开会时只能根据已经听到的声音判断，开头几分钟和抢话容易分错；会后会拿整场的声音重新核对一遍，并更新纪要。录音只临时存在本机，校对完立即删除。'}"/>
                         </StackPanel>
                     </Border>
@@ -179,7 +179,7 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="{local:Loc Key='按键说话'}" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="SpeakOn" Style="{StaticResource Switch}" Content="{local:Loc Key='打开同声传译：按住按键说话，松开后译成对方的语言，播报进会议'}" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="SpeakOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='打开同声传译：按住按键说话，松开后译成对方的语言，播报进会议'}" Checked="Changed" Unchecked="Changed"/>
                             <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
                                 <Border DockPanel.Dock="Right" Background="#E8EBF2" CornerRadius="5" Padding="2">
                                     <StackPanel Orientation="Horizontal">
@@ -207,7 +207,7 @@
                                 <TextBlock x:Name="CableText" VerticalAlignment="Center" TextWrapping="Wrap"/>
                             </DockPanel>
                             <TextBlock x:Name="CableHelp" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
-                            <CheckBox x:Name="RouteOn" Style="{StaticResource Switch}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"
+                            <CheckBox x:Name="RouteOn" Style="{StaticResource SwitchRow}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"
                                       Content="{local:Loc Key='打开同声传译时，自动把系统麦克风切到 CABLE Output'}"/>
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
                                        Text="{local:Loc Key='会议软件的麦克风用「默认」就行，对方只听得到翻译后的声音，听不到你的原声。关掉同声传译或退出会译时自动切回原来的麦克风。'}"/>
@@ -229,7 +229,7 @@
                             <TextBlock x:Name="VoiceHelp" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
                             <Button x:Name="VoiceSettingsBtn" Content="{local:Loc Key='打开系统语音设置 ↗'}" Style="{StaticResource GhostBtn}" HorizontalAlignment="Left"
                                     Margin="-6,2,0,0" Visibility="Collapsed" Click="VoiceSettings_Click"/>
-                            <CheckBox x:Name="MonitorOn" Style="{StaticResource Switch}" Content="{local:Loc Key='播报时自己的耳机里也放一遍'}" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="MonitorOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='播报时自己的耳机里也放一遍'}" Margin="0,8,0,0" Checked="Changed" Unchecked="Changed"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -243,7 +243,7 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="{local:Loc Key='自动结束'}" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="FollowApps" Style="{StaticResource Switch}" Content="{local:Loc Key='会议软件挂断后，自动结束本场记录'}" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="FollowApps" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='会议软件挂断后，自动结束本场记录'}" Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='识别 Zoom、Teams、腾讯会议、飞书、钉钉、Webex 等：它们不再占用麦克风，就当作会议结束。'}"/>
                             <DockPanel Style="{StaticResource Row}" Margin="0,12,0,0">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -274,8 +274,8 @@
                     <Border Style="{StaticResource Panel}">
                         <StackPanel>
                             <TextBlock Text="{local:Loc Key='启动'}" Style="{StaticResource Overline}"/>
-                            <CheckBox x:Name="LoginOn" Style="{StaticResource Switch}" Content="{local:Loc Key='登录 Windows 后自动启动'}" Checked="Changed" Unchecked="Changed"/>
-                            <CheckBox x:Name="TrayStartOn" Style="{StaticResource Switch}" Content="{local:Loc Key='单击通知区域图标时直接开始收听'}" Margin="0,10,0,0"
+                            <CheckBox x:Name="LoginOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='登录 Windows 后自动启动'}" Checked="Changed" Unchecked="Changed"/>
+                            <CheckBox x:Name="TrayStartOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='单击通知区域图标时直接开始收听'}" Margin="0,10,0,0"
                                       Checked="Changed" Unchecked="Changed"/>
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
                                        Text="{local:Loc Key='关闭时，单击图标只打开实时面板，点面板上的「开始会议」才开始录制，避免误点就录。'}"/>

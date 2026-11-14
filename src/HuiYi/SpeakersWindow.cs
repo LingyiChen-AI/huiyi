@@ -31,11 +31,12 @@ public sealed class SpeakersWindow : Window
     {
         SessionId = sessionId;
         this.model = model;
+        // As tall as its people (two voices shouldn't sit over an empty page), scrolling past 70 % of the screen.
         Width = 540;
-        Height = 580;
+        SizeToContent = SizeToContent.Height;
         MinWidth = 420;
-        MinHeight = 340;
-        MaxHeight = SystemParameters.WorkArea.Height * .9;
+        MinHeight = 240;
+        MaxHeight = SystemParameters.WorkArea.Height * .7;
         Background = Theme.Surface;
         FontFamily = new System.Windows.Media.FontFamily("Microsoft YaHei UI, Segoe UI");
         WindowStartupLocation = WindowStartupLocation.CenterOwner;

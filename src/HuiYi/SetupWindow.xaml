@@ -89,7 +89,7 @@
                                 <TextBlock x:Name="CableText" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap"/>
                             </DockPanel>
                             <TextBlock x:Name="CableHelp" Style="{StaticResource Helper}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                            <CheckBox x:Name="SpeakOn" Content="{local:Loc Key='打开同声传译'}" Style="{StaticResource Switch}" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
+                            <CheckBox x:Name="SpeakOn" Content="{local:Loc Key='打开同声传译'}" Style="{StaticResource SwitchRow}" Margin="0,12,0,0" Checked="Speak_Changed" Unchecked="Speak_Changed"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

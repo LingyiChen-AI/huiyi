@@ -50,7 +50,7 @@ public sealed class TermFixWindow : Window
         everywhere = new CheckBox
         {
             Content = L.F("同时改正这场会议里的 {0} 处「{1}」", count, heard), IsChecked = count > 0, IsEnabled = count > 0,
-            Style = (Style)Application.Current.FindResource("Switch"), Margin = new Thickness(0, 14, 0, 0),
+            Style = (Style)Application.Current.FindResource("SwitchRow"), Margin = new Thickness(0, 14, 0, 0),
         };
         body.Children.Add(everywhere);
 

@@ -521,6 +521,47 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- A setting on its own row: the words on the left (wrapping), the switch at the right edge,
+             like the rows that pair a label with a dropdown. Inline toggles (the 翻译 switches) keep Switch. -->
+        <Style x:Key="SwitchRow" TargetType="CheckBox" BasedOn="{StaticResource Switch}">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <DockPanel Background="Transparent" LastChildFill="True">
+                            <Border x:Name="track" DockPanel.Dock="Right" Width="34" Height="19" CornerRadius="9.5" Margin="16,0,0,0"
+                                    Background="{TemplateBinding Background}" VerticalAlignment="Center">
+                                <Ellipse x:Name="knob" Width="15" Height="15" Fill="White" HorizontalAlignment="Left" Margin="2,0,0,0">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.25"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="False">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="track" Property="Background" Value="{StaticResource Primary}"/>
+                                <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="knob" Property="Margin" Value="0,0,2,0"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="track" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="SwitchNight" TargetType="CheckBox" BasedOn="{StaticResource Switch}">
             <Setter Property="Foreground" Value="{StaticResource NightMuted}"/>
             <Setter Property="Background" Value="#3A3F55"/>

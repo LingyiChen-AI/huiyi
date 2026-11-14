@@ -2194,4 +2194,13 @@
   <data name="一句话里有读音接近词条、但没到自动替换程度的字时，让大模型判断要不要改。只采纳改成词库写法的改动；会消耗你的大模型额度，默认关闭。" xml:space="preserve">
     <value>一句话里有读音接近词条、但没到自动替换程度的字时，让大模型判断要不要改。只采纳改成词库写法的改动；会消耗你的大模型额度，默认关闭。</value>
   </data>
+  <data name="也可以把文件拖到这里 · 支持 WAV、MP3、M4A、MP4、FLAC 等" xml:space="preserve">
+    <value>也可以把文件拖到这里 · 支持 WAV、MP3、M4A、MP4、FLAC 等</value>
+  </data>
+  <data name="或粘贴视频链接" xml:space="preserve">
+    <value>或粘贴视频链接</value>
+  </data>
+  <data name="B 站、YouTube 等视频页面的链接" xml:space="preserve">
+    <value>B 站、YouTube 等视频页面的链接</value>
+  </data>
 </root>

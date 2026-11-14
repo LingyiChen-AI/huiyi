@@ -2194,4 +2194,13 @@ D:\Apps\HuiYi 등 다른 위치를 선택하세요.</value>
   <data name="一句话里有读音接近词条、但没到自动替换程度的字时，让大模型判断要不要改。只采纳改成词库写法的改动；会消耗你的大模型额度，默认关闭。" xml:space="preserve">
     <value>용어와 발음이 비슷하지만 자동으로 바꿀 정도는 아닌 단어가 있는 문장만 AI가 고칠지 판단합니다. 용어집 표기로 바꾸는 변경만 받아들입니다. AI 사용량을 소모하므로 기본값은 꺼짐입니다.</value>
   </data>
+  <data name="也可以把文件拖到这里 · 支持 WAV、MP3、M4A、MP4、FLAC 等" xml:space="preserve">
+    <value>파일을 여기로 끌어와도 됩니다 · WAV, MP3, M4A, MP4, FLAC 등</value>
+  </data>
+  <data name="或粘贴视频链接" xml:space="preserve">
+    <value>또는 동영상 링크 붙여넣기</value>
+  </data>
+  <data name="B 站、YouTube 等视频页面的链接" xml:space="preserve">
+    <value>Bilibili, YouTube 등 동영상 페이지 링크</value>
+  </data>
 </root>

@@ -493,7 +493,7 @@ public sealed class NotesEngine
             var estimate = lines.Skip(Math.Max(0, from - 2)).Sum(l => (long)l.Src.Length + 100)
                 + (final ? 0 : JsonSerializer.Serialize(based, Json.Options).Length);
             // The user's glossary: the words this meeting mentions, written their way.
-            var mine = Terms?.ForNotes(string.Join("\n", lines.Select(l => l.Src))) ?? [];
+            var mine = Terms?.ForNotes(string.Join("\n", lines.Select(l => l.Src)), template.Id) ?? [];
             var glossary = mine.Count == 0 ? ""
                 : "\n\nThe user's glossary — always write these exactly so; a word that sounds like one of them is that word: " + string.Join("; ", mine);
             var prompt = estimate <= NotesBatch.MaxPromptChars

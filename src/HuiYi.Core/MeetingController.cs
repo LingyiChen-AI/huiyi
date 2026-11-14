@@ -21,6 +21,9 @@ public sealed class MeetingController
 
     /// Runs the after-meeting check (MeetingRedo with the app's models); null leaves records as heard.
     public Func<float[], IReadOnlyList<TranscriptLine>, MeetingRedo.Plan?>? Redo { get; set; }
+    /// The glossary's AI check (off unless the user turns it on): corrections for a line just heard,
+    /// or null. Runs in the background; the line is updated when it answers.
+    public Func<string, Task<List<LineFix>?>>? CheckLine { get; set; }
     /// One recording per channel (the PC, the microphone), checked separately after the meeting.
     private readonly NAudio.Wave.WaveFileWriter?[] recording = new NAudio.Wave.WaveFileWriter?[2];
     private readonly string?[] recordingPath = new string?[2];
@@ -436,8 +439,37 @@ public sealed class MeetingController
         LineChanged?.Invoke(lineId);
         Render();
         TranslateLine(id, lineId);
+        if (CheckLine is { } check) _ = Check(check, id, lineId, seg.Text);
         // Once two voices are on show (and every 20 lines after), the AI may know their names.
         if (voice != null) namer?.Guess(id);
+    }
+
+    /// Asks the AI check about a piece just heard; its corrections go into the line (wherever the
+    /// misheard words still are), marked like the glossary's own, and the line is translated again.
+    private async Task Check(Func<string, Task<List<LineFix>?>> check, string sessionId, string lineId, string heard)
+    {
+        try
+        {
+            if (await check(heard) is not { Count: > 0 } fixes) return;
+            var changed = false;
+            store.Mutate(sessionId, s =>
+            {
+                if (s.Lines.FirstOrDefault(l => l.Id == lineId) is not { } line) return;
+                foreach (var f in fixes)
+                {
+                    if (!line.Src.Contains(f.From)) continue;
+                    line.Src = line.Src.Replace(f.From, f.To);
+                    line.Fixes = LineFix.Merge(line.Fixes, [f]);
+                    changed = true;
+                }
+            });
+            if (!changed) return;
+            Log.Debug($"glossary: the AI check corrected {fixes.Count} word(s) in a line");
+            LineChanged?.Invoke(lineId);
+            Render();
+            TranslateLine(sessionId, lineId);
+        }
+        catch (Exception e) { Log.Debug($"glossary: AI check failed {e.Message}"); }
     }
 
     private void TranslateLine(string sessionId, string lineId, int attempt = 0)

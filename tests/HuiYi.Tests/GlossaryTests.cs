@@ -172,4 +172,72 @@ public class GlossaryTests
         Assert.Equal(0, Glossary.CountOf("伊丽静", "毕丽静"));
         Assert.Equal(2, Glossary.CountOf("aaaa", "aa"));
     }
+
+    // ── phase three: groups limited to templates, and the AI check ──
+
+    [Fact]
+    public void AGroupLimitedToTemplatesCountsOnlyInThoseMeetings()
+    {
+        var g = Make(new GlossaryTerm { Text = "网关", Misheard = ["网管"], Group = "支付项目" },
+                     new GlossaryTerm { Text = "伊丽静", Misheard = ["毕丽静"] });
+        // A group with no templates chosen works everywhere.
+        Assert.Equal("网关", g.FixWithDetails("网管", "interview").Text);
+        g.SetTemplates("支付项目", ["weekly", "standup"]);
+        Assert.Equal("网关", g.FixWithDetails("网管", "weekly").Text);
+        Assert.Equal("网管", g.FixWithDetails("网管", "interview").Text);
+        Assert.Equal("网管", g.FixWithDetails("网管", null).Text);
+        // 通用 terms always count.
+        Assert.Equal("伊丽静", g.FixWithDetails("毕丽静", "interview").Text);
+        Assert.Equal(["支付项目"], g.Groups);
+        Assert.Equal(["weekly", "standup"], g.TemplatesOf("支付项目"));
+        // The current meeting's template decides by default.
+        g.CurrentTemplate = () => "interview";
+        Assert.Equal("网管", g.Fix("网管"));
+        Assert.Empty(g.In("网关配置"));
+        g.CurrentTemplate = () => "weekly";
+        Assert.Single(g.In("网关配置"));
+    }
+
+    [Fact]
+    public void GroupsAndTheirTemplatesAreKeptAndExported()
+    {
+        var file = Path.Combine(Path.GetTempPath(), "huiyi-glossary-" + Guid.NewGuid().ToString("N") + ".json");
+        var g = new Glossary(file);
+        g.Import("网关\t网管\tgateway\t入口服务\t支付项目\n");
+        g.SetTemplates("支付项目", ["weekly"]);
+        var again = new Glossary(file);
+        Assert.Equal("支付项目", again.Terms.Single().Group);
+        Assert.Equal(["weekly"], again.TemplatesOf("支付项目"));
+        Assert.Contains("\t支付项目", again.Export());
+        File.Delete(file);
+        File.Delete(Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + "-groups.json"));
+    }
+
+    [Fact]
+    public void SoundAlikesTooFarToReplaceAreSuspects()
+    {
+        var g = Make(new GlossaryTerm { Text = "帆船" }, new GlossaryTerm { Text = "陈佩娜" }, new GlossaryTerm { Text = "网关" });
+        // 犯成 (fan cheng) is not 帆船 (fan chuan): not replaced, but worth a look.
+        Assert.Equal("对于犯成一米惜败", g.Fix("对于犯成一米惜败"));
+        Assert.Contains(("犯成", "帆船"), g.Suspects("对于犯成一米惜败", null));
+        // One character off in a longer name.
+        Assert.Contains(("陈佩拉", "陈佩娜"), g.Suspects("叫陈佩拉那个女孩", null));
+        // Ordinary talk raises nothing.
+        Assert.Empty(g.Suspects("我周五前改好配置，周末跑一轮测试。", null));
+    }
+
+    [Fact]
+    public void OnlyCorrectionsIntoGlossaryTermsAreTakenFromTheAi()
+    {
+        string[] terms = ["帆船", "陈佩娜"];
+        var ok = GlossaryAiCheck.Accept("对于犯成一米惜败，叫陈佩拉", "对于帆船一米惜败，叫陈佩娜", terms)!;
+        Assert.Equal([("犯成", "帆船"), ("陈佩拉", "陈佩娜")], ok.Select(f => (f.From, f.To)));
+        // Anything else changed (here a word dropped, there punctuation): nothing is taken.
+        Assert.Null(GlossaryAiCheck.Accept("对于犯成一米惜败", "帆船一米惜败", terms));
+        Assert.Null(GlossaryAiCheck.Accept("对于犯成一米惜败", "对于帆船一米惜败！", terms));
+        Assert.Null(GlossaryAiCheck.Accept("对于犯成一米惜败", "对于犯成一米惜败", terms));
+        Assert.Null(GlossaryAiCheck.Accept("今天天气不错", "今天天气很好", terms));
+        // Quotes around the answer are ignored.
+        Assert.NotNull(GlossaryAiCheck.Accept("对于犯成", "「对于帆船」", terms));
+    }
 }

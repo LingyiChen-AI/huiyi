@@ -38,6 +38,9 @@ public sealed class AppSettings
     public bool RedoSpeakers { get; set; } = true;
     /// Correct recognized text against the glossary (its misheard spellings and sound-alikes). On by default.
     public bool GlossaryOn { get; set; } = true;
+    /// When a line has words that sound close to a glossary term, ask the AI whether they were
+    /// misheard. Off by default: it uses the user's AI quota.
+    public bool GlossaryAiCheck { get; set; }
     public double SubtitleFontSize { get; set; } = 26;
     /// The notes template new meetings use (built-in id or one of the user's).
     public string DefaultTemplateId { get; set; } = NoteTemplates.DefaultId;

@@ -19,11 +19,14 @@ public sealed class GlossaryTerm
     /// Only the listed misheard spellings are replaced, never sound-alikes.
     public bool ExactOnly { get; set; }
     public bool Enabled { get; set; } = true;
+    /// A word list of its own ("支付项目", "医疗"): a group can be limited to some notes templates'
+    /// meetings. Empty: 通用, every meeting.
+    public string Group { get; set; } = "";
 
     public GlossaryTerm Clone() => new()
     {
         Id = Id, Text = Text, Misheard = [.. Misheard], Translations = new(Translations), Note = Note,
-        ExactOnly = ExactOnly, Enabled = Enabled,
+        ExactOnly = ExactOnly, Enabled = Enabled, Group = Group,
     };
 
     /// "gateway；ja=ゲートウェイ": a bare value is English, others carry their language code.
@@ -66,13 +69,54 @@ public sealed class Glossary
     private readonly object gate = new();
     private readonly string path;
     private List<GlossaryTerm> terms = [];
-    private TermFixer fixer = new([]);
+    /// Per group, the notes templates whose meetings use it (none listed: every meeting).
+    private Dictionary<string, List<string>> scopes = [];
+    /// Correctors per template id ("" when none is known), built on first use.
+    private readonly Dictionary<string, TermFixer> fixers = [];
     public event Action? Changed;
+
+    /// The template of the meeting being heard now (the app sets it); groups limited to other
+    /// templates stay out of corrections, translations and notes.
+    public Func<string?> CurrentTemplate { get; set; } = () => null;
 
     public Glossary(string? path = null)
     {
         this.path = path ?? Path.Combine(Paths.Roaming, "glossary.json");
         Load();
+    }
+
+    private string ScopesPath => Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "-groups.json");
+
+    /// The groups in use, in the order first met.
+    public IReadOnlyList<string> Groups { get { lock (gate) return terms.Select(t => t.Group).Where(g => g.Length > 0).Distinct().ToList(); } }
+
+    /// The templates a group is limited to (empty: every meeting).
+    public IReadOnlyList<string> TemplatesOf(string group) { lock (gate) return scopes.TryGetValue(group, out var l) ? [.. l] : []; }
+
+    public void SetTemplates(string group, IEnumerable<string> templateIds)
+    {
+        lock (gate)
+        {
+            var list = templateIds.Distinct().ToList();
+            if (list.Count == 0) scopes.Remove(group); else scopes[group] = list;
+            Commit();
+        }
+        Changed?.Invoke();
+    }
+
+    /// Whether a term counts in a meeting with this template.
+    private bool Active(GlossaryTerm t, string? template) =>
+        t.Enabled && (t.Group.Length == 0 || !scopes.TryGetValue(t.Group, out var only) || only.Count == 0
+                      || (template != null && only.Contains(template)));
+
+    private TermFixer FixerFor(string? template)
+    {
+        lock (gate)
+        {
+            var key = template ?? "";
+            if (!fixers.TryGetValue(key, out var f)) fixers[key] = f = new TermFixer(terms.Where(t => Active(t, template)));
+            return f;
+        }
     }
 
     public IReadOnlyList<GlossaryTerm> Terms { get { lock (gate) return terms.Select(t => t.Clone()).ToList(); } }
@@ -83,26 +127,35 @@ public sealed class Glossary
         {
             if (File.Exists(path))
                 terms = JsonSerializer.Deserialize<List<GlossaryTerm>>(File.ReadAllText(path), Json.Options) ?? [];
+            if (File.Exists(ScopesPath))
+                scopes = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(File.ReadAllText(ScopesPath), Json.Options) ?? [];
         }
         catch (Exception e)
         {
             Log.Debug($"glossary: can't read {e.Message}");
             terms = [];
         }
-        fixer = new TermFixer(terms);
     }
 
     private void Commit()
     {
-        fixer = new TermFixer(terms);
+        fixers.Clear();
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var tmp = path + ".tmp";
-            File.WriteAllText(tmp, JsonSerializer.Serialize(terms, Json.Options));
-            File.Move(tmp, path, true);
+            Write(path, JsonSerializer.Serialize(terms, Json.Options));
+            // Scopes of groups no term uses any more are forgotten.
+            foreach (var g in scopes.Keys.Where(g => terms.All(t => t.Group != g)).ToList()) scopes.Remove(g);
+            Write(ScopesPath, JsonSerializer.Serialize(scopes, Json.Options));
         }
         catch (Exception e) { Log.Debug($"glossary: can't save {e.Message}"); }
+    }
+
+    private static void Write(string file, string json)
+    {
+        var tmp = file + ".tmp";
+        File.WriteAllText(tmp, json);
+        File.Move(tmp, file, true);
     }
 
     /// Adds or replaces a term (by id; a new term with the same text merges into the old one).
@@ -173,15 +226,25 @@ public sealed class Glossary
         return n;
     }
 
-    /// Recognized text with the glossary's spellings.
-    public string Fix(string text) { TermFixer f; lock (gate) f = fixer; return f.Fix(text).Text; }
-    public (string Text, IReadOnlyList<TermFix> Fixes) FixWithDetails(string text) { TermFixer f; lock (gate) f = fixer; return f.Fix(text); }
+    /// Recognized text with the glossary's spellings (for the current meeting's template).
+    public string Fix(string text) => FixerFor(CurrentTemplate()).Fix(text).Text;
+    public (string Text, IReadOnlyList<TermFix> Fixes) FixWithDetails(string text) => FixerFor(CurrentTemplate()).Fix(text);
+    public (string Text, IReadOnlyList<TermFix> Fixes) FixWithDetails(string text, string? template) => FixerFor(template).Fix(text);
 
-    /// The enabled terms that occur in `text` (by their spelling), longest first.
-    public List<GlossaryTerm> In(string text)
+    /// Words that sound close to a term but not close enough to be replaced ("犯成" for 帆船):
+    /// what the AI check looks at.
+    public IReadOnlyList<(string Heard, string Term)> Suspects(string text, string? template) => FixerFor(template).Suspects(text);
+
+    /// The terms active for this template (all of them, enabled).
+    public List<GlossaryTerm> ActiveTerms(string? template) { lock (gate) return terms.Where(t => Active(t, template)).Select(t => t.Clone()).ToList(); }
+
+    /// The active terms that occur in `text` (by their spelling), longest first.
+    public List<GlossaryTerm> In(string text) => In(text, CurrentTemplate());
+
+    public List<GlossaryTerm> In(string text, string? template)
     {
         lock (gate)
-            return terms.Where(t => t.Enabled && t.Text.Length > 0 && text.Contains(t.Text, StringComparison.OrdinalIgnoreCase))
+            return terms.Where(t => Active(t, template) && t.Text.Length > 0 && text.Contains(t.Text, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(t => t.Text.Length).Select(t => t.Clone()).ToList();
     }
 
@@ -198,9 +261,9 @@ public sealed class Glossary
         return text;
     }
 
-    /// For the notes: every enabled term the transcript mentions, with its note.
-    public List<string> ForNotes(string transcript) =>
-        In(transcript).Take(40).Select(t => t.Note.Length > 0 ? $"{t.Text} ({t.Note})" : t.Text).ToList();
+    /// For the notes: every active term the transcript mentions, with its note.
+    public List<string> ForNotes(string transcript, string? template) =>
+        In(transcript, template).Take(40).Select(t => t.Note.Length > 0 ? $"{t.Text} ({t.Note})" : t.Text).ToList();
 
     private static string Replace(string text, string from, string to)
     {
@@ -216,10 +279,11 @@ public sealed class Glossary
     public string Export()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("# 会译词库：正确写法<TAB>常被听成（| 分隔）<TAB>译法（gateway; ja=ゲートウェイ）<TAB>说明");
+        sb.AppendLine("# 会译词库：正确写法<TAB>常被听成（| 分隔）<TAB>译法（gateway; ja=ゲートウェイ）<TAB>说明<TAB>分组");
         lock (gate)
             foreach (var t in terms)
-                sb.AppendLine(string.Join('\t', t.Text, string.Join('|', t.Misheard), GlossaryTerm.FormatTranslations(t.Translations), t.Note.Replace('\t', ' ').Replace('\n', ' ')));
+                sb.AppendLine(string.Join('\t', t.Text, string.Join('|', t.Misheard), GlossaryTerm.FormatTranslations(t.Translations),
+                    t.Note.Replace('\t', ' ').Replace('\n', ' '), t.Group));
         return sb.ToString();
     }
 
@@ -241,10 +305,11 @@ public sealed class Glossary
                 var misheard = cols.Length > 1 ? GlossaryTerm.ParseList(cols[1]) : [];
                 var tr = cols.Length > 2 ? GlossaryTerm.ParseTranslations(cols[2]) : [];
                 var note = cols.Length > 3 ? cols[3].Trim() : "";
+                var group = cols.Length > 4 ? cols[4].Trim() : "";
                 var known = terms.FirstOrDefault(t => t.Text == spelling);
                 if (known == null)
                 {
-                    terms.Add(new GlossaryTerm { Text = spelling, Misheard = misheard.Where(m => m != spelling).ToList(), Translations = tr, Note = note });
+                    terms.Add(new GlossaryTerm { Text = spelling, Misheard = misheard.Where(m => m != spelling).ToList(), Translations = tr, Note = note, Group = group });
                     added++;
                     continue;
                 }
@@ -252,6 +317,7 @@ public sealed class Glossary
                 foreach (var m in misheard) if (m != spelling && !known.Misheard.Contains(m)) known.Misheard.Add(m);
                 foreach (var kv in tr) known.Translations.TryAdd(kv.Key, kv.Value);
                 if (known.Note.Length == 0) known.Note = note;
+                if (known.Group.Length == 0) known.Group = group;
                 if (JsonSerializer.Serialize(known, Json.Options) != before) updated++;
             }
             if (added + updated > 0) Commit();
@@ -317,6 +383,37 @@ public sealed class TermFixer
         return (sb.ToString(), fixes);
     }
 
+    /// Runs that sound close to a term but were not replaced: a two-character term with the
+    /// common blurs, or a longer one with one character off. Each window is reported once.
+    public IReadOnlyList<(string Heard, string Term)> Suspects(string text)
+    {
+        var found = new List<(string, string)>();
+        if (alike.Count == 0 || text.Length == 0) return found;
+        var sounds = text.Select(c => Pinyin.IsHan(c) ? Pinyin.Of(c) : []).ToArray();
+        foreach (var (term, termSounds, _) in alike)
+        {
+            var n = term.Length;
+            for (var i = 0; i + n <= text.Length; i++)
+            {
+                var window = text.Substring(i, n);
+                if (window == term || spellings.Contains(window)) continue;
+                // Per character: alike (loosely the same sound), near (same initial or final), or off.
+                int alikeCount = 0, near = 0, off = 0;
+                for (var k = 0; k < n; k++)
+                {
+                    if (sounds[i + k].Length == 0) { off = 9; break; }
+                    if (Pinyin.Alike(sounds[i + k], termSounds[k], true)) alikeCount++;
+                    else if (Pinyin.Near(sounds[i + k], termSounds[k])) near++;
+                    else off++;
+                }
+                // Every character at least near, and at most one of them only near.
+                var close = off == 0 && near <= 1 && alikeCount >= 1;
+                if (close && !found.Contains((window, term))) found.Add((window, term));
+            }
+        }
+        return found;
+    }
+
     private (int Length, string To)? Exact(string text, int i)
     {
         foreach (var r in exact)
@@ -375,6 +472,26 @@ public static class Pinyin
         return false;
     }
 
+    private static readonly string[] Initials = ["zh", "ch", "sh", "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "j", "q", "x", "r", "z", "c", "s", "y", "w"];
+
+    /// A syllable's initial and final ("chuan" → "ch", "uan").
+    public static (string Initial, string Final) Split(string s)
+    {
+        var i = Initials.FirstOrDefault(s.StartsWith) ?? "";
+        return (i, s[i.Length..]);
+    }
+
+    /// Sounds near: the common readings share the initial, blurs forgiven (成 cheng / 船 chuan,
+    /// 拉 la / 娜 na). Only the first reading: rare ones (式 te) and shared finals (碗 wan / 谈 tan)
+    /// flagged ordinary words on a two-hour test transcript.
+    public static bool Near(string[] a, string[] b)
+    {
+        if (a.Length == 0 || b.Length == 0) return false;
+        var (xi, _) = Split(Loose(a[0]));
+        var (yi, _) = Split(Loose(b[0]));
+        return xi.Length > 0 && xi == yi;
+    }
+
     public static string Loose(string s)
     {
         if (s.StartsWith("zh")) s = "z" + s[2..];
@@ -394,5 +511,77 @@ public static class Pinyin
         while (reader.ReadLine() is { } line)
             if (line.Length > 1) d[line[0]] = line[1..].Split(',');
         return d;
+    }
+}
+
+/// The optional AI check (设置 › 词库): a line with words that sound close to a glossary term goes
+/// to the AI, which may only change those words into the glossary's spellings. Anything else it
+/// changes is not taken.
+public static class GlossaryAiCheck
+{
+    public static string Prompt(string line, IReadOnlyList<(string Heard, string Term)> suspects, IEnumerable<GlossaryTerm> terms)
+    {
+        var names = terms.Select(t => t.Note.Length > 0 ? $"{t.Text} ({t.Note})" : t.Text).Take(60);
+        return "A line of a meeting transcript, from speech recognition, which mishears names and terms.\n"
+               + "The user's glossary: " + string.Join("; ", names) + "\n"
+               + "Possibly misheard here: " + string.Join("; ", suspects.Select(s => $"{s.Heard} → {s.Term}?")) + "\n"
+               + "Return the line with only the misheard glossary words corrected to the glossary's spelling. "
+               + "Change nothing else: not punctuation, not other words. If nothing was misheard, return the line unchanged.\n"
+               + "Line: " + line;
+    }
+
+    /// The AI's corrections, if every change it made turns a stretch into a glossary term; null when
+    /// it changed anything else (or nothing).
+    public static List<LineFix>? Accept(string before, string after, IEnumerable<string> termTexts)
+    {
+        after = after.Trim().Trim('"', '“', '”', '「', '」');
+        if (after.Length == 0 || after == before) return null;
+        var spellings = termTexts.Where(t => t.Length > 0).ToList();
+        var fixes = new List<LineFix>();
+        foreach (var (i1, i2, j1, j2) in Changes(before, after))
+        {
+            // The change must sit inside an occurrence of a term in the corrected line.
+            var hit = spellings.SelectMany(t => Occurrences(after, t).Select(p => (Start: p, End: p + t.Length, Term: t)))
+                .Where(o => o.Start <= j1 && j2 <= o.End).OrderBy(o => o.End - o.Start).FirstOrDefault();
+            if (hit.Term == null) return null;
+            // What was heard: the changed part plus the unchanged characters of the term around it.
+            var from = before.Substring(i1 - (j1 - hit.Start), (i2 - i1) + (j1 - hit.Start) + (hit.End - j2));
+            // A word for a word: dropping or adding words around the term is not a correction.
+            if (Math.Abs(from.Length - hit.Term.Length) > 1) return null;
+            if (!fixes.Any(f => f.From == from && f.To == hit.Term)) fixes.Add(new LineFix { From = from, To = hit.Term });
+        }
+        return fixes.Count > 0 ? fixes : null;
+    }
+
+    private static IEnumerable<int> Occurrences(string text, string part)
+    {
+        for (var at = text.IndexOf(part, StringComparison.Ordinal); at >= 0; at = text.IndexOf(part, at + 1, StringComparison.Ordinal))
+            yield return at;
+    }
+
+    /// The differing stretches of two strings (by a longest common subsequence), as
+    /// (before start, before end, after start, after end).
+    public static List<(int, int, int, int)> Changes(string a, string b)
+    {
+        var n = a.Length; var m = b.Length;
+        var l = new int[n + 1, m + 1];
+        for (var i = n - 1; i >= 0; i--)
+            for (var j = m - 1; j >= 0; j--)
+                l[i, j] = a[i] == b[j] ? l[i + 1, j + 1] + 1 : Math.Max(l[i + 1, j], l[i, j + 1]);
+        var result = new List<(int, int, int, int)>();
+        int x = 0, y = 0, sx = -1, sy = -1;
+        while (x < n || y < m)
+        {
+            if (x < n && y < m && a[x] == b[y])
+            {
+                if (sx >= 0) { result.Add((sx, x, sy, y)); sx = -1; }
+                x++; y++;
+                continue;
+            }
+            if (sx < 0) { sx = x; sy = y; }
+            if (y < m && (x == n || l[x, y + 1] >= l[x + 1, y])) y++; else x++;
+        }
+        if (sx >= 0) result.Add((sx, n, sy, m));
+        return result;
     }
 }

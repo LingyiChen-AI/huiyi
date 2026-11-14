@@ -340,6 +340,17 @@ switch (cmd)
         Console.WriteLine("sentence ends: " + string.Join(", ", r.SentenceEnds().Select(x => x.ToString("F2"))));
         break;
     }
+    case "suspects":
+    {
+        // suspects <glossary.json> <text file>: how many lines would go to the AI check, with examples.
+        var g = new Glossary(args[1]);
+        var lines = File.ReadAllLines(args[2]).Where(l => l.Trim().Length > 0).ToList();
+        var hits = lines.Select(l => (Line: l, S: g.Suspects(l, null))).Where(x => x.S.Count > 0).ToList();
+        Console.WriteLine($"{hits.Count} of {lines.Count} lines have suspects ({100.0 * hits.Count / Math.Max(1, lines.Count):F1} %)");
+        foreach (var (line, s) in hits.Take(25))
+            Console.WriteLine($"  {string.Join(", ", s.Select(x => $"{x.Heard}→{x.Term}"))}   | {line.Trim()[..Math.Min(60, line.Trim().Length)]}");
+        break;
+    }
     case "mics":
     {
         var current = DefaultDevices.DefaultMicId();

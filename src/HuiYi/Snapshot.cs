@@ -75,11 +75,13 @@ public static class Snapshot
         Save(templates, folder, "templates-mine");
 
         // The glossary, with the demo meeting's words (a temp copy of the settings folder).
-        model.Glossary.Import("Priya\t普丽雅|普利亚\t\t支付组，负责接口联调\n网关\t网管\tgateway\t支付请求的入口服务\n"
-                              + "回归测试\t\tregression test\t\n压测\t鸭测\tload test\t压力测试\nKubernetes\t酷伯奈提斯\t\t\n");
+        model.Glossary.Import("Priya\t普丽雅|普利亚\t\t支付组，负责接口联调\n网关\t网管\tgateway\t支付请求的入口服务\t支付项目\n"
+                              + "回归测试\t\tregression test\t\n压测\t鸭测\tload test\t压力测试\nKubernetes\t酷伯奈提斯\t\t\t支付项目\n");
+        model.Glossary.SetTemplates("支付项目", ["weekly", "requirements"]);
         var glossary = new GlossaryWindow(model);
         glossary.TryBox.Text = "我周五前改好网管配置，跟普丽雅确认后跑一轮鸭测。";
         Save(glossary, folder, "glossary");
+        Save(GroupScopeWindow.ForSnapshot("支付项目", model.Templates, model.Glossary.TemplatesOf("支付项目")), folder, "glossary-scope");
 
         // Notes in a work template, with owners, deadlines and risks.
         // The open meeting's own notes when they use sections (the --demo one does), else a sample.

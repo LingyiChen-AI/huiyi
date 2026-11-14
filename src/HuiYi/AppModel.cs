@@ -87,6 +87,9 @@ public sealed class AppModel
         Translator = new TranslationService(Ai);
         Notes = new NotesEngine(Ai, Store) { Template = TemplateFor, Terms = Glossary };
         Translator.Terms = Glossary;
+        // Groups limited to some templates count only in those meetings: the one being heard now,
+        // else (imports, the try-it box) the default template.
+        Glossary.CurrentTemplate = () => LiveSessionId is { } live ? TemplateFor(Store.Get(live)).Id : Settings.DefaultTemplateId;
         Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
         Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable
@@ -143,6 +146,7 @@ public sealed class AppModel
         meeting.Error += m => Ui(() => Toast?.Invoke(m));
         meeting.EndPending += p => Ui(() => EndPending?.Invoke(p));
         meeting.Redo = (audio, lines) => Prints() is { } vp ? MeetingRedo.Run(audio, lines, vp.Embed, rec.Recognize) : null;
+        meeting.CheckLine = CheckLine;
         meeting.Redone += (id, relabelled, split) => Ui(() => Toast?.Invoke(
             L.F("已用整场录音重新校对了发言人：{0} 句有调整{1}，纪要会随之更新。", relabelled + split, (split > 0 ? $"（其中 {split} 句拆成了两个人）" : ""))));
         speak.MyMic = Routing.MyMicId;
@@ -231,6 +235,22 @@ public sealed class AppModel
         var label = line.Speaker == "me" ? L.T("我") : number is { } speaker
             ? names.GetValueOrDefault(speaker) ?? L.F("发言人 {0}", speaker) : L.T("发言人");
         return (label, number);
+    }
+
+    /// The glossary's AI check: only for a line with words that sound close to a term, and only
+    /// corrections into the glossary's spellings are taken.
+    private async Task<List<LineFix>?> CheckLine(string text)
+    {
+        if (!Settings.GlossaryAiCheck || !Settings.GlossaryOn || !Ai.Usable) return null;
+        var template = Glossary.CurrentTemplate();
+        var suspects = Glossary.Suspects(text, template);
+        if (suspects.Count == 0) return null;
+        var terms = Glossary.ActiveTerms(template);
+        var reply = await Ai.Chat(GlossaryAiCheck.Prompt(text, suspects, terms), "Correct the line.", AiClient.Priority.Notes,
+            maxTokens: 400, timeout: TimeSpan.FromSeconds(20));
+        var fixes = GlossaryAiCheck.Accept(text, reply, terms.Select(t => t.Text));
+        Log.Debug($"glossary: AI check on {suspects.Count} suspect(s), {(fixes == null ? "no change taken" : $"{fixes.Count} correction(s)")}");
+        return fixes;
     }
 
     /// A short message at the corner of the screen.

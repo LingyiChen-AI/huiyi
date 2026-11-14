@@ -2167,4 +2167,31 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="导入本地录音、视频或视频链接" xml:space="preserve">
     <value>ローカルの録音・動画・動画リンクを取り込む</value>
   </data>
+  <data name="留空就是通用词条，所有会议都用。填一个分组名（如「支付项目」），可以在左侧分组标题上设置只在哪些模板的会议里用。" xml:space="preserve">
+    <value>空欄なら共通の用語で、すべての会議で使います。グループ名（例：「決済プロジェクト」）を入れると、左のグループ見出しでどのテンプレートの会議で使うかを設定できます。</value>
+  </data>
+  <data name="所有会议" xml:space="preserve">
+    <value>すべての会議</value>
+  </data>
+  <data name="只在：{0}" xml:space="preserve">
+    <value>限定：{0}</value>
+  </data>
+  <data name="「{0}」在哪些会议里用" xml:space="preserve">
+    <value>「{0}」を使う会議</value>
+  </data>
+  <data name="只在选中模板的会议里按这组词纠正、翻译和写纪要；其他会议不受影响。" xml:space="preserve">
+    <value>選んだテンプレートの会議でだけ、このグループで補正・翻訳・議事録作成をします。他の会議には影響しません。</value>
+  </data>
+  <data name="所有会议都用" xml:space="preserve">
+    <value>すべての会議で使う</value>
+  </data>
+  <data name="只在这些模板的会议里用：" xml:space="preserve">
+    <value>これらのテンプレートの会議だけで使う：</value>
+  </data>
+  <data name="疑似认错时让 AI 核对" xml:space="preserve">
+    <value>誤認識の疑いがあれば AI に確認</value>
+  </data>
+  <data name="一句话里有读音接近词条、但没到自动替换程度的字时，让大模型判断要不要改。只采纳改成词库写法的改动；会消耗你的大模型额度，默认关闭。" xml:space="preserve">
+    <value>用語に読みが近いが自動置換するほどではない語がある文だけ、大規模モデルに直すかどうか判断させます。用語集の表記への変更だけを採用します。モデルの利用枠を消費するため、既定ではオフです。</value>
+  </data>
 </root>

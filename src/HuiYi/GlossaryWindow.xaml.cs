@@ -53,6 +53,8 @@ public partial class GlossaryWindow : Window
         NoteBox.Text = current.Note;
         EnabledBox.IsChecked = current.Enabled;
         ExactBox.IsChecked = current.ExactOnly;
+        FillGroups();
+        GroupBox.Text = current.Group;
         loading = false;
         dirty = false;
         SavedText.Text = "";
@@ -84,8 +86,49 @@ public partial class GlossaryWindow : Window
                 Text = L.T("还没有词条。把常被认错的人名、产品名、术语加进来，以后的会议都会自动纠正。"),
                 TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Theme.Grey2, Margin = new Thickness(6, 12, 8, 0),
             });
-        foreach (var t in shown) ListHost.Children.Add(Row(t));
+        var groups = shown.GroupBy(t => t.Group).OrderBy(g => g.Key.Length == 0 ? 0 : 1).ThenBy(g => g.Key, StringComparer.CurrentCulture).ToList();
+        foreach (var group in groups)
+        {
+            // Only 通用 terms: no headers needed.
+            if (groups.Count > 1 || group.Key.Length > 0) ListHost.Children.Add(Header(group.Key));
+            foreach (var t in group) ListHost.Children.Add(Row(t));
+        }
         CountText.Text = L.F("共 {0} 个词条", all.Count);
+    }
+
+    /// A group's header: its name and where it counts; a click on a named group sets that.
+    private UIElement Header(string group)
+    {
+        var where = group.Length == 0 ? L.T("所有会议") : ScopeText(group);
+        var panel = new DockPanel { Margin = new Thickness(6, 12, 6, 4) };
+        if (group.Length > 0)
+        {
+            var set = new TextBlock { Text = L.T("设置"), FontSize = 11, Foreground = Theme.Primary, Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
+            set.MouseLeftButtonUp += (_, _) => EditScope(group);
+            DockPanel.SetDock(set, Dock.Right);
+            panel.Children.Add(set);
+        }
+        panel.Children.Add(new TextBlock
+        {
+            Text = (group.Length == 0 ? L.T("通用") : group) + " · " + where, FontSize = 11, FontWeight = FontWeights.SemiBold,
+            Foreground = Theme.Grey2, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = where,
+        });
+        return panel;
+    }
+
+    private string ScopeText(string group)
+    {
+        var ids = model.Glossary.TemplatesOf(group);
+        if (ids.Count == 0) return L.T("所有会议");
+        var names = ids.Select(id => model.Templates.FirstOrDefault(t => t.Id == id) is { } t ? (t.BuiltIn ? L.T(t.Name) : t.Name) : null)
+            .Where(n => n != null).ToList();
+        return names.Count == 0 ? L.T("所有会议") : L.F("只在：{0}", string.Join("、", names));
+    }
+
+    private void EditScope(string group)
+    {
+        if (GroupScopeWindow.Ask(this, group, model.Templates, model.Glossary.TemplatesOf(group)) is { } chosen)
+            model.Glossary.SetTemplates(group, chosen);
     }
 
     private UIElement Row(GlossaryTerm t)
@@ -135,7 +178,26 @@ public partial class GlossaryWindow : Window
         Note = NoteBox.Text.Trim(),
         Enabled = EnabledBox.IsChecked == true,
         ExactOnly = ExactBox.IsChecked == true,
+        Group = (GroupBox.Text ?? "").Trim(),
     };
+
+    private void FillGroups()
+    {
+        var was = loading;
+        loading = true;
+        var text = GroupBox.Text;
+        GroupBox.Items.Clear();
+        foreach (var g in model.Glossary.Groups) GroupBox.Items.Add(g);
+        GroupBox.Text = text;
+        loading = was;
+    }
+
+    private void Group_Selected(object sender, SelectionChangedEventArgs e)
+    {
+        if (loading || GroupBox.SelectedItem is not string g) return;
+        GroupBox.Text = g;
+        Field_Changed(sender, e);
+    }
 
     private void Field_Changed(object sender, RoutedEventArgs e)
     {

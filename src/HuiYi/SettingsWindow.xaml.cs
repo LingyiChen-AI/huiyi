@@ -29,6 +29,7 @@ public partial class SettingsWindow : Window
         VoicesOn.IsChecked = s.SpeakerVoices;
         RedoOn.IsChecked = s.RedoSpeakers;
         GlossaryOn.IsChecked = s.GlossaryOn;
+        GlossaryAiOn.IsChecked = s.GlossaryAiCheck;
         UiText.Set(GlossaryHelp, "Text", () => L.F("词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。", model.Glossary.Terms.Count));
         model.Glossary.Changed += () => Dispatcher.BeginInvoke(() => UiText.Set(GlossaryHelp, "Text", () => L.F("词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。", model.Glossary.Terms.Count)));
         Capturable.IsChecked = s.HideFromCaptures;
@@ -132,6 +133,7 @@ public partial class SettingsWindow : Window
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.RedoSpeakers = RedoOn.IsChecked == true;
         s.GlossaryOn = GlossaryOn.IsChecked == true;
+        s.GlossaryAiCheck = GlossaryAiOn.IsChecked == true;
         s.HideFromCaptures = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
         if (TagOf(TemplateDefaultBox) is { Length: > 0 } tid) s.DefaultTemplateId = tid;

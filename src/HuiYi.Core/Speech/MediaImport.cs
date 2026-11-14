@@ -26,7 +26,7 @@ public static class MediaImport
         string? failure = null;
         engine.Failed += message => { failure = message; source.Stop(); engine.CancelInput(); };
         source.Finished += engine.CompleteInput;
-        engine.Audio += _ => progress?.Report(Math.Min(0.99, engine.FedSeconds / duration));
+        engine.Audio += (_, _) => progress?.Report(Math.Min(0.99, engine.FedSeconds / duration));
         tagger.Merged += (from, into) =>
         {
             foreach (var line in result.Lines.Where(l => l.Voice == from)) line.Voice = into;

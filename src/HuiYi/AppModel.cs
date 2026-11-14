@@ -182,10 +182,11 @@ public sealed class AppModel
         {
             // Listening to the cable would hear only our own interpreted voice, never the meeting.
             DefaultDevices.KeepRealSpeaker();
-            // Both ends of the meeting. While I hold the interpreting key my words become a 我 line
-            // of their own, so the microphone is muted for them here.
+            // Both ends of the meeting, each recognized on its own: the far side in the video and me
+            // in the room can talk at once. While I hold the interpreting key my words become a 我
+            // line of their own, so the microphone is muted for them here.
             var mic = Settings.ListenMic && DefaultDevices.Mics().Count > 0 ? new MicSource(ListenMicId) : null;
-            source = new MixSource(new LoopbackSource(), mic, () => Speak?.Status == SpeakEngine.State.Recording);
+            source = new BothEnds(new SteadySource(new LoopbackSource()), mic, () => Speak?.Status == SpeakEngine.State.Recording);
         }
         Meeting!.Start(source);
         StateChanged?.Invoke();

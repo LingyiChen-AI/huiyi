@@ -56,6 +56,9 @@ public sealed class Recognizer : IDisposable
 
     public Recognized Recognize(float[] samples)
     {
+        // Digital silence (a muted microphone, a gap filled on the PC's side) or a sliver of audio:
+        // nothing to hear, and the decoder divides by zero on it.
+        if (samples.Length < SampleRate / 10 || !samples.Any(v => Math.Abs(v) > 1e-5f)) return new Recognized("", "");
         lock (gate)
         {
             using var stream = recognizer.CreateStream();
@@ -71,5 +74,6 @@ public sealed class Recognizer : IDisposable
     private static string? LangTag(OfflineRecognizerResult r) =>
         r.GetType().GetProperty("Lang")?.GetValue(r) as string;
 
-    public void Dispose() => recognizer.Dispose();
+    // A decode still running on a listening thread finishes first: freeing the model under it crashes.
+    public void Dispose() { lock (gate) recognizer.Dispose(); }
 }

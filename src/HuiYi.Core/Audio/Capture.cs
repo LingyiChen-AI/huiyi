@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using HuiYi.Localization;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -231,97 +232,147 @@ public sealed class MicSource : IAudioSource
     }
 }
 
-/// What the PC plays and the microphone, heard as one stream, the way a meeting app records a
-/// call: the other side (from the PC) and this end (me, or a room round one mic) both land in the
-/// transcript. The microphone's steady clock drives the output; the PC's sound, which WASAPI only
-/// sends while something plays, is queued and laid over it. With no working microphone the PC's
-/// sound still comes through, a little later.
-public sealed class MixSource(IAudioSource pc, IAudioSource? mic, Func<bool>? muteMic = null) : IAudioSource
+/// Both ends of a meeting: what the PC plays (the far side) and the microphone (me, or a room
+/// round one mic). ListenEngine hears them as two channels, each recognized on its own, so two
+/// people talking at once both land in the transcript. `MuteMic`: the microphone is silenced while
+/// it returns true (my words while I hold the interpreting key become a 我 line of their own).
+/// Not a source to read samples from: Start/Stop only pass through.
+public sealed class BothEnds(IAudioSource pc, IAudioSource? mic, Func<bool>? muteMic = null) : IAudioSource
+{
+    public IAudioSource Pc { get; } = pc;
+    public IAudioSource? Mic { get; } = mic;
+    public Func<bool>? MuteMic { get; } = muteMic;
+#pragma warning disable CS0067 // the channels raise their own
+    public event Action<float[]>? Samples;
+    public event Action<string>? Failed;
+#pragma warning restore CS0067
+    public void Start() { Pc.Start(); Mic?.Start(); }
+    public void Stop() { Pc.Stop(); Mic?.Stop(); }
+    public void Dispose() { Pc.Dispose(); Mic?.Dispose(); }
+}
+
+/// Keeps a source on the wall clock: WASAPI loopback sends nothing while nothing plays, so its
+/// sample count would fall behind the microphone's (and a sentence cut off by a pause would never
+/// see the quiet that ends it). Silence fills any gap longer than `Slack`, on arrival and from a
+/// timer, so sample n is always about n / 16000 s after Start.
+public sealed class SteadySource(IAudioSource inner, Func<double>? clock = null) : IAudioSource
 {
     public event Action<float[]>? Samples;
     public event Action<string>? Failed;
+    private const int Rate = 16000;
+    /// How far behind the clock the source may run before silence is put in (0.25 s).
+    public const int Slack = Rate / 4;
     private readonly object gate = new();
-    private readonly Queue<float> fromPc = new();
-    private int duck;
+    private readonly Stopwatch watch = new();
+    private Timer? timer;
+    private long sent;
 
-    /// The PC's sound waits at most this long for microphone samples to lie over (0.3 s).
-    private const int MaxWait = 4800;
-    /// While the PC plays a voice, the microphone also hears it from the speakers a moment later:
-    /// it is turned down then (and for half a second after), so the other side is not heard twice.
-    private const float Loud = 0.01f, DuckGain = 0.15f;
-    private const int DuckTail = 8000;
+    private double Now => clock?.Invoke() ?? watch.Elapsed.TotalSeconds;
 
     public void Start()
     {
-        pc.Samples += OnPc;
-        pc.Failed += OnFailed;
-        pc.Start();
-        if (mic == null) return;
-        mic.Samples += OnMic;
-        // A missing or broken microphone must not stop the meeting: the PC's side carries on.
-        mic.Failed += m => Log.Debug($"mix: microphone left out ({m})");
-        mic.Start();
+        watch.Restart();
+        sent = 0;
+        inner.Samples += OnSamples;
+        inner.Failed += OnFailed;
+        inner.Start();
+        if (clock == null) timer = new Timer(_ => Tick(), null, 100, 100);
     }
 
-    private void OnFailed(string message) => Failed?.Invoke(message);
+    private void OnFailed(string m) => Failed?.Invoke(m);
 
-    private void OnPc(float[] chunk)
+    private void OnSamples(float[] chunk)
     {
         lock (gate)
         {
-            if (mic == null)
-            {
-                Samples?.Invoke(chunk);
-                return;
-            }
-            if (Rms(chunk) > Loud) duck = DuckTail;
-            foreach (var x in chunk) fromPc.Enqueue(x);
-            // No microphone samples coming (it dropped, or is reopening): let the PC's sound out alone.
-            if (fromPc.Count > MaxWait)
-            {
-                var alone = new float[fromPc.Count - MaxWait];
-                for (var i = 0; i < alone.Length; i++) alone[i] = fromPc.Dequeue();
-                Samples?.Invoke(alone);
-            }
+            // The gap before this chunk arrived: the chunk itself ends now.
+            Fill((long)(Now * Rate) - chunk.Length);
+            sent += chunk.Length;
+            Samples?.Invoke(chunk);
         }
     }
 
-    private void OnMic(float[] chunk)
+    /// Called from the timer (or a test): silence up to the clock when nothing came in.
+    public void Tick()
     {
-        lock (gate)
-        {
-            var gain = muteMic?.Invoke() == true ? 0f : 1f;
-            var output = new float[chunk.Length];
-            for (var i = 0; i < chunk.Length; i++)
-            {
-                var g = duck > 0 ? gain * DuckGain : gain;
-                if (duck > 0) duck--;
-                var p = fromPc.Count > 0 ? fromPc.Dequeue() : 0f;
-                output[i] = Math.Clamp(chunk[i] * g + p, -1f, 1f);
-            }
-            Samples?.Invoke(output);
-        }
+        lock (gate) Fill((long)(Now * Rate) - Slack / 2);
     }
 
-    private static float Rms(float[] x)
+    private void Fill(long upTo)
     {
-        if (x.Length == 0) return 0;
-        double sum = 0;
-        foreach (var v in x) sum += v * v;
-        return (float)Math.Sqrt(sum / x.Length);
+        var gap = upTo - sent;
+        if (gap <= Slack) return;
+        var quiet = new float[gap];
+        sent += gap;
+        Samples?.Invoke(quiet);
     }
 
     public void Stop()
     {
-        pc.Stop();
-        mic?.Stop();
+        timer?.Dispose();
+        timer = null;
+        inner.Stop();
     }
 
     public void Dispose()
     {
-        pc.Dispose();
-        mic?.Dispose();
+        Stop();
+        inner.Samples -= OnSamples;
+        inner.Dispose();
     }
+}
+
+/// Tells the microphone hearing the speakers from someone speaking in the room, by what was said:
+/// the PC's audio over the same moment is recognized too, and an echo says the same words (a
+/// room's reverb and a dull speaker blur the loudness curve, but not the words). Measured on
+/// simulated rooms: loudness matching could not tell a reverberant echo from a voice in the room.
+public static class EchoCheck
+{
+    /// Seconds the speakers' sound may take to reach the microphone (output latency plus the room).
+    public const double MaxLag = 0.4;
+    /// Share of the microphone's words found, in order, in what the PC played, above which it is an echo.
+    public const double Threshold = 0.6;
+
+    /// How much of `heard` (the microphone's line) appears, in order, in `played` (the PC's words
+    /// over the same moment): longest common subsequence over letters and digits, 0–1.
+    public static double Overlap(string heard, string played)
+    {
+        var a = Letters(heard);
+        var b = Letters(played);
+        if (a.Length == 0 || b.Length == 0) return 0;
+        var prev = new int[b.Length + 1];
+        var cur = new int[b.Length + 1];
+        for (var i = 1; i <= a.Length; i++)
+        {
+            for (var j = 1; j <= b.Length; j++)
+                cur[j] = a[i - 1] == b[j - 1] ? prev[j - 1] + 1 : Math.Max(prev[j], cur[j - 1]);
+            (prev, cur) = (cur, prev);
+        }
+        return prev[b.Length] / (double)a.Length;
+    }
+
+    /// A short line (under 8 letters) has few words to match, and an echo of it is often misheard:
+    /// it needs less. Measured: my own short lines over a video matched at most 33 %.
+    public const double ShortThreshold = 0.4;
+
+    public static bool IsEcho(string heard, string played) =>
+        Overlap(heard, played) >= (Letters(heard).Length < 8 ? ShortThreshold : Threshold);
+
+    /// Whether anything was playing at all (peak 20 ms loudness).
+    public static bool Playing(float[] played)
+    {
+        const int frame = 320;
+        for (var i = 0; i + frame <= played.Length; i += frame)
+        {
+            double sum = 0;
+            for (var j = 0; j < frame; j++) { var v = played[i + j]; sum += v * v; }
+            if (Math.Sqrt(sum / frame) >= 0.01) return true;
+        }
+        return false;
+    }
+
+    private static string Letters(string s) =>
+        new([.. s.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant)]);
 }
 
 /// An audio file played through the pipeline at real speed (tests and the self-check), or as fast

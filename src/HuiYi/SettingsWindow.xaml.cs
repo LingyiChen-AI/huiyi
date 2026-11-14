@@ -483,7 +483,7 @@ public partial class SettingsWindow : Window
         ListenMicOn.IsChecked = mic;
         ListenMicRow.Visibility = mic ? Visibility.Visible : Visibility.Collapsed;
         UiText.Set(FromHelp, "Text", () => mic
-            ? L.T("电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）一起记，线上线下的会都不漏。用音箱外放时，对方说话期间麦克风会自动压低，同一句不会记两遍。")
+            ? L.T("电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）分开识别，两边同时说话也都能记下。用音箱外放时，麦克风收到的回声会自动去掉，同一句不会记两遍。")
             : L.T("只听电脑放出来的声音，你自己和身边的人说的话不会记下来。"));
         if (model.IsListening) UiText.Set(FromHelp, "Text", () => L.T("改动从下一场会议开始生效。"));
     }

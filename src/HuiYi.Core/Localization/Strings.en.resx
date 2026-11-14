@@ -1164,8 +1164,8 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="用来说明的例子和故事" xml:space="preserve">
     <value>Illustrative examples and stories</value>
   </data>
-  <data name="电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）一起记，线上线下的会都不漏。用音箱外放时，对方说话期间麦克风会自动压低，同一句不会记两遍。" xml:space="preserve">
-    <value>Capture computer audio from others and microphone audio from you and people in the room for both online and in-person meetings. When using speakers, the microphone is automatically lowered while others speak to avoid duplicate sentences.</value>
+  <data name="电脑放出来的声音（对方）和麦克风（你自己、会议室里的人）分开识别，两边同时说话也都能记下。用音箱外放时，麦克风收到的回声会自动去掉，同一句不会记两遍。" xml:space="preserve">
+    <value>Computer audio (others) and the microphone (you and people in the room) are recognized separately, so both are captured even when talking at the same time. When using speakers, the echo picked up by the microphone is removed automatically, so nothing is recorded twice.</value>
   </data>
   <data name="电脑里有人说话时，逐字稿会一句句出现在这里。" xml:space="preserve">
     <value>Speech from your computer will appear here as a sentence-by-sentence transcript.</value>

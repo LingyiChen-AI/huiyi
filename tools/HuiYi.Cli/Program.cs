@@ -94,7 +94,7 @@ switch (cmd)
             // first file plays on the speakers (the other side), then the second goes into the
             // virtual cable, heard as a microphone (me), each starting while the other still plays.
             var cableIn = VirtualCable.Input() ?? throw new InvalidOperationException("VB-CABLE is not installed");
-            source = new MixSource(new LoopbackSource(), new MicSource(VirtualCable.Output()!.ID));
+            source = new BothEnds(new SteadySource(new LoopbackSource()), new MicSource(VirtualCable.Output()!.ID));
             var speaker = new WaveOutEvent();
             speaker.Init(new MediaFoundationReader(args[1]));
             var mine = new NAudio.Wave.WasapiOut(cableIn, NAudio.CoreAudioApi.AudioClientShareMode.Shared, true, 100);
@@ -107,8 +107,11 @@ switch (cmd)
             meeting.Start(source);
             speaker.Play();
             // Mine starts 3 s before the speaker's file ends: a reply that overlaps a little.
+            // HUIYI_BOTH_AT=<seconds>: start mine that far into the speaker's file instead — talking
+            // over a video that keeps playing.
             var pcLength = new MediaFoundationReader(args[1]).TotalTime;
-            await Task.Delay(pcLength - TimeSpan.FromSeconds(3));
+            await Task.Delay(double.TryParse(Environment.GetEnvironmentVariable("HUIYI_BOTH_AT"), out var at)
+                ? TimeSpan.FromSeconds(at) : pcLength - TimeSpan.FromSeconds(3));
             mine.Play();
             await done.Task;
             speaker.Dispose();

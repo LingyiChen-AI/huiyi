@@ -21,9 +21,15 @@ public sealed class MeetingController
 
     /// Runs the after-meeting check (MeetingRedo with the app's models); null leaves records as heard.
     public Func<float[], IReadOnlyList<TranscriptLine>, MeetingRedo.Plan?>? Redo { get; set; }
-    private NAudio.Wave.WaveFileWriter? recording;
-    private string? recordingPath;
+    /// One recording per channel (the PC, the microphone), checked separately after the meeting.
+    private readonly NAudio.Wave.WaveFileWriter?[] recording = new NAudio.Wave.WaveFileWriter?[2];
+    private readonly string?[] recordingPath = new string?[2];
     private readonly object recordingGate = new();
+    /// Lines heard on the microphone in this meeting (by id): the after-meeting check runs them
+    /// against the microphone's recording, the rest against the PC's.
+    private readonly HashSet<string> micLines = [];
+    /// Lines arrive from two channels' threads: one at a time.
+    private readonly object finalGate = new();
 
     public string? SessionId { get; private set; }
     public bool IsListening => SessionId != null;
@@ -41,9 +47,12 @@ public sealed class MeetingController
     private readonly object gate = new();
 
     private DateTime startedAt;
-    private string? lastThemId;
-    private bool lastCut;
-    private double lastEnd;
+    /// Per channel: the line a following piece may join, how it ended.
+    private readonly string?[] lastThemId = new string?[2];
+    private readonly bool[] lastCut = new bool[2];
+    private readonly double[] lastEnd = new double[2];
+    /// The line heard last on either channel: the subtitle shows it.
+    private string? lastShownId;
     private string partial = "";
     private string partialLang = "";
     private string partialTranslation = "";
@@ -90,7 +99,9 @@ public sealed class MeetingController
         {
             SessionId = s.Id;
             startedAt = s.StartedAt;
-            lastThemId = null;
+            Array.Clear(lastThemId);
+            lastShownId = null;
+            micLines.Clear();
             partial = partialTranslation = "";
         }
         speakers?.Reset();
@@ -121,7 +132,7 @@ public sealed class MeetingController
             namer?.Guess(id, force: true);
         }
         Log.Debug($"meeting: ended {id}");
-        if (id != null && audio != null) _ = Task.Run(() => RedoSpeakers(id, audio));
+        if (id != null && audio.Any(a => a != null)) _ = Task.Run(() => RedoSpeakers(id, audio));
         SubtitleChanged?.Invoke(new Subtitle("", "", false));
         StateChanged?.Invoke();
         EndPending?.Invoke(null);
@@ -136,23 +147,24 @@ public sealed class MeetingController
         {
             Directory.CreateDirectory(Paths.Recordings);
             lock (recordingGate)
-            {
-                recordingPath = Path.Combine(Paths.Recordings, id + ".wav");
-                recording = new NAudio.Wave.WaveFileWriter(recordingPath, new NAudio.Wave.WaveFormat(Recognizer.SampleRate, 16, 1));
-            }
+                for (var ch = 0; ch < 2; ch++)
+                {
+                    recordingPath[ch] = Path.Combine(Paths.Recordings, id + (ch == 0 ? ".wav" : "-mic.wav"));
+                    recording[ch] = new NAudio.Wave.WaveFileWriter(recordingPath[ch], new NAudio.Wave.WaveFormat(Recognizer.SampleRate, 16, 1));
+                }
         }
         catch (Exception e)
         {
             Log.Debug($"meeting: can't keep the recording {e.Message}");
-            recording = null;
+            lock (recordingGate) for (var ch = 0; ch < 2; ch++) { recording[ch]?.Dispose(); recording[ch] = null; }
         }
     }
 
-    private void Record(float[] chunk)
+    private void Record(int channel, float[] chunk)
     {
         lock (recordingGate)
         {
-            if (recording == null) return;
+            if (channel is < 0 or > 1 || recording[channel] is not { } writer) return;
             var bytes = new byte[chunk.Length * 2];
             for (var i = 0; i < chunk.Length; i++)
             {
@@ -160,29 +172,47 @@ public sealed class MeetingController
                 bytes[2 * i] = (byte)v;
                 bytes[2 * i + 1] = (byte)(v >> 8);
             }
-            recording.Write(bytes, 0, bytes.Length);
+            writer.Write(bytes, 0, bytes.Length);
         }
     }
 
-    /// Closes the recording; its path, or null when none was kept.
-    private string? StopRecording()
+    /// Closes the recordings; per channel its path, or null when none was kept (or nothing was heard
+    /// there: an empty microphone file is deleted at once).
+    private string?[] StopRecording()
     {
         lock (recordingGate)
         {
-            if (recording == null) return null;
-            recording.Dispose();
-            recording = null;
-            return recordingPath;
+            var paths = new string?[2];
+            for (var ch = 0; ch < 2; ch++)
+            {
+                if (recording[ch] is not { } writer) continue;
+                var empty = writer.Length == 0;
+                writer.Dispose();
+                recording[ch] = null;
+                if (empty) { try { File.Delete(recordingPath[ch]!); } catch { } }
+                else paths[ch] = recordingPath[ch];
+            }
+            return paths;
         }
     }
 
-    /// Who said what, checked again over the whole meeting; then the recording is deleted.
-    private void RedoSpeakers(string id, string path)
+    /// Who said what, checked again over the whole meeting, each channel against its own
+    /// recording (so my words are never re-heard as the video's); then the recordings are deleted.
+    private void RedoSpeakers(string id, string?[] paths)
+    {
+        HashSet<string> mic;
+        lock (finalGate) mic = [.. micLines];
+        for (var ch = 0; ch < paths.Length; ch++)
+            if (paths[ch] is { } path) RedoSpeakers(id, path, ch == 1 ? mic.Contains : l => !mic.Contains(l));
+    }
+
+    private void RedoSpeakers(string id, string path, Func<string, bool> ofChannel)
     {
         try
         {
             var snap = store.Snapshot(id);
-            if (snap == null || Redo == null || snap.Lines.Count(l => l.Speaker == "them") < 4) return;
+            var lines = snap?.Lines.Where(l => ofChannel(l.Id)).ToList();
+            if (lines == null || Redo == null || lines.Count(l => l.Speaker == "them") < 4) return;
             float[] audio;
             using (var reader = new NAudio.Wave.WaveFileReader(path))
             {
@@ -194,7 +224,7 @@ public sealed class MeetingController
                 audio = [.. all];
             }
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            var plan = Redo(audio, snap.Lines);
+            var plan = Redo(audio, lines);
             Log.Debug($"redo: {audio.Length / (double)Recognizer.SampleRate:F0} s checked in {watch.ElapsedMilliseconds} ms, " +
                       $"{plan?.Relabelled ?? 0} relabelled, {plan?.Split ?? 0} split");
             if (plan == null || plan.Lines.Count == 0) return;
@@ -340,6 +370,11 @@ public sealed class MeetingController
 
     private void OnFinal(HeardSegment seg)
     {
+        lock (finalGate) OnFinalOne(seg);
+    }
+
+    private void OnFinalOne(HeardSegment seg)
+    {
         var id = SessionId;
         if (id == null) return;
         endWatch?.Heard(DateTime.Now);
@@ -359,11 +394,14 @@ public sealed class MeetingController
             partialTranslation = "";
             lastDraftSent = "";
             partialEpoch++;
-            var prev = lastThemId == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastThemId);
+            // A piece joins only the line before it on its own channel: the PC and the microphone
+            // are two people, never one line.
+            var ch = Math.Clamp(seg.Channel, 0, 1);
+            var prev = lastThemId[ch] == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastThemId[ch]);
             joined = prev != null && !seg.NewSpeaker && prev.SrcLang == seg.Lang && (voice == null || prev.Voice == null || voice == prev.Voice)
-                     && HeardText.Continues(prev.Src, seg.Text, seg.Start - lastEnd, lastCut);
-            lastCut = seg.Cut;
-            lastEnd = seg.End;
+                     && HeardText.Continues(prev.Src, seg.Text, seg.Start - lastEnd[ch], lastCut[ch]);
+            lastCut[ch] = seg.Cut;
+            lastEnd[ch] = seg.End;
             if (joined)
             {
                 lineId = prev!.Id;
@@ -382,10 +420,18 @@ public sealed class MeetingController
                     Id = lineId, T = Math.Round(t, 2), End = Math.Round(seg.End, 2), Speaker = "them",
                     Src = seg.Text, SrcLang = seg.Lang, DstLang = target, Voice = voice,
                 };
-                store.Mutate(id, s => s.Lines.Add(line));
-                lastThemId = lineId;
+                // Two channels hand lines over out of order: keep the transcript in time order.
+                store.Mutate(id, s =>
+                {
+                    var at = s.Lines.Count;
+                    while (at > 0 && s.Lines[at - 1].T > line.T) at--;
+                    s.Lines.Insert(at, line);
+                });
+                lastThemId[ch] = lineId;
+                if (ch == 1) micLines.Add(lineId);
             }
         }
+        lock (gate) lastShownId = lineId;
         LineChanged?.Invoke(lineId);
         Render();
         TranslateLine(id, lineId);
@@ -464,7 +510,7 @@ public sealed class MeetingController
         string p, pt, pl;
         lock (gate)
         {
-            last = lastThemId == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastThemId);
+            last = lastShownId == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastShownId);
             p = partial;
             pt = partialTranslation;
             pl = partialLang;

@@ -54,6 +54,10 @@ public sealed class Recognizer : IDisposable
         recognizer = new OfflineRecognizer(config);
     }
 
+    /// The user's glossary (Glossary.Fix): every text recognized — the meeting, imported media, my
+    /// interpreted words, the after-meeting check — comes out with its spellings.
+    public Func<string, string>? Fix { get; set; }
+
     public Recognized Recognize(float[] samples)
     {
         // Digital silence (a muted microphone, a gap filled on the PC's side) or a sliver of audio:
@@ -66,6 +70,11 @@ public sealed class Recognizer : IDisposable
             recognizer.Decode(stream);
             var r = stream.Result;
             var text = r.Text.Trim();
+            if (Fix != null && text.Length > 0)
+            {
+                try { text = Fix(text); }
+                catch (Exception e) { Log.Debug($"glossary: fix failed {e.Message}"); }
+            }
             return new Recognized(text, Languages.FromRecognizer(LangTag(r), text), r.Tokens, r.Timestamps);
         }
     }

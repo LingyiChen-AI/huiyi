@@ -1999,4 +1999,130 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="截止时间" xml:space="preserve"><value>期限</value></data>
   <data name="支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。" xml:space="preserve"><value>このPCまたはLAN上の Ollama を使用できます。http://localhost:11434 またはサーバーURLを入力すると /v1 が自動補完されます。モデル一覧からダウンロード済みモデルを選択してください。</value></data>
   <data name="打开服务官网 ↗" xml:space="preserve"><value>公式サイトを開く ↗</value></data>
+  <data name="词库" xml:space="preserve">
+    <value>用語集</value>
+  </data>
+  <data name="人名、产品名、行业术语：识别、翻译和纪要都按这里的写法来。" xml:space="preserve">
+    <value>人名・製品名・業界用語：認識・翻訳・議事録はここの表記に従います。</value>
+  </data>
+  <data name="搜索词条" xml:space="preserve">
+    <value>用語を検索</value>
+  </data>
+  <data name="＋ 添加词条" xml:space="preserve">
+    <value>＋ 用語を追加</value>
+  </data>
+  <data name="导入" xml:space="preserve">
+    <value>インポート</value>
+  </data>
+  <data name="导出" xml:space="preserve">
+    <value>エクスポート</value>
+  </data>
+  <data name="正确写法" xml:space="preserve">
+    <value>正しい表記</value>
+  </data>
+  <data name="比如：伊丽静、Kubernetes、网关" xml:space="preserve">
+    <value>例：伊丽静、Kubernetes、网关</value>
+  </data>
+  <data name="常被听成" xml:space="preserve">
+    <value>よくある誤認識</value>
+  </data>
+  <data name="比如：毕丽静、伊利静" xml:space="preserve">
+    <value>例：毕丽静、伊利静</value>
+  </data>
+  <data name="识别成这些写法时，一律改成正确写法。多个用逗号分隔。" xml:space="preserve">
+    <value>これらの表記で認識されたら、必ず正しい表記に直します。複数はカンマで区切ります。</value>
+  </data>
+  <data name="译法" xml:space="preserve">
+    <value>訳語</value>
+  </data>
+  <data name="比如：gateway; ja=ゲートウェイ" xml:space="preserve">
+    <value>例：gateway; ja=ゲートウェイ</value>
+  </data>
+  <data name="翻译时固定这样译。直接写的是英文译法，其他语言写成「ja=…」，用分号隔开。" xml:space="preserve">
+    <value>翻訳では常にこの訳語を使います。そのまま書くと英語の訳語、他の言語は「ja=…」の形で、セミコロンで区切ります。</value>
+  </data>
+  <data name="比如：支付请求的入口服务（写纪要时 AI 会参考）" xml:space="preserve">
+    <value>例：決済リクエストの入口サービス（議事録作成時に AI が参照）</value>
+  </data>
+  <data name="启用这个词条" xml:space="preserve">
+    <value>この用語を有効にする</value>
+  </data>
+  <data name="只替换列出的写法，不按读音猜" xml:space="preserve">
+    <value>記載した表記だけを置き換え、読みからは推測しない</value>
+  </data>
+  <data name="默认还会按读音纠正：两个字的词要读音完全相同，三个字以上可以有 zh/z、n/l、前后鼻音这类口音差别。" xml:space="preserve">
+    <value>既定では読みでも補正します：2 文字の語は読みが完全に同じ場合のみ、3 文字以上は zh/z、n/l、前鼻音・後鼻音などの訛りの差を許容します。</value>
+  </data>
+  <data name="试一试" xml:space="preserve">
+    <value>試してみる</value>
+  </data>
+  <data name="输入一句识别出来的话，看看会被改成什么" xml:space="preserve">
+    <value>認識された文を入力して、どう直るか確かめる</value>
+  </data>
+  <data name="新词条" xml:space="preserve">
+    <value>新しい用語</value>
+  </data>
+  <data name="还没有词条。把常被认错的人名、产品名、术语加进来，以后的会议都会自动纠正。" xml:space="preserve">
+    <value>まだ用語がありません。よく誤認識される人名・製品名・用語を追加すると、以後の会議で自動的に補正されます。</value>
+  </data>
+  <data name="共 {0} 个词条" xml:space="preserve">
+    <value>{0} 件の用語</value>
+  </data>
+  <data name="已停用" xml:space="preserve">
+    <value>無効</value>
+  </data>
+  <data name="常被听成 {0}" xml:space="preserve">
+    <value>誤認識：{0}</value>
+  </data>
+  <data name="已保存，之后识别、翻译和纪要都会用上" xml:space="preserve">
+    <value>保存しました。以後の認識・翻訳・議事録で使われます</value>
+  </data>
+  <data name="删除词条「{0}」？" xml:space="preserve">
+    <value>用語「{0}」を削除しますか？</value>
+  </data>
+  <data name="之后的会议不再按它纠正和翻译，已经记下的内容不受影响。" xml:space="preserve">
+    <value>以後の会議ではこの用語で補正・翻訳しなくなります。記録済みの内容には影響しません。</value>
+  </data>
+  <data name="比如输入「我和毕丽静都没想到」，看它会不会被改对。" xml:space="preserve">
+    <value>例えば「我和毕丽静都没想到」と入力して、正しく直るか確かめます。</value>
+  </data>
+  <data name="没有需要改的。" xml:space="preserve">
+    <value>直す箇所はありません。</value>
+  </data>
+  <data name="{0} → {1}" xml:space="preserve">
+    <value>{0} → {1}</value>
+  </data>
+  <data name="导入词库" xml:space="preserve">
+    <value>用語集をインポート</value>
+  </data>
+  <data name="文本文件" xml:space="preserve">
+    <value>テキストファイル</value>
+  </data>
+  <data name="导入完成：新增 {0} 个，更新 {1} 个" xml:space="preserve">
+    <value>インポート完了：追加 {0} 件、更新 {1} 件</value>
+  </data>
+  <data name="知道了" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="导出词库" xml:space="preserve">
+    <value>用語集をエクスポート</value>
+  </data>
+  <data name="会译词库" xml:space="preserve">
+    <value>会訳用語集</value>
+  </data>
+  <data name="已导出到 {0}" xml:space="preserve">
+    <value>{0} にエクスポートしました</value>
+  </data>
+  <data name="识别后按词库纠正" xml:space="preserve">
+    <value>認識結果を用語集で補正</value>
+  </data>
+  <data name="打开词库" xml:space="preserve">
+    <value>用語集を開く</value>
+  </data>
+  <data name="词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。" xml:space="preserve">
+    <value>用語集には {0} 件の用語があります。人名・製品名・用語の誤認識は自動で直り、翻訳と議事録も用語集の表記と訳語に従います。</value>
+  </data>
+  <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
+    <value>人名・製品名・用語の表記と訳語</value>
+  </data>
 </root>

@@ -22,4 +22,9 @@
     <InternalsVisibleTo Include="HuiYi.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Toneless pinyin per character (mozillazg/pinyin-data, MIT): the glossary's sound-alike matching. -->
+    <EmbeddedResource Include="Resources\pinyin.txt" LogicalName="HuiYi.pinyin.txt" />
+  </ItemGroup>
+
 </Project>

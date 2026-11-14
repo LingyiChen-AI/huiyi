@@ -72,6 +72,17 @@
                             <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap" Text="{local:Loc Key='开会时只能根据已经听到的声音判断，开头几分钟和抢话容易分错；会后会拿整场的声音重新核对一遍，并更新纪要。录音只临时存在本机，校对完立即删除。'}"/>
                         </StackPanel>
                     </Border>
+                    <Border Style="{StaticResource Panel}">
+                        <StackPanel>
+                            <TextBlock Text="{local:Loc Key='词库'}" Style="{StaticResource Overline}"/>
+                            <DockPanel Style="{StaticResource Row}">
+                                <CheckBox x:Name="GlossaryOn" DockPanel.Dock="Right" Style="{StaticResource Switch}" Checked="Changed" Unchecked="Changed"/>
+                                <TextBlock Text="{local:Loc Key='识别后按词库纠正'}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock x:Name="GlossaryHelp" Style="{StaticResource Helper}" TextWrapping="Wrap"/>
+                            <Button Content="{local:Loc Key='打开词库'}" Style="{StaticResource Btn}" HorizontalAlignment="Left" Margin="0,10,0,0" Click="Glossary_Click"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </TabItem>

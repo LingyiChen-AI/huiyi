@@ -36,7 +36,7 @@ switch (cmd)
     }
     case "transcribe":
     {
-        using var rec = new Recognizer(models);
+        using var rec = new Recognizer(models) { Fix = GlossaryFix() };
         var samples = ReadAll(args[1]);
         var w = Stopwatch.StartNew();
         var r = rec.Recognize(samples);
@@ -56,7 +56,7 @@ switch (cmd)
         var ai = new AiClient();
         var translator = new TranslationService(ai);
         var notes = new NotesEngine(ai, store);
-        using var rec = new Recognizer(models);
+        using var rec = new Recognizer(models) { Fix = GlossaryFix() };
         var listen = new ListenEngine(rec, models);
         using var prints = new Voiceprints(models);
         var tagger = new SpeakerTagger(() => prints);
@@ -359,6 +359,10 @@ switch (cmd)
 }
 
 static string Tail(string s) => s.Length > 60 ? "…" + s[^60..] : s;
+
+// HUIYI_GLOSSARY=<glossary.json>: recognition corrected against that glossary, as the app does.
+static Func<string, string>? GlossaryFix() =>
+    Environment.GetEnvironmentVariable("HUIYI_GLOSSARY") is { Length: > 0 } g ? new Glossary(g).Fix : null;
 
 static float[] ReadAll(string path)
 {

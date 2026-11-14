@@ -193,6 +193,7 @@ public partial class App : Application
         menu.Items.Add(new Separator());
         Item(L.T("会议记录"), OpenMain);
         Item(L.T("纪要模板"), () => OpenTemplates());
+        Item(L.T("词库"), () => OpenGlossary());
         Item(L.T("设置"), OpenSettings);
         menu.Items.Add(new Separator());
         if (Updates.ReadyVersion is { } next) Item(L.F("重启并更新到 {0}", next), RestartToUpdate);
@@ -296,6 +297,14 @@ public partial class App : Application
     }
 
     private TemplateWindow? templateWindow;
+    private GlossaryWindow? glossaryWindow;
+
+    public void OpenGlossary()
+    {
+        glossaryWindow ??= new GlossaryWindow(Model);
+        glossaryWindow.Closed += (_, _) => glossaryWindow = null;
+        Bring(glossaryWindow);
+    }
 
     public void OpenTemplates(string? select = null)
     {

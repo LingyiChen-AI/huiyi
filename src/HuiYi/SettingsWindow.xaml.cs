@@ -28,6 +28,9 @@ public partial class SettingsWindow : Window
         TranslateOn.IsChecked = s.TranslationOn;
         VoicesOn.IsChecked = s.SpeakerVoices;
         RedoOn.IsChecked = s.RedoSpeakers;
+        GlossaryOn.IsChecked = s.GlossaryOn;
+        UiText.Set(GlossaryHelp, "Text", () => L.F("词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。", model.Glossary.Terms.Count));
+        model.Glossary.Changed += () => Dispatcher.BeginInvoke(() => UiText.Set(GlossaryHelp, "Text", () => L.F("词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。", model.Glossary.Terms.Count)));
         Capturable.IsChecked = s.HideFromCaptures;
         RenderFrom();
 
@@ -128,6 +131,7 @@ public partial class SettingsWindow : Window
         s.Display = ModeSubs.IsChecked == true ? DisplayMode.Subtitles : DisplayMode.Notes;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.RedoSpeakers = RedoOn.IsChecked == true;
+        s.GlossaryOn = GlossaryOn.IsChecked == true;
         s.HideFromCaptures = Capturable.IsChecked == true;
         s.NotesLanguage = TagOf(NotesLangBox);
         if (TagOf(TemplateDefaultBox) is { Length: > 0 } tid) s.DefaultTemplateId = tid;
@@ -555,4 +559,6 @@ public partial class SettingsWindow : Window
     private void OpenData_Click(object sender, RoutedEventArgs e) => Native.Open(Paths.Roaming);
 
     private void OpenLog_Click(object sender, RoutedEventArgs e) => Native.Open(Paths.DebugLog);
+
+    private void Glossary_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).OpenGlossary();
 }

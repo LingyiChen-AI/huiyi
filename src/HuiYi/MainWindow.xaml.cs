@@ -319,6 +319,8 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Glossary_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).OpenGlossary();
+
     private void Templates_Click(object sender, RoutedEventArgs e) =>
         ((App)Application.Current).OpenTemplates(selected is { } id ? model.TemplateFor(model.Store.Get(id)).Id : null);
 

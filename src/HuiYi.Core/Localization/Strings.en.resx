@@ -1999,4 +1999,130 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="截止时间" xml:space="preserve"><value>Due date</value></data>
   <data name="支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。" xml:space="preserve"><value>Use Ollama on this PC or your local network. Enter http://localhost:11434 or your server URL. /v1 is added automatically. Fetch the model list to choose a downloaded model.</value></data>
   <data name="打开服务官网 ↗" xml:space="preserve"><value>Open service website ↗</value></data>
+  <data name="词库" xml:space="preserve">
+    <value>Glossary</value>
+  </data>
+  <data name="人名、产品名、行业术语：识别、翻译和纪要都按这里的写法来。" xml:space="preserve">
+    <value>Names, products and industry terms: recognition, translation and notes all follow the spellings here.</value>
+  </data>
+  <data name="搜索词条" xml:space="preserve">
+    <value>Search terms</value>
+  </data>
+  <data name="＋ 添加词条" xml:space="preserve">
+    <value>＋ Add term</value>
+  </data>
+  <data name="导入" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="导出" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="正确写法" xml:space="preserve">
+    <value>Correct spelling</value>
+  </data>
+  <data name="比如：伊丽静、Kubernetes、网关" xml:space="preserve">
+    <value>e.g. Yi Lijing, Kubernetes, gateway</value>
+  </data>
+  <data name="常被听成" xml:space="preserve">
+    <value>Often misheard as</value>
+  </data>
+  <data name="比如：毕丽静、伊利静" xml:space="preserve">
+    <value>e.g. 毕丽静, 伊利静</value>
+  </data>
+  <data name="识别成这些写法时，一律改成正确写法。多个用逗号分隔。" xml:space="preserve">
+    <value>When recognized as any of these, it is always changed to the correct spelling. Separate several with commas.</value>
+  </data>
+  <data name="译法" xml:space="preserve">
+    <value>Translation</value>
+  </data>
+  <data name="比如：gateway; ja=ゲートウェイ" xml:space="preserve">
+    <value>e.g. gateway; ja=ゲートウェイ</value>
+  </data>
+  <data name="翻译时固定这样译。直接写的是英文译法，其他语言写成「ja=…」，用分号隔开。" xml:space="preserve">
+    <value>Always translated this way. A plain value is the English translation; for other languages write &quot;ja=…&quot;, separated by semicolons.</value>
+  </data>
+  <data name="比如：支付请求的入口服务（写纪要时 AI 会参考）" xml:space="preserve">
+    <value>e.g. the entry service for payment requests (the AI uses it when writing notes)</value>
+  </data>
+  <data name="启用这个词条" xml:space="preserve">
+    <value>Use this term</value>
+  </data>
+  <data name="只替换列出的写法，不按读音猜" xml:space="preserve">
+    <value>Only replace the listed spellings, never guess from the sound</value>
+  </data>
+  <data name="默认还会按读音纠正：两个字的词要读音完全相同，三个字以上可以有 zh/z、n/l、前后鼻音这类口音差别。" xml:space="preserve">
+    <value>By default it also corrects by sound: a two-character term must sound exactly the same; longer ones allow accent differences such as zh/z, n/l and -n/-ng.</value>
+  </data>
+  <data name="试一试" xml:space="preserve">
+    <value>Try it</value>
+  </data>
+  <data name="输入一句识别出来的话，看看会被改成什么" xml:space="preserve">
+    <value>Type a recognized sentence to see what it becomes</value>
+  </data>
+  <data name="新词条" xml:space="preserve">
+    <value>New term</value>
+  </data>
+  <data name="还没有词条。把常被认错的人名、产品名、术语加进来，以后的会议都会自动纠正。" xml:space="preserve">
+    <value>No terms yet. Add names, products and terms that are often misrecognized, and future meetings will correct them automatically.</value>
+  </data>
+  <data name="共 {0} 个词条" xml:space="preserve">
+    <value>{0} terms</value>
+  </data>
+  <data name="已停用" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="常被听成 {0}" xml:space="preserve">
+    <value>misheard as {0}</value>
+  </data>
+  <data name="已保存，之后识别、翻译和纪要都会用上" xml:space="preserve">
+    <value>Saved. Recognition, translation and notes will use it from now on</value>
+  </data>
+  <data name="删除词条「{0}」？" xml:space="preserve">
+    <value>Delete the term &quot;{0}&quot;?</value>
+  </data>
+  <data name="之后的会议不再按它纠正和翻译，已经记下的内容不受影响。" xml:space="preserve">
+    <value>Later meetings will no longer be corrected or translated with it. What is already recorded stays as it is.</value>
+  </data>
+  <data name="比如输入「我和毕丽静都没想到」，看它会不会被改对。" xml:space="preserve">
+    <value>For example, type &quot;我和毕丽静都没想到&quot; and see whether it gets corrected.</value>
+  </data>
+  <data name="没有需要改的。" xml:space="preserve">
+    <value>Nothing to change.</value>
+  </data>
+  <data name="{0} → {1}" xml:space="preserve">
+    <value>{0} → {1}</value>
+  </data>
+  <data name="导入词库" xml:space="preserve">
+    <value>Import glossary</value>
+  </data>
+  <data name="文本文件" xml:space="preserve">
+    <value>Text files</value>
+  </data>
+  <data name="导入完成：新增 {0} 个，更新 {1} 个" xml:space="preserve">
+    <value>Imported: {0} added, {1} updated</value>
+  </data>
+  <data name="知道了" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="导出词库" xml:space="preserve">
+    <value>Export glossary</value>
+  </data>
+  <data name="会译词库" xml:space="preserve">
+    <value>HuiYi glossary</value>
+  </data>
+  <data name="已导出到 {0}" xml:space="preserve">
+    <value>Exported to {0}</value>
+  </data>
+  <data name="识别后按词库纠正" xml:space="preserve">
+    <value>Correct recognition with the glossary</value>
+  </data>
+  <data name="打开词库" xml:space="preserve">
+    <value>Open glossary</value>
+  </data>
+  <data name="词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。" xml:space="preserve">
+    <value>The glossary has {0} terms. Misrecognized names, products and terms are corrected automatically, and translations and notes follow its spellings and translations.</value>
+  </data>
+  <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
+    <value>How names, products and terms are spelled and translated</value>
+  </data>
 </root>

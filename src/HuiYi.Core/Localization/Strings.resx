@@ -1999,4 +1999,130 @@
   <data name="截止时间" xml:space="preserve"><value>截止时间</value></data>
   <data name="支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。" xml:space="preserve"><value>支持本机或局域网 Ollama。填写 http://localhost:11434 或自己的服务 URL，自动补全 /v1；点「获取模型列表」选择已下载的模型。</value></data>
   <data name="打开服务官网 ↗" xml:space="preserve"><value>打开服务官网 ↗</value></data>
+  <data name="词库" xml:space="preserve">
+    <value>词库</value>
+  </data>
+  <data name="人名、产品名、行业术语：识别、翻译和纪要都按这里的写法来。" xml:space="preserve">
+    <value>人名、产品名、行业术语：识别、翻译和纪要都按这里的写法来。</value>
+  </data>
+  <data name="搜索词条" xml:space="preserve">
+    <value>搜索词条</value>
+  </data>
+  <data name="＋ 添加词条" xml:space="preserve">
+    <value>＋ 添加词条</value>
+  </data>
+  <data name="导入" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="导出" xml:space="preserve">
+    <value>导出</value>
+  </data>
+  <data name="正确写法" xml:space="preserve">
+    <value>正确写法</value>
+  </data>
+  <data name="比如：伊丽静、Kubernetes、网关" xml:space="preserve">
+    <value>比如：伊丽静、Kubernetes、网关</value>
+  </data>
+  <data name="常被听成" xml:space="preserve">
+    <value>常被听成</value>
+  </data>
+  <data name="比如：毕丽静、伊利静" xml:space="preserve">
+    <value>比如：毕丽静、伊利静</value>
+  </data>
+  <data name="识别成这些写法时，一律改成正确写法。多个用逗号分隔。" xml:space="preserve">
+    <value>识别成这些写法时，一律改成正确写法。多个用逗号分隔。</value>
+  </data>
+  <data name="译法" xml:space="preserve">
+    <value>译法</value>
+  </data>
+  <data name="比如：gateway; ja=ゲートウェイ" xml:space="preserve">
+    <value>比如：gateway; ja=ゲートウェイ</value>
+  </data>
+  <data name="翻译时固定这样译。直接写的是英文译法，其他语言写成「ja=…」，用分号隔开。" xml:space="preserve">
+    <value>翻译时固定这样译。直接写的是英文译法，其他语言写成「ja=…」，用分号隔开。</value>
+  </data>
+  <data name="比如：支付请求的入口服务（写纪要时 AI 会参考）" xml:space="preserve">
+    <value>比如：支付请求的入口服务（写纪要时 AI 会参考）</value>
+  </data>
+  <data name="启用这个词条" xml:space="preserve">
+    <value>启用这个词条</value>
+  </data>
+  <data name="只替换列出的写法，不按读音猜" xml:space="preserve">
+    <value>只替换列出的写法，不按读音猜</value>
+  </data>
+  <data name="默认还会按读音纠正：两个字的词要读音完全相同，三个字以上可以有 zh/z、n/l、前后鼻音这类口音差别。" xml:space="preserve">
+    <value>默认还会按读音纠正：两个字的词要读音完全相同，三个字以上可以有 zh/z、n/l、前后鼻音这类口音差别。</value>
+  </data>
+  <data name="试一试" xml:space="preserve">
+    <value>试一试</value>
+  </data>
+  <data name="输入一句识别出来的话，看看会被改成什么" xml:space="preserve">
+    <value>输入一句识别出来的话，看看会被改成什么</value>
+  </data>
+  <data name="新词条" xml:space="preserve">
+    <value>新词条</value>
+  </data>
+  <data name="还没有词条。把常被认错的人名、产品名、术语加进来，以后的会议都会自动纠正。" xml:space="preserve">
+    <value>还没有词条。把常被认错的人名、产品名、术语加进来，以后的会议都会自动纠正。</value>
+  </data>
+  <data name="共 {0} 个词条" xml:space="preserve">
+    <value>共 {0} 个词条</value>
+  </data>
+  <data name="已停用" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="常被听成 {0}" xml:space="preserve">
+    <value>常被听成 {0}</value>
+  </data>
+  <data name="已保存，之后识别、翻译和纪要都会用上" xml:space="preserve">
+    <value>已保存，之后识别、翻译和纪要都会用上</value>
+  </data>
+  <data name="删除词条「{0}」？" xml:space="preserve">
+    <value>删除词条「{0}」？</value>
+  </data>
+  <data name="之后的会议不再按它纠正和翻译，已经记下的内容不受影响。" xml:space="preserve">
+    <value>之后的会议不再按它纠正和翻译，已经记下的内容不受影响。</value>
+  </data>
+  <data name="比如输入「我和毕丽静都没想到」，看它会不会被改对。" xml:space="preserve">
+    <value>比如输入「我和毕丽静都没想到」，看它会不会被改对。</value>
+  </data>
+  <data name="没有需要改的。" xml:space="preserve">
+    <value>没有需要改的。</value>
+  </data>
+  <data name="{0} → {1}" xml:space="preserve">
+    <value>{0} → {1}</value>
+  </data>
+  <data name="导入词库" xml:space="preserve">
+    <value>导入词库</value>
+  </data>
+  <data name="文本文件" xml:space="preserve">
+    <value>文本文件</value>
+  </data>
+  <data name="导入完成：新增 {0} 个，更新 {1} 个" xml:space="preserve">
+    <value>导入完成：新增 {0} 个，更新 {1} 个</value>
+  </data>
+  <data name="知道了" xml:space="preserve">
+    <value>知道了</value>
+  </data>
+  <data name="导出词库" xml:space="preserve">
+    <value>导出词库</value>
+  </data>
+  <data name="会译词库" xml:space="preserve">
+    <value>会译词库</value>
+  </data>
+  <data name="已导出到 {0}" xml:space="preserve">
+    <value>已导出到 {0}</value>
+  </data>
+  <data name="识别后按词库纠正" xml:space="preserve">
+    <value>识别后按词库纠正</value>
+  </data>
+  <data name="打开词库" xml:space="preserve">
+    <value>打开词库</value>
+  </data>
+  <data name="词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。" xml:space="preserve">
+    <value>词库里有 {0} 个词条。人名、产品名、术语被认错时会自动改对，翻译和纪要也按词库的写法和译法来。</value>
+  </data>
+  <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
+    <value>人名、产品名、术语的写法和译法</value>
+  </data>
 </root>

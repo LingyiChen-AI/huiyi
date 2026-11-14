@@ -36,6 +36,8 @@ public sealed class AppSettings
     public bool SpeakerVoices { get; set; } = true;
     /// After a meeting, check who said what again over its whole recording (kept until then). On by default.
     public bool RedoSpeakers { get; set; } = true;
+    /// Correct recognized text against the glossary (its misheard spellings and sound-alikes). On by default.
+    public bool GlossaryOn { get; set; } = true;
     public double SubtitleFontSize { get; set; } = 26;
     /// The notes template new meetings use (built-in id or one of the user's).
     public string DefaultTemplateId { get; set; } = NoteTemplates.DefaultId;

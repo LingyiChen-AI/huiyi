@@ -28,7 +28,15 @@
                         <Button Grid.Column="1" Content="{local:Loc Key='纪要模板'}" Style="{StaticResource Btn}" Margin="8,0,0,0" Padding="12,8"
                                 ToolTip="{local:Loc Key='纪要模板中心：选默认模板、自定义模板'}" Click="Templates_Click"/>
                     </Grid>
-                    <Button Content="{local:Loc Key='导入音视频'}" Style="{StaticResource Btn}" Margin="0,8,0,0" Padding="12,7" Click="ImportMedia_Click"/>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Content="{local:Loc Key='导入音视频'}" Style="{StaticResource Btn}" Padding="12,7" Click="ImportMedia_Click"/>
+                        <Button Grid.Column="1" Content="{local:Loc Key='词库'}" Style="{StaticResource Btn}" Margin="8,0,0,0" Padding="12,7"
+                                ToolTip="{local:Loc Key='人名、产品名、术语的写法和译法'}" Click="Glossary_Click"/>
+                    </Grid>
                     <Button x:Name="LiveBtn" Content="{local:Loc Key='打开实时面板 ›'}" Style="{StaticResource GhostBtn}" HorizontalAlignment="Left"
                             Margin="-6,6,0,0" Visibility="Collapsed" Click="Live_Click"/>
                     <Grid Margin="0,12,0,0">

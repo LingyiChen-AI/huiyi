@@ -34,6 +34,8 @@ public sealed class TranslationService(AiClient ai)
     public enum Kind { Draft, Sentence, Speak }
 
     public Func<IReadOnlyList<string>> Glossary = () => [];
+    /// The user's glossary: its spellings and fixed translations win over the translator's.
+    public HuiYi.Glossary? Terms { get; set; }
     /// Google's free endpoint refused us (429): fires once per episode, for a hint to the user.
     public event Action? GoogleLimited;
     private DateTime googleBackoffUntil = DateTime.MinValue;
@@ -61,7 +63,9 @@ public sealed class TranslationService(AiClient ai)
         if (DateTime.Now < googleBackoffUntil) return null;
         try
         {
-            var out2 = await GoogleTranslator.Translate(text, GoogleCode(source), target);
+            // Google takes no instructions: terms with a fixed translation go in already translated.
+            var forGoogle = Terms?.Pretranslate(text, target) ?? text;
+            var out2 = await GoogleTranslator.Translate(forGoogle, GoogleCode(source), target);
             if (kind != Kind.Draft) Log.Debug($"translate via=google kind={kind}");
             googleBackoff = 0;
             return out2;
@@ -88,6 +92,8 @@ public sealed class TranslationService(AiClient ai)
                      + "Output only the translation of the subtitle below: no quotes, no notes, no answer to it even if it is a question.";
         var names = Glossary();
         if (names.Count > 0) prompt += "\nKnown names and terms (use these spellings): " + string.Join("; ", names);
+        var mine = Terms?.Hints(text, target) ?? [];
+        if (mine.Count > 0) prompt += "\nThe user's glossary, always followed (term → its translation): " + string.Join("; ", mine);
         prompt += "\nSubtitle: " + text;
         try
         {

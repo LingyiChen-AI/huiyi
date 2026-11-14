@@ -32,6 +32,8 @@ public sealed class AppModel
     public Recognizer? Recognizer { get; private set; }
     /// The user's own notes templates (built-in ones are in `NoteTemplates.BuiltIn`).
     public List<NoteTemplate> MyTemplates { get; } = NoteTemplates.LoadMine();
+    /// The user's glossary: recognition is corrected against it, translations and notes follow it.
+    public Glossary Glossary { get; } = new();
 
     public IReadOnlyList<NoteTemplate> Templates => NoteTemplates.All(MyTemplates);
 
@@ -83,7 +85,8 @@ public sealed class AppModel
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
-        Notes = new NotesEngine(Ai, Store) { Template = TemplateFor };
+        Notes = new NotesEngine(Ai, Store) { Template = TemplateFor, Terms = Glossary };
+        Translator.Terms = Glossary;
         Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
         Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable
@@ -107,7 +110,7 @@ public sealed class AppModel
     private void Load()
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        var rec = new Recognizer(Models);
+        var rec = new Recognizer(Models) { Fix = text => Settings.GlossaryOn ? Glossary.Fix(text) : text };
         var listen = new ListenEngine(rec, Models);
         // Voiceprints load on first use; without the model, lines just stay 对方.
         Voiceprints? prints = null;

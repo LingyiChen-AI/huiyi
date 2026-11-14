@@ -388,6 +388,8 @@ public sealed class NotesEngine
 
     /// The language notes are written in (English name).
     public Func<string> Language = () => "Simplified Chinese";
+    /// The user's glossary: notes use its spellings.
+    public Glossary? Terms { get; set; }
 
     /// The template a meeting's notes follow: the one picked for it, else the default.
     public Func<Session, NoteTemplate> Template = _ => NoteTemplates.BuiltIn[0];
@@ -490,15 +492,19 @@ public sealed class NotesEngine
             // Avoid constructing an unbounded live prompt from accumulated notes or transcript.
             var estimate = lines.Skip(Math.Max(0, from - 2)).Sum(l => (long)l.Src.Length + 100)
                 + (final ? 0 : JsonSerializer.Serialize(based, Json.Options).Length);
+            // The user's glossary: the words this meeting mentions, written their way.
+            var mine = Terms?.ForNotes(string.Join("\n", lines.Select(l => l.Src))) ?? [];
+            var glossary = mine.Count == 0 ? ""
+                : "\n\nThe user's glossary — always write these exactly so; a word that sounds like one of them is that word: " + string.Join("; ", mine);
             var prompt = estimate <= NotesBatch.MaxPromptChars
-                ? NotesPrompt.Build(based, lines, from, lang, final, names, template, session.StartedAt) : null;
+                ? NotesPrompt.Build(based, lines, from, lang, final, names, template, session.StartedAt) + glossary : null;
             MeetingNotes? next = null;
             if (prompt == null || prompt.Length > NotesBatch.MaxPromptChars)
             {
                 next = await NotesBatch.Generate(lines, lang, names, template, session.StartedAt,
-                    p => ai.Chat(p, $"Update the notes. Write them in {lang}. Keep the entire JSON under 4500 characters.",
+                    p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}. Keep the entire JSON under 4500 characters.",
                         AiClient.Priority.Notes, json: true, maxTokens: 2000, timeout: TimeSpan.FromSeconds(90)),
-                    finalChat: p => ai.Chat(p, $"Update the notes. Write them in {lang}.",
+                    finalChat: p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}.",
                         AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)));
             }
             else

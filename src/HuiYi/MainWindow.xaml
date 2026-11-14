@@ -19,24 +19,28 @@
                         <Image x:Name="Logo" Width="26" Height="26" Margin="0,0,10,0"/>
                         <TextBlock x:Name="AppName" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
-                    <Grid Margin="0,14,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button x:Name="ListenBtn" Content="{local:Loc Key='开始收听'}" Style="{StaticResource PrimaryBtn}" Padding="0,8" Click="Listen_Click"/>
-                        <Button Grid.Column="1" Content="{local:Loc Key='纪要模板'}" Style="{StaticResource Btn}" Margin="8,0,0,0" Padding="12,8"
-                                ToolTip="{local:Loc Key='纪要模板中心：选默认模板、自定义模板'}" Click="Templates_Click"/>
-                    </Grid>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Content="{local:Loc Key='导入音视频'}" Style="{StaticResource Btn}" Padding="12,7" Click="ImportMedia_Click"/>
-                        <Button Grid.Column="1" Content="{local:Loc Key='词库'}" Style="{StaticResource Btn}" Margin="8,0,0,0" Padding="12,7"
-                                ToolTip="{local:Loc Key='人名、产品名、术语的写法和译法'}" Click="Glossary_Click"/>
-                    </Grid>
+                    <!-- One wide action, then three equal tools with icons: no ragged widths. -->
+                    <Button x:Name="ListenBtn" Content="{local:Loc Key='开始收听'}" Style="{StaticResource PrimaryBtn}" Padding="0,9" Margin="0,14,0,0" Click="Listen_Click"/>
+                    <UniformGrid Columns="3" Margin="0,8,0,0">
+                        <Button Style="{StaticResource Btn}" Padding="2,8,2,7" Margin="0,0,4,0" ToolTip="{local:Loc Key='导入本地录音、视频或视频链接'}" Click="ImportMedia_Click">
+                            <StackPanel>
+                                <TextBlock Text="&#xE8B5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="#4F5BD5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{local:Loc Key='导入音视频'}" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Btn}" Padding="2,8,2,7" Margin="2,0,2,0" ToolTip="{local:Loc Key='纪要模板中心：选默认模板、自定义模板'}" Click="Templates_Click">
+                            <StackPanel>
+                                <TextBlock Text="&#xE8A5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="#4F5BD5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{local:Loc Key='纪要模板'}" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Btn}" Padding="2,8,2,7" Margin="4,0,0,0" ToolTip="{local:Loc Key='人名、产品名、术语的写法和译法'}" Click="Glossary_Click">
+                            <StackPanel>
+                                <TextBlock Text="&#xE82D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="#4F5BD5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{local:Loc Key='词库'}" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
                     <Button x:Name="LiveBtn" Content="{local:Loc Key='打开实时面板 ›'}" Style="{StaticResource GhostBtn}" HorizontalAlignment="Left"
                             Margin="-6,6,0,0" Visibility="Collapsed" Click="Live_Click"/>
                     <Grid Margin="0,12,0,0">

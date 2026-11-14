@@ -2164,4 +2164,7 @@
   <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
     <value>已加入詞庫，這場會議改正了 {0} 處</value>
   </data>
+  <data name="导入本地录音、视频或视频链接" xml:space="preserve">
+    <value>匯入本機錄音、影片或影片連結</value>
+  </data>
 </root>

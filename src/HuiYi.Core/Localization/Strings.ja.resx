@@ -2164,4 +2164,7 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
     <value>用語集に追加し、この会議の {0} か所を訂正しました</value>
   </data>
+  <data name="导入本地录音、视频或视频链接" xml:space="preserve">
+    <value>ローカルの録音・動画・動画リンクを取り込む</value>
+  </data>
 </root>

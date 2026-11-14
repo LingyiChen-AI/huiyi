@@ -2125,4 +2125,43 @@
   <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
     <value>人名、产品名、术语的写法和译法</value>
   </data>
+  <data name="改正并加入词库" xml:space="preserve">
+    <value>改正并加入词库</value>
+  </data>
+  <data name="识别成「{0}」的，以后都改成下面的写法。" xml:space="preserve">
+    <value>识别成「{0}」的，以后都改成下面的写法。</value>
+  </data>
+  <data name="同时改正这场会议里的 {0} 处「{1}」" xml:space="preserve">
+    <value>同时改正这场会议里的 {0} 处「{1}」</value>
+  </data>
+  <data name="加入词库" xml:space="preserve">
+    <value>加入词库</value>
+  </data>
+  <data name="识别为「{0}」，已按词库改成「{1}」" xml:space="preserve">
+    <value>识别为「{0}」，已按词库改成「{1}」</value>
+  </data>
+  <data name="✓ 已在词库" xml:space="preserve">
+    <value>✓ 已在词库</value>
+  </data>
+  <data name="＋ 加入词库" xml:space="preserve">
+    <value>＋ 加入词库</value>
+  </data>
+  <data name="以后识别成「{0}」时自动改成「{1}」" xml:space="preserve">
+    <value>以后识别成「{0}」时自动改成「{1}」</value>
+  </data>
+  <data name="「{0}」已加入词库" xml:space="preserve">
+    <value>「{0}」已加入词库</value>
+  </data>
+  <data name="复制" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="改正「{0}」并加入词库…" xml:space="preserve">
+    <value>改正「{0}」并加入词库…</value>
+  </data>
+  <data name="选中认错的字，可以改正并加入词库" xml:space="preserve">
+    <value>选中认错的字，可以改正并加入词库</value>
+  </data>
+  <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
+    <value>已加入词库，这场会议改正了 {0} 处</value>
+  </data>
 </root>

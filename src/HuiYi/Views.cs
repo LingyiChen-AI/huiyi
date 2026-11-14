@@ -36,6 +36,9 @@ public sealed class LineVM : INotifyPropertyChanged
     public bool HasName { get; private set; }
 
     public string Src { get => src; set => Set(ref src, value); }
+    private IReadOnlyList<LineFix>? fixes;
+    /// Words the glossary corrected in Src.
+    public IReadOnlyList<LineFix>? Fixes { get => fixes; set => Set(ref fixes, value); }
     public string Who { get => who; set => Set(ref who, value); }
     public Brush WhoBrush { get => whoBrush; set => Set(ref whoBrush, value); }
     public string? Dst
@@ -57,11 +60,13 @@ public sealed class LineVM : INotifyPropertyChanged
         IsMe = l.Speaker == "me";
         src = l.Src;
         dst = l.Dst;
+        fixes = l.Fixes?.ToList();
     }
 
     public void Update(TranscriptLine l, string label, int? number, bool showDst = true, bool hasName = false)
     {
         Src = l.Src;
+        if (!SameFixes(fixes, l.Fixes)) Fixes = l.Fixes?.ToList();
         Dst = showDst ? l.Dst : null;
         // Speaker names and transcript text are user content. Only generated labels follow the UI.
         HasName = hasName;
@@ -71,6 +76,9 @@ public sealed class LineVM : INotifyPropertyChanged
         Number = number;
         WhoBrush = IsMe ? Theme.Primary : number is { } n ? Theme.Speaker(n) : Theme.Grey2;
     }
+
+    private static bool SameFixes(IReadOnlyList<LineFix>? a, IReadOnlyList<LineFix>? b) =>
+        (a?.Count ?? 0) == (b?.Count ?? 0) && (a == null || a.Zip(b!).All(p => p.First.From == p.Second.From && p.First.To == p.Second.To));
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new(name));

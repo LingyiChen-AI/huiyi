@@ -9,14 +9,58 @@ namespace HuiYi.App;
 public sealed class SelectableText : RichTextBox
 {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string),
-        typeof(SelectableText), new PropertyMetadata("", (d, e) =>
-        {
-            var box = (SelectableText)d;
-            box.Document.Blocks.Clear();
-            box.Document.Blocks.Add(new Paragraph(new Run((string?)e.NewValue ?? "")) { Margin = new Thickness(0) });
-        }));
+        typeof(SelectableText), new PropertyMetadata("", (d, _) => ((SelectableText)d).Render()));
 
     public string Text { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value); }
+
+    /// Words the glossary corrected in `Text`: drawn with a dashed underline, the tooltip saying what
+    /// was heard.
+    public static readonly DependencyProperty MarksProperty = DependencyProperty.Register(nameof(Marks), typeof(IReadOnlyList<HuiYi.LineFix>),
+        typeof(SelectableText), new PropertyMetadata(null, (d, _) => ((SelectableText)d).Render()));
+
+    public IReadOnlyList<HuiYi.LineFix>? Marks { get => (IReadOnlyList<HuiYi.LineFix>?)GetValue(MarksProperty); set => SetValue(MarksProperty, value); }
+
+    private static readonly TextDecorationCollection Dashed = MakeDashed();
+
+    private static TextDecorationCollection MakeDashed()
+    {
+        var pen = new Pen(new SolidColorBrush(Color.FromRgb(0x4F, 0x5B, 0xD5)), 1.2) { DashStyle = new DashStyle([2, 2], 0) };
+        pen.Freeze();
+        var c = new TextDecorationCollection { new TextDecoration(TextDecorationLocation.Underline, pen, 1, TextDecorationUnit.FontRecommended, TextDecorationUnit.FontRecommended) };
+        c.Freeze();
+        return c;
+    }
+
+    private void Render()
+    {
+        Document.Blocks.Clear();
+        var text = Text ?? "";
+        var paragraph = new Paragraph { Margin = new Thickness(0) };
+        var marks = Marks?.Where(m => m.To.Length > 0).OrderByDescending(m => m.To.Length).ToList();
+        if (marks is not { Count: > 0 })
+        {
+            paragraph.Inlines.Add(new Run(text));
+            Document.Blocks.Add(paragraph);
+            return;
+        }
+        var i = 0;
+        var plain = new System.Text.StringBuilder();
+        while (i < text.Length)
+        {
+            var hit = marks.FirstOrDefault(m => string.CompareOrdinal(text, i, m.To, 0, m.To.Length) == 0);
+            if (hit == null) { plain.Append(text[i++]); continue; }
+            if (plain.Length > 0) { paragraph.Inlines.Add(new Run(plain.ToString())); plain.Clear(); }
+            var froms = marks.Where(m => m.To == hit.To).Select(m => m.From).Distinct();
+            paragraph.Inlines.Add(new Run(hit.To)
+            {
+                TextDecorations = Dashed,
+                ToolTip = HuiYi.Localization.L.F("识别为「{0}」，已按词库改成「{1}」", string.Join("、", froms), hit.To),
+            });
+            i += hit.To.Length;
+        }
+        if (plain.Length > 0) paragraph.Inlines.Add(new Run(plain.ToString()));
+        Document.Blocks.Add(paragraph);
+    }
 
     public SelectableText()
     {

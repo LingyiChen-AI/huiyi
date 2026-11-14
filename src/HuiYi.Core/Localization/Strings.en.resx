@@ -2125,4 +2125,43 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
     <value>How names, products and terms are spelled and translated</value>
   </data>
+  <data name="改正并加入词库" xml:space="preserve">
+    <value>Correct and add to glossary</value>
+  </data>
+  <data name="识别成「{0}」的，以后都改成下面的写法。" xml:space="preserve">
+    <value>Whenever &quot;{0}&quot; is recognized, it will be written as below from now on.</value>
+  </data>
+  <data name="同时改正这场会议里的 {0} 处「{1}」" xml:space="preserve">
+    <value>Also correct the {0} occurrences of &quot;{1}&quot; in this meeting</value>
+  </data>
+  <data name="加入词库" xml:space="preserve">
+    <value>Add to glossary</value>
+  </data>
+  <data name="识别为「{0}」，已按词库改成「{1}」" xml:space="preserve">
+    <value>Recognized as &quot;{0}&quot;, changed to &quot;{1}&quot; by the glossary</value>
+  </data>
+  <data name="✓ 已在词库" xml:space="preserve">
+    <value>✓ In the glossary</value>
+  </data>
+  <data name="＋ 加入词库" xml:space="preserve">
+    <value>＋ Add to glossary</value>
+  </data>
+  <data name="以后识别成「{0}」时自动改成「{1}」" xml:space="preserve">
+    <value>From now on &quot;{0}&quot; is corrected to &quot;{1}&quot; automatically</value>
+  </data>
+  <data name="「{0}」已加入词库" xml:space="preserve">
+    <value>&quot;{0}&quot; added to the glossary</value>
+  </data>
+  <data name="复制" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="改正「{0}」并加入词库…" xml:space="preserve">
+    <value>Correct &quot;{0}&quot; and add to glossary…</value>
+  </data>
+  <data name="选中认错的字，可以改正并加入词库" xml:space="preserve">
+    <value>Select a misrecognized word to correct it and add it to the glossary</value>
+  </data>
+  <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
+    <value>Added to the glossary; {0} places corrected in this meeting</value>
+  </data>
 </root>

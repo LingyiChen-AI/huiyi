@@ -123,6 +123,37 @@ public sealed class Glossary
         Changed?.Invoke();
     }
 
+    /// Learns a spelling: the term gains the misheard spellings it lacks, or is added. From the
+    /// transcript ("改正并加入词库") and from the AI's notes ("加入词库").
+    public void Learn(string text, IEnumerable<string> misheard, string note = "")
+    {
+        text = text.Trim();
+        if (text.Length == 0) return;
+        var heard = misheard.Select(m => m.Trim()).Where(m => m.Length > 0 && m != text).Distinct().ToList();
+        lock (gate)
+        {
+            var known = terms.FirstOrDefault(t => t.Text == text);
+            if (known == null) terms.Add(new GlossaryTerm { Text = text, Misheard = heard, Note = note.Trim() });
+            else
+            {
+                foreach (var m in heard) if (!known.Misheard.Contains(m)) known.Misheard.Add(m);
+                if (known.Note.Length == 0) known.Note = note.Trim();
+                known.Enabled = true;
+            }
+            // A spelling learned as right is no longer anyone's misheard one.
+            foreach (var t in terms) if (t.Text != text) t.Misheard.Remove(text);
+            Commit();
+        }
+        Changed?.Invoke();
+    }
+
+    /// Whether the glossary already has this spelling with all these misheard ones.
+    public bool Knows(string text, IEnumerable<string> misheard)
+    {
+        lock (gate)
+            return terms.FirstOrDefault(t => t.Text == text) is { } known && misheard.All(m => m == text || known.Misheard.Contains(m));
+    }
+
     public void Remove(string id)
     {
         lock (gate)
@@ -131,6 +162,15 @@ public sealed class Glossary
             Commit();
         }
         Changed?.Invoke();
+    }
+
+    /// How often `part` occurs in `text` (not overlapping).
+    public static int CountOf(string text, string part)
+    {
+        if (part.Length == 0) return 0;
+        int n = 0, at = 0;
+        while ((at = text.IndexOf(part, at, StringComparison.Ordinal)) >= 0) { n++; at += part.Length; }
+        return n;
     }
 
     /// Recognized text with the glossary's spellings.

@@ -410,6 +410,7 @@ public sealed class MeetingController
                 {
                     prev.Src = text;
                     prev.End = seg.End;
+                    prev.Fixes = LineFix.Merge(prev.Fixes, seg.Fixes);
                 });
             }
             else
@@ -418,7 +419,7 @@ public sealed class MeetingController
                 var line = new TranscriptLine
                 {
                     Id = lineId, T = Math.Round(t, 2), End = Math.Round(seg.End, 2), Speaker = "them",
-                    Src = seg.Text, SrcLang = seg.Lang, DstLang = target, Voice = voice,
+                    Src = seg.Text, SrcLang = seg.Lang, DstLang = target, Voice = voice, Fixes = seg.Fixes?.ToList(),
                 };
                 // Two channels hand lines over out of order: keep the transcript in time order.
                 store.Mutate(id, s =>

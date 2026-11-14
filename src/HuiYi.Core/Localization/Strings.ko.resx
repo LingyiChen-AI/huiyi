@@ -2125,4 +2125,43 @@ D:\Apps\HuiYi 등 다른 위치를 선택하세요.</value>
   <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
     <value>인명·제품명·용어의 표기와 번역어</value>
   </data>
+  <data name="改正并加入词库" xml:space="preserve">
+    <value>교정하고 용어집에 추가</value>
+  </data>
+  <data name="识别成「{0}」的，以后都改成下面的写法。" xml:space="preserve">
+    <value>&quot;{0}&quot;(으)로 인식되면 앞으로 아래 표기로 바꿉니다.</value>
+  </data>
+  <data name="同时改正这场会议里的 {0} 处「{1}」" xml:space="preserve">
+    <value>이 회의의 &quot;{1}&quot; {0}곳도 교정</value>
+  </data>
+  <data name="加入词库" xml:space="preserve">
+    <value>용어집에 추가</value>
+  </data>
+  <data name="识别为「{0}」，已按词库改成「{1}」" xml:space="preserve">
+    <value>&quot;{0}&quot;(으)로 인식되어 용어집에 따라 &quot;{1}&quot;(으)로 교정됨</value>
+  </data>
+  <data name="✓ 已在词库" xml:space="preserve">
+    <value>✓ 용어집에 있음</value>
+  </data>
+  <data name="＋ 加入词库" xml:space="preserve">
+    <value>＋ 용어집에 추가</value>
+  </data>
+  <data name="以后识别成「{0}」时自动改成「{1}」" xml:space="preserve">
+    <value>앞으로 &quot;{0}&quot;(으)로 인식되면 자동으로 &quot;{1}&quot;(으)로 고칩니다</value>
+  </data>
+  <data name="「{0}」已加入词库" xml:space="preserve">
+    <value>&quot;{0}&quot;을(를) 용어집에 추가했습니다</value>
+  </data>
+  <data name="复制" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="改正「{0}」并加入词库…" xml:space="preserve">
+    <value>&quot;{0}&quot; 교정하고 용어집에 추가…</value>
+  </data>
+  <data name="选中认错的字，可以改正并加入词库" xml:space="preserve">
+    <value>잘못 인식된 단어를 선택하면 교정하고 용어집에 추가할 수 있습니다</value>
+  </data>
+  <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
+    <value>용어집에 추가하고 이 회의에서 {0}곳을 교정했습니다</value>
+  </data>
 </root>

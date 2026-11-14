@@ -40,7 +40,7 @@ public static class MediaImport
             result.Lines.Add(new TranscriptLine
             {
                 Id = Guid.NewGuid().ToString("N"), T = Math.Min(duration, segment.Start),
-                End = Math.Min(duration, segment.End), Src = segment.Text, SrcLang = segment.Lang,
+                End = Math.Min(duration, segment.End), Src = segment.Text, SrcLang = segment.Lang, Fixes = segment.Fixes?.ToList(),
                 Voice = segment.Samples != null && SpeakerLabels.Substantive(segment.Text) ? tagger.Voice(segment.Samples) : null
             });
         };

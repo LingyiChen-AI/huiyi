@@ -2125,4 +2125,43 @@ D:\Apps\HuiYi など、別の場所を選んでください。</value>
   <data name="人名、产品名、术语的写法和译法" xml:space="preserve">
     <value>人名・製品名・用語の表記と訳語</value>
   </data>
+  <data name="改正并加入词库" xml:space="preserve">
+    <value>訂正して用語集に追加</value>
+  </data>
+  <data name="识别成「{0}」的，以后都改成下面的写法。" xml:space="preserve">
+    <value>「{0}」と認識されたら、今後は下の表記に直します。</value>
+  </data>
+  <data name="同时改正这场会议里的 {0} 处「{1}」" xml:space="preserve">
+    <value>この会議の「{1}」{0} か所も訂正する</value>
+  </data>
+  <data name="加入词库" xml:space="preserve">
+    <value>用語集に追加</value>
+  </data>
+  <data name="识别为「{0}」，已按词库改成「{1}」" xml:space="preserve">
+    <value>「{0}」と認識され、用語集により「{1}」に訂正</value>
+  </data>
+  <data name="✓ 已在词库" xml:space="preserve">
+    <value>✓ 用語集に登録済み</value>
+  </data>
+  <data name="＋ 加入词库" xml:space="preserve">
+    <value>＋ 用語集に追加</value>
+  </data>
+  <data name="以后识别成「{0}」时自动改成「{1}」" xml:space="preserve">
+    <value>今後「{0}」と認識されたら自動で「{1}」に直します</value>
+  </data>
+  <data name="「{0}」已加入词库" xml:space="preserve">
+    <value>「{0}」を用語集に追加しました</value>
+  </data>
+  <data name="复制" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="改正「{0}」并加入词库…" xml:space="preserve">
+    <value>「{0}」を訂正して用語集に追加…</value>
+  </data>
+  <data name="选中认错的字，可以改正并加入词库" xml:space="preserve">
+    <value>誤認識された語を選ぶと、訂正して用語集に追加できます</value>
+  </data>
+  <data name="已加入词库，这场会议改正了 {0} 处" xml:space="preserve">
+    <value>用語集に追加し、この会議の {0} か所を訂正しました</value>
+  </data>
 </root>

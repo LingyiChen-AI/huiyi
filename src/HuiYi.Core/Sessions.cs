@@ -19,6 +19,32 @@ public sealed class TranscriptLine
     public int? Voice { get; set; }
     /// Seconds from the start of the session at which the line ended (not in Cicada's format).
     public double? End { get; set; }
+    /// Words the user's glossary corrected in `Src` (not in Cicada's format; absent when none).
+    public List<LineFix>? Fixes { get; set; }
+}
+
+/// A word the glossary corrected in a line: recognized as `From`, written `To`.
+public sealed class LineFix
+{
+    public string From { get; set; } = "";
+    public string To { get; set; } = "";
+
+    /// The corrections still visible in the final text (cleanup may have dropped a piece), one per pair.
+    public static List<LineFix>? Kept(IReadOnlyList<TermFix>? fixes, string text)
+    {
+        if (fixes == null) return null;
+        var kept = fixes.Where(f => f.To.Length > 0 && text.Contains(f.To))
+            .Select(f => (f.From, f.To)).Distinct().Select(p => new LineFix { From = p.From, To = p.To }).ToList();
+        return kept.Count > 0 ? kept : null;
+    }
+
+    /// Both lists together, without repeats.
+    public static List<LineFix>? Merge(List<LineFix>? a, IReadOnlyList<LineFix>? b)
+    {
+        if (b == null || b.Count == 0) return a;
+        var all = (a ?? []).Concat(b).GroupBy(f => (f.From, f.To)).Select(g => g.First()).ToList();
+        return all.Count > 0 ? all : null;
+    }
 }
 
 public sealed class Session

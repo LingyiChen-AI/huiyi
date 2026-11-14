@@ -110,7 +110,7 @@ public sealed class AppModel
     private void Load()
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        var rec = new Recognizer(Models) { Fix = text => Settings.GlossaryOn ? Glossary.Fix(text) : text };
+        var rec = new Recognizer(Models) { Fix = text => Settings.GlossaryOn ? Glossary.FixWithDetails(text) : (text, []) };
         var listen = new ListenEngine(rec, Models);
         // Voiceprints load on first use; without the model, lines just stay 对方.
         Voiceprints? prints = null;
@@ -231,6 +231,40 @@ public sealed class AppModel
         var label = line.Speaker == "me" ? L.T("我") : number is { } speaker
             ? names.GetValueOrDefault(speaker) ?? L.F("发言人 {0}", speaker) : L.T("发言人");
         return (label, number);
+    }
+
+    /// A short message at the corner of the screen.
+    public void Say(string message) => Ui(() => Toast?.Invoke(message));
+
+    /// A misheard word written right everywhere in one meeting: each line holding it is corrected
+    /// (and marked, as glossary corrections are), and lines that had a translation are translated
+    /// again. Returns how many places changed.
+    public int CorrectMeeting(string sessionId, string heard, string right)
+    {
+        if (heard.Length == 0 || heard == right) return 0;
+        var changed = new List<TranscriptLine>();
+        var count = 0;
+        Store.Mutate(sessionId, s =>
+        {
+            foreach (var l in s.Lines)
+            {
+                if (!l.Src.Contains(heard)) continue;
+                count += Glossary.CountOf(l.Src, heard);
+                l.Src = l.Src.Replace(heard, right);
+                l.Fixes = LineFix.Merge(l.Fixes, [new LineFix { From = heard, To = right }]);
+                changed.Add(l);
+            }
+        });
+        foreach (var l in changed.Where(l => l.Dst != null && Settings.TranslationOn))
+        {
+            var line = l;
+            _ = Task.Run(async () =>
+            {
+                var dst = await Translator.Translate(line.Src, line.SrcLang, line.DstLang, TranslationService.Kind.Sentence);
+                if (dst != null) Store.Mutate(sessionId, _ => line.Dst = dst);
+            });
+        }
+        return count;
     }
 
     /// Names a voice in a meeting; every view of its notes redraws with the name.

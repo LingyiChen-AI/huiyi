@@ -41,6 +41,8 @@ public partial class MainWindow : Window
         PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
         model.Store.Changed += () => Dispatcher.BeginInvoke(RefreshList);
         model.NotesChanged += RefreshSelectedDetails;
+        // 加入词库 buttons in the notes show what the glossary knows.
+        model.Glossary.Changed += () => Dispatcher.BeginInvoke(RefreshSelectedDetails);
         Refresh();
     }
 
@@ -131,7 +133,8 @@ public partial class MainWindow : Window
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
         UiText.Set(NotesBtn, "ToolTip", () => generating ? L.T("AI 正在通读整场会议…") : s.Notes?.UpdatedAt is { } at ? L.F("纪要更新于 {0:M月d日 HH:mm}", at.ToLocalTime()) : "");
         NotesHost.Content = s.Notes is { IsEmpty: false } n
-            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s), localizeHeadings: model.TemplateFor(s).BuiltIn)
+            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s), localizeHeadings: model.TemplateFor(s).BuiltIn,
+                termExtra: LearnButton)
             : new Border
             {
                 Style = (Style)FindResource("Panel"),
@@ -320,6 +323,61 @@ public partial class MainWindow : Window
     }
 
     private void Glossary_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).OpenGlossary();
+
+    /// Under a name or term the AI found misheard: add it to the glossary, or say it is there.
+    private UIElement? LearnButton(NoteTerm t)
+    {
+        if (t.Heard.Count == 0 || t.Name.Trim().Length == 0) return null;
+        if (model.Glossary.Knows(t.Name, t.Heard))
+            return new TextBlock { Text = L.T("✓ 已在词库"), FontSize = 11, Foreground = Theme.OnAir, Margin = new Thickness(0, 4, 0, 0) };
+        var b = new Button
+        {
+            Content = L.T("＋ 加入词库"), Style = (Style)FindResource("GhostBtn"), FontSize = 11, Padding = new Thickness(0, 2, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(-2, 2, 0, 0),
+            ToolTip = L.F("以后识别成「{0}」时自动改成「{1}」", string.Join("、", t.Heard), t.Name),
+        };
+        b.Click += (_, _) =>
+        {
+            model.Glossary.Learn(t.Name, t.Heard, t.Note);
+            model.Say(L.F("「{0}」已加入词库", t.Name));
+        };
+        return b;
+    }
+
+    /// Right-click on a transcript line: copy, or correct the selected word and add it to the glossary.
+    private void Src_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is not SelectableText box) return;
+        var picked = box.Selection.Text.Trim();
+        var menu = new ContextMenu();
+        menu.Items.Add(new MenuItem { Header = L.T("复制"), Command = ApplicationCommands.Copy, CommandTarget = box });
+        var usable = picked.Length is > 0 and <= 30 && !picked.Contains('\n');
+        var fix = new MenuItem
+        {
+            Header = usable ? L.F("改正「{0}」并加入词库…", picked) : L.T("选中认错的字，可以改正并加入词库"),
+            IsEnabled = usable,
+        };
+        fix.Click += (_, _) => FixWord(picked);
+        menu.Items.Add(fix);
+        box.ContextMenu = menu;
+    }
+
+    private void FixWord(string heard)
+    {
+        if (selected is not { } id || model.Store.Get(id) is not { } s) return;
+        var count = s.Lines.Sum(l => Glossary.CountOf(l.Src, heard));
+        if (TermFixWindow.Ask(this, heard, count) is not { } answer) return;
+        if (answer.Text == heard)
+        {
+            // Written right already: keep the spelling, so sound-alikes are corrected to it.
+            model.Glossary.Learn(heard, []);
+            model.Say(L.F("「{0}」已加入词库", heard));
+            return;
+        }
+        model.Glossary.Learn(answer.Text, [heard]);
+        var changed = answer.Everywhere ? model.CorrectMeeting(id, heard, answer.Text) : 0;
+        model.Say(changed > 0 ? L.F("已加入词库，这场会议改正了 {0} 处", changed) : L.F("「{0}」已加入词库", answer.Text));
+    }
 
     private void Templates_Click(object sender, RoutedEventArgs e) =>
         ((App)Application.Current).OpenTemplates(selected is { } id ? model.TemplateFor(model.Store.Get(id)).Id : null);

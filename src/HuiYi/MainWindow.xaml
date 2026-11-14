@@ -236,7 +236,8 @@
                                                 <TextBlock Text="{Binding Time}" Foreground="#9AA1B2" FontSize="11" Margin="0,2,0,0"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
-                                                <local:SelectableText Text="{Binding Src}" FontSize="14"/>
+                                                <local:SelectableText Text="{Binding Src}" Marks="{Binding Fixes}" FontSize="14"
+                                                                      ContextMenuOpening="Src_ContextMenuOpening"/>
                                                 <local:SelectableText Text="{Binding Dst}" Visibility="{Binding DstVisibility}" Foreground="#646B80" FontSize="13" Margin="0,3,0,0"/>
                                             </StackPanel>
                                         </Grid>

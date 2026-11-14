@@ -11,8 +11,9 @@ namespace HuiYi.Speech;
 /// `Samples`: the stretch's audio (16 kHz mono), for telling whose voice it is. `NewSpeaker`: it was
 /// cut off the stretch before it because the voice changed there, so it never joins that line.
 /// `Channel`: where it was heard (0: what the PC plays, 1: the microphone).
+/// `Fixes`: what the user's glossary corrected in it (shown underlined in the transcript).
 public sealed record HeardSegment(string Text, string Lang, double Start, double End, bool Cut, float[]? Samples = null,
-    bool NewSpeaker = false, int Channel = 0);
+    bool NewSpeaker = false, int Channel = 0, IReadOnlyList<LineFix>? Fixes = null);
 
 /// Audio → Silero VAD → SenseVoice. A sentence ends at a pause (or after 12 s of unbroken speech);
 /// while someone is talking, the speech so far is decoded again every ~0.6 s for the live (partial)
@@ -367,7 +368,7 @@ public sealed class ListenEngine : IDisposable
             }
             said = true;
             Final?.Invoke(new HeardSegment(text, r.Lang, (start + edges[k]) / (double)rate, (start + edges[k + 1]) / (double)rate,
-                cut && last, piece, NewSpeaker: k > 0, Channel: c.Index));
+                cut && last, piece, NewSpeaker: k > 0, Channel: c.Index, Fixes: LineFix.Kept(r.Fixes, text)));
         }
         return said;
     }

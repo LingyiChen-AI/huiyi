@@ -34,8 +34,9 @@ public static class NotesRenderer
     /// `names`: the meeting's speaker names (SpeakerLabels.Names): "发言人1" in the notes reads as the
     /// name given since, and owners keep their voice's colour.
     public static UIElement Build(MeetingNotes n, DateTime start, double fontSize = 14, bool cards = false,
-        IReadOnlyDictionary<int, string>? names = null, bool localizeHeadings = true)
+        IReadOnlyDictionary<int, string>? names = null, bool localizeHeadings = true, Func<NoteTerm, UIElement?>? termExtra = null)
     {
+        TermExtra = termExtra;
         if (names is { Count: > 0 }) n = SpeakerLabels.WithNames(n, names);
         var k = new Look(cards, fontSize, start.ToLocalTime(), names);
         var root = new StackPanel();
@@ -64,7 +65,7 @@ public static class NotesRenderer
             Section(root, k, L.T("人名与术语"), n.Terms.Count, panel =>
             {
                 var wrap = new WrapPanel();
-                foreach (var t in NoteTerm.Ordered(n.Terms)) wrap.Children.Add(Term(k, t));
+                foreach (var t in NoteTerm.Ordered(n.Terms)) wrap.Children.Add(Term(k, t, TermExtra?.Invoke(t)));
                 panel.Children.Add(wrap);
             });
         return SelectableText.MakeSelectable(root);
@@ -236,16 +237,26 @@ public static class NotesRenderer
     }
 
     /// A name or term: bold name, what it is, and how recognition misheard it.
-    private static UIElement Term(Look k, NoteTerm t)
+    [ThreadStatic] private static Func<NoteTerm, UIElement?>? TermExtra;
+
+    private static UIElement Term(Look k, NoteTerm t, UIElement? extra = null)
     {
         var tb = new TextBlock { FontSize = k.Size - 1, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
         tb.Inlines.Add(new Run(t.Name) { FontWeight = FontWeights.SemiBold, Foreground = k.Ink });
         if (t.Note.Length > 0) tb.Inlines.Add(new Run("  " + t.Note) { Foreground = k.Muted });
         if (t.Heard.Count > 0) tb.Inlines.Add(new Run(L.T("\n识别成 ") + string.Join("、", t.Heard)) { Foreground = k.Faint, FontSize = 11 });
+        UIElement child = tb;
+        if (extra != null)
+        {
+            var stack = new StackPanel();
+            stack.Children.Add(tb);
+            stack.Children.Add(extra);
+            child = stack;
+        }
         return new Border
         {
             Background = k.ChipBack, CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6),
-            Margin = new Thickness(0, 0, 8, 8), Child = tb,
+            Margin = new Thickness(0, 0, 8, 8), Child = child,
         };
     }
 

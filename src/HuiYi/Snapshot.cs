@@ -17,12 +17,25 @@ public static class Snapshot
         model.Settings.OnboardingDone = true;
         var latest = model.Store.All.FirstOrDefault(s => s.Lines.Count > 0);
         if (latest != null && latest.Notes == null) model.Store.SetNotes(latest.Id, Sample());
+        // The glossary at work: a line it corrected (underlined), and a term the AI found misheard.
+        if (latest != null)
+            model.Store.Mutate(latest.Id, s =>
+            {
+                if (s.Lines.FirstOrDefault(l => l.Src.Contains("压测")) is { } line) line.Fixes = [new LineFix { From = "鸭测", To = "压测" }];
+                if (s.Notes is { } n)
+                {
+                    n.Terms.RemoveAll(t => t.Name == "压测");
+                    n.Terms.Insert(0, new NoteTerm { Name = "压测", Note = "压力测试", Heard = ["鸭测"] });
+                }
+            });
 
         Save(new SetupWindow(model), folder, "setup");
         var main = new MainWindow(model);
         Save(main, folder, "main-notes", keepOpen: true);
+        SaveElement((FrameworkElement)main.NotesHost.Content, folder, "main-notes-terms", Brushes.White);
         main.ShowTab(notes: false);
         Save(main, folder, "main-lines");
+        Save(TermFixWindow.ForSnapshot("网管", 2), folder, "term-fix");
         if (latest != null) Save(new SpeakersWindow(model, latest.Id), folder, "speakers");
         Save(new GroupNameWindow(model.Store), folder, "group-new");
         Save(new MediaImportWindow(model), folder, "media-import");

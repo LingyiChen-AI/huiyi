@@ -164,6 +164,7 @@ switch (cmd)
         var names = SpeakerLabels.Names(snap);
         foreach (var l in snap.Lines)
             Console.WriteLine($"{TranscriptExport.Clock(l.T)} {SpeakerLabels.Who(l, numbers, names),-6} (voice {l.Voice?.ToString() ?? "-"}) {l.Src}"
+                              + (l.Fixes is { Count: > 0 } f ? "   [词库: " + string.Join(", ", f.Select(x => $"{x.From}→{x.To}")) + "]" : "")
                               + (l.Dst != null ? $"\n          {l.Dst}" : ""));
         Console.WriteLine($"speakers on show: {SpeakerLabels.ShownCount(snap.Lines)}");
         // HUIYI_REDO=1: the after-meeting check over the whole file, line by line beside the live voice.
@@ -361,8 +362,8 @@ switch (cmd)
 static string Tail(string s) => s.Length > 60 ? "…" + s[^60..] : s;
 
 // HUIYI_GLOSSARY=<glossary.json>: recognition corrected against that glossary, as the app does.
-static Func<string, string>? GlossaryFix() =>
-    Environment.GetEnvironmentVariable("HUIYI_GLOSSARY") is { Length: > 0 } g ? new Glossary(g).Fix : null;
+static Func<string, (string, IReadOnlyList<TermFix>)>? GlossaryFix() =>
+    Environment.GetEnvironmentVariable("HUIYI_GLOSSARY") is { Length: > 0 } g ? new Glossary(g).FixWithDetails : null;
 
 static float[] ReadAll(string path)
 {

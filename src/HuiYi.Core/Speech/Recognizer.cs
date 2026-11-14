@@ -4,7 +4,8 @@ namespace HuiYi.Speech;
 
 /// `Tokens` and `Times`: each recognized piece (a character, a word part, punctuation) and when it
 /// starts, in seconds from the clip's start, for cutting a clip at its sentence ends.
-public sealed record Recognized(string Text, string Lang, string[]? Tokens = null, float[]? Times = null)
+/// `Fixes`: what the user's glossary corrected in the text.
+public sealed record Recognized(string Text, string Lang, string[]? Tokens = null, float[]? Times = null, IReadOnlyList<TermFix>? Fixes = null)
 {
     private static readonly char[] Enders = ['。', '？', '！', '?', '!', '.'];
 
@@ -56,7 +57,7 @@ public sealed class Recognizer : IDisposable
 
     /// The user's glossary (Glossary.Fix): every text recognized — the meeting, imported media, my
     /// interpreted words, the after-meeting check — comes out with its spellings.
-    public Func<string, string>? Fix { get; set; }
+    public Func<string, (string Text, IReadOnlyList<TermFix> Fixes)>? Fix { get; set; }
 
     public Recognized Recognize(float[] samples)
     {
@@ -70,12 +71,13 @@ public sealed class Recognizer : IDisposable
             recognizer.Decode(stream);
             var r = stream.Result;
             var text = r.Text.Trim();
+            IReadOnlyList<TermFix>? fixes = null;
             if (Fix != null && text.Length > 0)
             {
-                try { text = Fix(text); }
+                try { (text, fixes) = Fix(text); }
                 catch (Exception e) { Log.Debug($"glossary: fix failed {e.Message}"); }
             }
-            return new Recognized(text, Languages.FromRecognizer(LangTag(r), text), r.Tokens, r.Timestamps);
+            return new Recognized(text, Languages.FromRecognizer(LangTag(r), text), r.Tokens, r.Timestamps, fixes is { Count: > 0 } ? fixes : null);
         }
     }
 

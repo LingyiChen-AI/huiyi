@@ -64,6 +64,28 @@ switch (cmd)
         if (Environment.GetEnvironmentVariable("HUIYI_TURNS") != "0")
             listen.Turns = (s, heard) => new TurnFinder(prints.Embed, tagger.Nearest).Points(s, heard.SentenceEnds());
         var meeting = new MeetingController(settings, store, translator, notes, listen, () => sys, tagger);
+        // HUIYI_AICHECK=1 (with HUIYI_GLOSSARY): the glossary's AI check on each line, as the app does
+        // when 疑似认错时让 AI 核对 is on, with the app's AI service.
+        var aiChecks = 0;
+        var aiPending = 0;
+        if (Environment.GetEnvironmentVariable("HUIYI_AICHECK") == "1" && GlossaryFile() is { } checkGlossary)
+        {
+            var checkAi = AppAi();
+            meeting.CheckLine = async text =>
+            {
+                var suspects = checkGlossary.Suspects(text, null);
+                if (suspects.Count == 0) return null;
+                Interlocked.Increment(ref aiChecks);
+                Interlocked.Increment(ref aiPending);
+                try {
+                var reply = await checkAi.Chat(GlossaryAiCheck.Prompt(text, suspects, checkGlossary.ActiveTerms(null)), "Judge each word.",
+                    AiClient.Priority.Notes, json: true, maxTokens: 300, temperature: 0);
+                var fixes = GlossaryAiCheck.Corrections(reply, suspects);
+                Console.WriteLine($"  [AI 核对] {string.Join(", ", suspects.Select(s => s.Heard + "→" + s.Term))} → {(fixes == null ? "不改" : string.Join(", ", fixes.Select(f => f.From + "→" + f.To)))}");
+                return fixes;
+                } finally { Interlocked.Decrement(ref aiPending); }
+            };
+        }
         var w = Stopwatch.StartNew();
         string lastPartial = "";
         meeting.SubtitleChanged += s =>
@@ -158,6 +180,8 @@ switch (cmd)
         var id = meeting.SessionId!;
         // Let the last translations land.
         await Task.Delay(3000);
+        // And the AI checks still out.
+        for (var i = 0; i < 120 && Volatile.Read(ref aiPending) > 0; i++) await Task.Delay(500);
         Console.WriteLine("\n=== lines ===");
         var snap = store.Snapshot(id)!;
         var numbers = SpeakerLabels.Numbers(snap.Lines);
@@ -167,6 +191,7 @@ switch (cmd)
                               + (l.Fixes is { Count: > 0 } f ? "   [词库: " + string.Join(", ", f.Select(x => $"{x.From}→{x.To}")) + "]" : "")
                               + (l.Dst != null ? $"\n          {l.Dst}" : ""));
         Console.WriteLine($"speakers on show: {SpeakerLabels.ShownCount(snap.Lines)}");
+        if (aiChecks > 0) Console.WriteLine($"AI checks: {aiChecks}");
         // HUIYI_REDO=1: the after-meeting check over the whole file, line by line beside the live voice.
         if (Environment.GetEnvironmentVariable("HUIYI_REDO") == "1" && cmd == "listen")
         {

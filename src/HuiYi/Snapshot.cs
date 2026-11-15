@@ -105,7 +105,14 @@ public static class Snapshot
             panel.Preview(latest.Id, notesTab: false);
             Save(panel, folder, "panel-lines", keepOpen: true);
             panel.Preview(latest.Id, notesTab: true);
-            Save(panel, folder, "panel-notes");
+            Save(panel, folder, "panel-notes", keepOpen: true);
+            // Ended, hidden from captures: the longest header (已结束 · 正在整理纪要, 对方看不到, 开始新会议).
+            panel.OnStopped();
+            panel.PreviewShared();
+            Save(panel, folder, "panel-ended-shared", keepOpen: true);
+            panel.Width = panel.MinWidth;
+            panel.PreviewShared();
+            Save(panel, folder, "panel-ended-shared-narrow");
         }
         Save(SpeakerNameWindow.ForSnapshot(2, "Daniel"), folder, "speaker-name");
         // The tray menu's look: its items in a window (a real context menu needs the tray to open).

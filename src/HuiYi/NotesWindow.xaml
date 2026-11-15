@@ -34,8 +34,13 @@
             </Grid.RowDefinitions>
 
             <!-- Header: drag to move -->
+            <!-- Two columns so the state on the left never runs under the buttons on the right. -->
             <Grid x:Name="Header" Grid.Row="0" Background="Transparent" Margin="16,12,10,10" Cursor="SizeAll">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel x:Name="HeaderLeft" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True">
                     <Border x:Name="OnAirPill" Background="#2C3148" CornerRadius="9" Padding="8,2">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="LiveDot" Width="7" Height="7" Fill="#FF5C6C" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -43,12 +48,16 @@
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="ClockText" Text="00:00" Foreground="#8E94A8" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                    <Border x:Name="Shared" Background="#3A3F55" CornerRadius="3" Padding="6,1" Margin="10,0,0,0" Visibility="Collapsed"
+                    <!-- An eye with a slash, and the words while there is room for them. -->
+                    <Border x:Name="Shared" Background="#2C3148" CornerRadius="9" Padding="7,2" Margin="8,0,0,0" Visibility="Collapsed"
                             ToolTip="{local:Loc Key='截图、录屏和屏幕共享里看不到这个窗口（设置 › 字幕里可以改）'}" VerticalAlignment="Center">
-                        <TextBlock Text="{local:Loc Key='对方看不到'}" Foreground="#E8EAF2" FontSize="11"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xED1A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11" Foreground="#9AA0B4" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SharedText" Text="{local:Loc Key='对方看不到'}" Foreground="#C9CDDA" FontSize="11" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel x:Name="HeaderRight" Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
                     <Button x:Name="StartBtn" Content="{local:Loc Key='开始新会议'}" Style="{StaticResource PrimaryBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
                     <Button x:Name="StopBtn" Content="{local:Loc Key='结束会议'}" Style="{StaticResource NightBtn}" Click="Stop_Click"/>
                     <Button Content="{local:Loc Key='收起'}" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"

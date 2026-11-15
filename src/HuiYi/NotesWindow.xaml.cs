@@ -35,6 +35,9 @@ public partial class NotesWindow : Window
         {
             if (e.ButtonState == MouseButtonState.Pressed) DragMove();
         };
+        Header.SizeChanged += (_, _) => FitHeader();
+        HeaderRight.SizeChanged += (_, _) => FitHeader();
+        OnAirPill.SizeChanged += (_, _) => FitHeader();
         model.LineChanged += OnLine;
         // Speaker names (the user's or the AI's) change labels on lines already shown.
         model.Store.Changed += () => Dispatcher.BeginInvoke(() => OnLine(""));
@@ -68,7 +71,21 @@ public partial class NotesWindow : Window
     {
         Native.SetCapturable(this, !model.Settings.HideFromCaptures);
         Shared.Visibility = model.Settings.HideFromCaptures ? Visibility.Visible : Visibility.Collapsed;
+        FitHeader();
     }
+
+    /// 对方看不到 keeps only its eye when the words would not fit beside the buttons
+    /// (a narrow panel, or 开始新会议 showing); the tooltip still says what it means.
+    private void FitHeader()
+    {
+        if (Shared.Visibility != Visibility.Visible || Header.ActualWidth <= 0) return;
+        SharedText.Visibility = Visibility.Visible;
+        // Measure again with the words in: without this the cached size (maybe without them) comes back.
+        for (DependencyObject? d = SharedText; d != null && d != Header; d = System.Windows.Media.VisualTreeHelper.GetParent(d))
+            (d as UIElement)?.InvalidateMeasure();
+        HeaderLeft.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var room = Header.ActualWidth - HeaderRight.ActualWidth - HeaderRight.Margin.Left;
+        if (HeaderLeft.DesiredSize.Width > room) SharedText.Visibility = Visibility.Collapsed;    }
 
     /// Top right of the work area, fully on screen (shorter than the screen when it must be).
     private void PlaceTopRight()
@@ -164,6 +181,14 @@ public partial class NotesWindow : Window
         TabNotes.IsChecked = notesTab;
         TabLines.IsChecked = !notesTab;
         ClockText.Text = "12:34";
+    }
+
+    /// Developer snapshot: the 对方看不到 mark, as when hidden from captures.
+    public void PreviewShared()
+    {
+        Shared.Visibility = Visibility.Visible;
+        UpdateLayout();
+        FitHeader();
     }
 
     // Listening: a red recording dot on the panel's own indigo, not the app's green.

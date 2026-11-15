@@ -125,6 +125,8 @@ public partial class SettingsWindow : Window
     private void Changed(object sender, RoutedEventArgs e)
     {
         if (loading) return;
+        // Applied first: saving raises StateChanged, which puts the switch back to the stored value.
+        model.SetTranslation(TranslateOn.IsChecked == true);
         var s = model.Settings;
         var oldDisplay = s.Display;
         var oldCapturable = s.HideFromCaptures;
@@ -154,7 +156,6 @@ public partial class SettingsWindow : Window
             Native.SetLaunchAtLogin(s.LaunchAtLogin);
         }
         model.SaveSettings();
-        model.SetTranslation(TranslateOn.IsChecked == true);
         if (oldDisplay != s.Display || oldCapturable != s.HideFromCaptures) ((App)Application.Current).SwitchDisplay();
         if (sender == SpeakTargetBox) RenderVoices();
     }

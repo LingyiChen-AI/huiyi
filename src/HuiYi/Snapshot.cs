@@ -139,9 +139,17 @@ public static class Snapshot
         var subs = new SubtitleWindow(model);
         subs.Width = 900;
         Prepare(subs);
+        // Snapshots work on a copy of the settings: show the translation whatever the user chose.
+        model.Settings.TranslationOn = true;
         subs.Show(new MeetingController.Subtitle("超时的问题定位到了，是网关的配置不对。",
             "We found the timeout: the gateway was misconfigured.", false));
-        Save(subs, folder, "subtitle");
+        Save(subs, folder, "subtitle", keepOpen: true);
+        // A long stream, as in a monologue: each box keeps its two lines and shows the end.
+        subs.Show(new MeetingController.Subtitle(
+            "那篇文章对我启发特别大。这一切之所以能够发生，就是因为我不知道为什么我在。去年到今年，我个人完成了某种神奇的改变。我不知道为什么发生了什么，可能就是一个时间到这一步了。对，量变完成了质变了。我从一个",
+            "That article was incredibly inspiring to me. It can happen precisely because I don't know why I'm here. From last year to this year, I personally underwent some kind of magical change.",
+            true));
+        Save(subs, folder, "subtitle-long");
         await Task.Delay(100);
     }
 

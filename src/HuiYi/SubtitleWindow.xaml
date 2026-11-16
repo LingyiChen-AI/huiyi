@@ -27,8 +27,16 @@
                         <TextBlock x:Name="WhoText" Text="{local:Loc Key='收听中'}" Foreground="#8E94A8" FontSize="12"/>
                     </StackPanel>
                 </DockPanel>
-                <TextBlock x:Name="TranslationText" Grid.Row="1" Foreground="White" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                <TextBlock x:Name="SourceText" Grid.Row="2" Foreground="#A7ADC0" FontSize="15" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                <!-- Each stream keeps a fixed two lines and shows its end: new words push old lines out at
+                     the top, and the window never changes height while someone talks. -->
+                <Border x:Name="TranslationBox" Grid.Row="1" ClipToBounds="True">
+                    <TextBlock x:Name="TranslationText" Foreground="White" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap"
+                               VerticalAlignment="Bottom" LineStackingStrategy="BlockLineHeight"/>
+                </Border>
+                <Border x:Name="SourceBox" Grid.Row="2" ClipToBounds="True" Margin="0,4,0,0">
+                    <TextBlock x:Name="SourceText" Foreground="#A7ADC0" FontSize="15" TextWrapping="Wrap"
+                               VerticalAlignment="Bottom" LineStackingStrategy="BlockLineHeight"/>
+                </Border>
             </Grid>
         </Grid>
     </Border>

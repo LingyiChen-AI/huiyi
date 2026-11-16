@@ -48,6 +48,41 @@ public static class HeardText
         };
     }
 
+    /// The line being said, as shown: the recognizer re-hears only the last few seconds, so each new
+    /// partial drops words from its start. Laid over what is already shown where they overlap, those
+    /// words stay on screen instead of vanishing from the middle of the subtitle. With no overlap
+    /// found the new partial is taken as it is.
+    public static string Stitch(string shown, string next)
+    {
+        if (shown.Length == 0 || next.Length == 0) return next;
+        var (s, sAt) = Letters(shown);
+        var (n, nAt) = Letters(next);
+        var size = IsCjk(next) ? 4 : 8;
+        if (n.Length < size) return next;
+        // The overlap may begin a word or two into the new partial (its first word misheard).
+        for (var skip = 0; skip <= 3 && skip + size <= n.Length; skip++)
+        {
+            var at = s.LastIndexOf(n.Substring(skip, size), StringComparison.Ordinal);
+            if (at < 0) continue;
+            return at == 0 && skip == 0 ? next : shown[..sAt[at]] + next[nAt[skip]..];
+        }
+        return next;
+    }
+
+    /// Letters and digits only, lower case, with where each came from in the text.
+    private static (string Text, int[] At) Letters(string text)
+    {
+        var sb = new System.Text.StringBuilder(text.Length);
+        var at = new List<int>(text.Length);
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (!char.IsLetterOrDigit(text[i])) continue;
+            sb.Append(char.ToLowerInvariant(text[i]));
+            at.Add(i);
+        }
+        return (sb.ToString(), at.ToArray());
+    }
+
     public static string Join(string previous, string next)
     {
         var head = previous;

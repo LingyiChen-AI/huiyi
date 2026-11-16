@@ -271,13 +271,8 @@ public partial class NotesWindow : Window
             var atBottom = LinesScroll.VerticalOffset >= LinesScroll.ScrollableHeight - 30;
             LivePanel.Visibility = Visibility.Visible;
             EmptyHint.Visibility = Visibility.Collapsed;
-            var last = lines.LastOrDefault(l => !l.IsMe);
-            var src = s.Source;
-            if (last != null && src.StartsWith(last.Src)) src = src[last.Src.Length..].TrimStart();
-            LiveSrc.Text = src;
-            var dst = s.Translation;
-            if (last?.Dst is { } d && dst.StartsWith(d)) dst = dst[d.Length..].TrimStart();
-            LiveDst.Text = model.Settings.TranslationOn ? dst : "";
+            LiveSrc.Text = s.Partial;
+            LiveDst.Text = model.Settings.TranslationOn ? s.PartialTranslation : "";
             LiveDst.Visibility = LiveDst.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             UiText.Set(LiveWho, "Text", () => L.T("正在说…"));
             if (atBottom) LinesScroll.ScrollToEnd();

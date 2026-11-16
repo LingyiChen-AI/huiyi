@@ -9,7 +9,10 @@ namespace HuiYi;
 public sealed class MeetingController
 {
     /// `LineId`: the finished line shown (for whose voice it is), nil while nothing is.
-    public sealed record Subtitle(string Source, string Translation, bool Live, string? LineId = null);
+    /// Source and Translation are the running streams (recent lines and the one being said);
+    /// Partial and PartialTranslation are only the line being said.
+    public sealed record Subtitle(string Source, string Translation, bool Live, string? LineId = null,
+        string Partial = "", string PartialTranslation = "");
 
     public event Action<string>? LineChanged;      // line id (added or updated)
     public event Action<Subtitle>? SubtitleChanged;
@@ -330,16 +333,17 @@ public sealed class MeetingController
     private void OnPartial(string text, string lang)
     {
         int epoch;
+        string shown;
         lock (gate)
         {
-            partial = text;
+            partial = shown = HeardText.Stitch(partial, text);
             partialLang = lang;
             if (text.Length == 0) partialTranslation = "";
             epoch = partialEpoch;
         }
         if (text.Length > 0) endWatch?.Heard(DateTime.Now);
         Render();
-        TranslateDraft(text, lang, epoch);
+        TranslateDraft(shown, lang, epoch);
     }
 
     private void TranslateDraft(string text, string lang, int epoch)
@@ -534,25 +538,49 @@ public sealed class MeetingController
         LineChanged?.Invoke(line.Id);
     }
 
-    /// The subtitle: the last finished line and the one being said, each with its translation.
+    /// The subtitle: two running streams, what was said and its translation — the last few lines
+    /// heard plus the one being said. The subtitle window shows the end of each. The AI's translation
+    /// of a line comes a second or so after the line: until then the translation stream keeps the
+    /// lines before it rather than going blank, and the new translation is added on, not swapped in.
     private void Render()
     {
         var id = SessionId;
         if (id == null) return;
-        TranscriptLine? last;
+        List<TranscriptLine> recent = [];
         string p, pt, pl;
         lock (gate)
         {
-            last = lastShownId == null ? null : store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lastShownId);
+            if (lastShownId != null && store.Get(id)?.Lines is { } lines)
+                recent = Recent(lines, lastShownId);
             p = partial;
             pt = partialTranslation;
             pl = partialLang;
         }
+        var last = recent.Count > 0 ? recent[^1] : null;
         var srcJoin = Languages.Joiner(pl.Length > 0 ? pl : last?.SrcLang ?? "en");
-        var source = string.Join(srcJoin.Length == 0 ? " " : srcJoin, new[] { last?.Src ?? "", p }.Where(x => x.Length > 0));
-        var tgt = TargetFor(pl.Length > 0 ? pl : last?.SrcLang);
-        var tgtJoin = Languages.Joiner(tgt);
-        var translation = string.Join(tgtJoin, new[] { last?.Dst ?? "", pt }.Where(x => x.Length > 0));
-        SubtitleChanged?.Invoke(new Subtitle(source, translation, p.Length > 0, last?.Id));
+        var source = string.Join(srcJoin, recent.Select(l => l.Src).Append(p).Where(x => x.Length > 0));
+        var tgtJoin = Languages.Joiner(TargetFor(pl.Length > 0 ? pl : last?.SrcLang));
+        var translation = string.Join(tgtJoin, recent.Select(l => l.Dst ?? "").Append(pt).Where(x => x.Length > 0));
+        SubtitleChanged?.Invoke(new Subtitle(source, translation, p.Length > 0, last?.Id, p, pt));
+    }
+
+    /// The lines still on screen: the one last shown and up to two heard just before it, back to
+    /// the first pause of more than ten seconds (after a pause the subtitle starts afresh).
+    internal static List<TranscriptLine> Recent(IReadOnlyList<TranscriptLine> lines, string lastId)
+    {
+        var at = -1;
+        for (var i = lines.Count - 1; i >= 0; i--)
+            if (lines[i].Id == lastId) { at = i; break; }
+        if (at < 0) return [];
+        var recent = new List<TranscriptLine> { lines[at] };
+        for (var i = at - 1; i >= 0 && recent.Count < 3; i--)
+        {
+            var l = lines[i];
+            if (l.Speaker != "them") continue;
+            var gap = recent[0].T - (l.End ?? l.T);
+            if (gap > 10) break;
+            recent.Insert(0, l);
+        }
+        return recent;
     }
 }

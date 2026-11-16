@@ -40,8 +40,20 @@ public partial class SubtitleWindow : Window
         Bar.BorderBrush = Theme.Primary;
         TranslationText.Text = "";
         SourceText.Text = "";
-        TranslationText.Visibility = Visibility.Collapsed;
-        SourceText.Visibility = Visibility.Collapsed;
+        Fit();
+    }
+
+    /// Two lines for each stream, at the chosen size; the translation's only while translating.
+    private void Fit()
+    {
+        var size = model.Settings.SubtitleFontSize;
+        TranslationText.FontSize = size;
+        TranslationText.LineHeight = Math.Round(size * 1.4);
+        TranslationBox.Height = TranslationText.LineHeight * 2;
+        TranslationBox.Visibility = model.Settings.TranslationOn ? Visibility.Visible : Visibility.Collapsed;
+        SourceText.LineHeight = 21;
+        // With no translation the original is all there is: give it a third line.
+        SourceBox.Height = SourceText.LineHeight * (model.Settings.TranslationOn ? 2 : 3);
     }
 
     public void ApplyCapturable()
@@ -60,7 +72,7 @@ public partial class SubtitleWindow : Window
             Top = area.Bottom - 200;
             placed = true;
         }
-        TranslationText.FontSize = model.Settings.SubtitleFontSize;
+        Fit();
         Show();
     }
 
@@ -76,17 +88,19 @@ public partial class SubtitleWindow : Window
         UiText.Set(WhoText, "Text", () => s.Live
             ? L.F("{0} · 正在说", model.SpeakerOf(s.LineId).Who) : model.SpeakerOf(s.LineId).Who);
         Bar.BorderBrush = number is { } n ? Theme.Speaker(n) : Theme.Primary;
-        var translation = model.Settings.TranslationOn ? Tail(s.Translation, 90) : "";
-        TranslationText.Text = translation;
-        TranslationText.Visibility = translation.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-        SourceText.Text = Tail(s.Source, 140);
-        SourceText.Visibility = Visibility.Visible;
+        Fit();
+        // The boxes show the end of each stream; what is far out of sight needn't be laid out.
+        TranslationText.Text = model.Settings.TranslationOn ? Tail(s.Translation, 400) : "";
+        SourceText.Text = Tail(s.Source, 400);
+        // The original sits right under the translation while it fits, and shows its end once it doesn't.
+        SourceText.VerticalAlignment = VerticalAlignment.Top;
+        SourceBox.UpdateLayout();
+        if (SourceText.ActualHeight > SourceBox.Height + 1) SourceText.VerticalAlignment = VerticalAlignment.Bottom;
         quiet.Stop();
         if (!s.Live) quiet.Start();
     }
 
-    /// Long text keeps its end: the newest words matter.
-    private static string Tail(string s, int max) => s.Length <= max ? s : "…" + s[^max..];
+    private static string Tail(string s, int max) => s.Length <= max ? s : s[^max..];
 
     private async void Stop_Click(object sender, RoutedEventArgs e) => await ((App)Application.Current).ToggleListening();
 }

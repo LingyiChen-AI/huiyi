@@ -21,6 +21,7 @@ public partial class SettingsWindow : Window
         PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
 
         Fill(TargetBox, [("auto", L.T("自动")), .. Languages.Target.Select(l => (l.Code, l.Name))], s.Target);
+        FillMachines();
         ModeNotes.IsChecked = s.Display == DisplayMode.Notes;
         ModeSubs.IsChecked = s.Display == DisplayMode.Subtitles;
         FontSlider.Value = s.SubtitleFontSize;
@@ -88,6 +89,9 @@ public partial class SettingsWindow : Window
         if (box.SelectedItem == null && box.Items.Count > 0) box.SelectedIndex = 0;
     }
 
+    private void FillMachines() => Fill(MachineBox,
+        [(MachineTranslators.Auto, L.T("自动（推荐）")), (MachineTranslators.Ai, L.T("AI 大模型")), .. MachineTranslators.All.Select(e => (e.Id, L.T(e.Name)))], model.Settings.MachineTranslator);
+
     private static string TagOf(ComboBox box) => (box.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
 
     private void FillUiLanguages() => Fill(UiLanguageBox,
@@ -108,6 +112,7 @@ public partial class SettingsWindow : Window
         loading = true;
         FillUiLanguages();
         Fill(TargetBox, [("auto", L.T("自动")), .. Languages.Target.Select(l => (l.Code, l.Name))], model.Settings.Target);
+        FillMachines();
         Fill(NotesLangBox, [("auto", L.T("跟字幕一致")), .. Languages.Target.Select(l => (l.Code, l.Name))], model.Settings.NotesLanguage);
         Fill(SpeakTargetBox, [("auto", L.T("自动（对方用的语言）")), .. Languages.Target.Select(l => (l.Code, l.Name))], model.Settings.SpeakTarget);
         Fill(SilenceBox, [("Prompt", L.T("先提醒再结束")), ("End", L.T("直接结束")), ("Off", L.T("不处理"))], model.Settings.SilenceEnd.ToString());
@@ -131,6 +136,7 @@ public partial class SettingsWindow : Window
         var oldDisplay = s.Display;
         var oldCapturable = s.HideFromCaptures;
         s.Target = TagOf(TargetBox);
+        s.MachineTranslator = TagOf(MachineBox) is { Length: > 0 } machine ? machine : MachineTranslators.Auto;
         s.Display = ModeSubs.IsChecked == true ? DisplayMode.Subtitles : DisplayMode.Notes;
         s.SpeakerVoices = VoicesOn.IsChecked == true;
         s.RedoSpeakers = RedoOn.IsChecked == true;

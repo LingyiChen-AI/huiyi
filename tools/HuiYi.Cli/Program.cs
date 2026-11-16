@@ -273,13 +273,17 @@ switch (cmd)
     }
     case "translate":
     {
-        // translate <text> <source> <target>: the app's AI service (Google when HUIYI_KIND=draft or
-        // no service); HUIYI_GLOSSARY=<glossary.json> adds the glossary as the app does.
+        // translate <text> <source> <target>: the app's AI service (a free translator when
+        // HUIYI_KIND=draft or no service; HUIYI_MACHINE=<engine id> picks it, else auto);
+        // HUIYI_GLOSSARY=<glossary.json> adds the glossary as the app does.
         var ai = AppAi();
-        var t = new TranslationService(ai) { Terms = GlossaryFile() };
+        var machine = Environment.GetEnvironmentVariable("HUIYI_MACHINE") is { Length: > 0 } m ? m : MachineTranslators.Auto;
+        var t = new TranslationService(ai) { Terms = GlossaryFile(), Machine = () => machine };
         var kind = Environment.GetEnvironmentVariable("HUIYI_KIND") == "draft" ? TranslationService.Kind.Draft : TranslationService.Kind.Sentence;
-        Console.WriteLine($"[{(kind == TranslationService.Kind.Draft || !ai.Usable ? "google" : ai.Describe)}] "
-                          + (await t.Translate(args[1], args[2], args[3], kind) ?? "(null)"));
+        var w = Stopwatch.StartNew();
+        var result = await t.Translate(args[1], args[2], args[3], kind);
+        Console.WriteLine($"[{(kind == TranslationService.Kind.Draft || !ai.Usable ? machine : ai.Describe)} {w.ElapsedMilliseconds} ms] "
+                          + (result ?? "(null)"));
         break;
     }
     case "aicheck":

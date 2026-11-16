@@ -40,6 +40,12 @@
                                 <TextBlock Text="{local:Loc Key='译成'}" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='自动：外语译成你的系统语言；对方说你的语言时，译成你的第二语言。'}"/>
+                            <DockPanel Style="{StaticResource Row}" Margin="0,10,0,0">
+                                <ComboBox x:Name="MachineBox" DockPanel.Dock="Right" MinWidth="200" SelectionChanged="Changed"/>
+                                <TextBlock Text="{local:Loc Key='翻译源'}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Helper}" TextWrapping="Wrap"
+                                       Text="{local:Loc Key='正在说的话用它即时翻译。免费翻译不用注册，选「自动」时哪个能连上用哪个；选「AI 大模型」更准但更耗额度，没接入时改用免费翻译。说完的整句，接入了大模型就由大模型翻译。'}"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Panel}">
@@ -105,7 +111,7 @@
                                 <ComboBox x:Name="ActiveBox" SelectionChanged="Active_Changed"/>
                             </DockPanel>
                             <TextBlock x:Name="KeyState" FontSize="13" Margin="0,10,0,0" TextWrapping="Wrap"/>
-                            <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用 Google。'}"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用免费翻译。'}"/>
                         </StackPanel>
                     </Border>
                     <Border x:Name="EditorCard" Style="{StaticResource Panel}">

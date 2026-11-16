@@ -87,14 +87,19 @@ public sealed class AppModel
         Translator = new TranslationService(Ai);
         Notes = new NotesEngine(Ai, Store) { Template = TemplateFor, Terms = Glossary };
         Translator.Terms = Glossary;
+        Translator.Machine = () => Settings.MachineTranslator;
         // Groups limited to some templates count only in those meetings: the one being heard now,
         // else (imports, the try-it box) the default template.
         Glossary.CurrentTemplate = () => LiveSessionId is { } live ? TemplateFor(Store.Get(live)).Id : Settings.DefaultTemplateId;
         Ai.Changed += () => Ui(() => StateChanged?.Invoke());
         Notes.Changed += () => Ui(() => NotesChanged?.Invoke());
-        Translator.GoogleLimited += () => Ui(() => Toast?.Invoke(Ai.Usable
-            ? L.F("Google 翻译暂时被限流，整句译文改由 {0} 提供", Ai.Current?.Name)
-            : L.T("Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译")));
+        Translator.MachineLimited += id => Ui(() =>
+        {
+            var who = MachineTranslators.ById(id) is { } e ? L.T(e.Name) : L.T("免费翻译");
+            Toast?.Invoke(Ai.Usable
+                ? L.F("{0}暂时连不上，正在说的话先不翻译，整句译文由 {1} 提供", who, Ai.Current?.Name)
+                : L.F("{0}暂时连不上，字幕先只显示原文。可以在「设置 › 字幕」换一个翻译源", who));
+        });
         if (!preview)
         {
             if (Ai.State == AiClient.KeyState.Unchecked) _ = Ai.Check();

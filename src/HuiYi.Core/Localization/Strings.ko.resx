@@ -40,12 +40,6 @@
   <data name="Base URL 不对，应该像 https://api.example.com/v1" xml:space="preserve">
     <value>Base URL이 올바르지 않습니다. https://api.example.com/v1 형식으로 입력하세요</value>
   </data>
-  <data name="Google 翻译暂时被限流，字幕先只显示原文。在「设置 › AI 服务」接入一个大模型即可继续翻译" xml:space="preserve">
-    <value>Google 번역 요청이 일시적으로 제한되어 원문만 표시합니다. ‘설정 › AI 서비스’에서 AI 모델을 연결하면 번역을 계속할 수 있습니다</value>
-  </data>
-  <data name="Google 翻译暂时被限流，整句译文改由 {0} 提供" xml:space="preserve">
-    <value>Google 번역 요청이 일시적으로 제한되어 완성된 문장은 {0}에서 번역합니다</value>
-  </data>
   <data name="Markdown|*.md|文本|*.txt" xml:space="preserve">
     <value>Markdown|*.md|텍스트|*.txt</value>
   </data>
@@ -1155,9 +1149,6 @@ D:\Apps\HuiYi 등 다른 위치를 선택하세요.</value>
   <data name="生成纪要" xml:space="preserve">
     <value>회의록 생성</value>
   </data>
-  <data name="用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用 Google。" xml:space="preserve">
-    <value>회의록, 완성된 문장 번역, 발언자 이름 파악에 사용합니다. 여러 서비스를 추가해 전환할 수 있습니다. 설정하지 않아도 사용 가능하며, AI 회의록 없이 Google로 문장을 번역합니다.</value>
-  </data>
   <data name="用哪个麦克风" xml:space="preserve">
     <value>사용할 마이크</value>
   </data>
@@ -2202,5 +2193,44 @@ D:\Apps\HuiYi 등 다른 위치를 선택하세요.</value>
   </data>
   <data name="B 站、YouTube 等视频页面的链接" xml:space="preserve">
     <value>Bilibili, YouTube 등 동영상 페이지 링크</value>
+  </data>
+  <data name="用于会议纪要、整句翻译和识别发言人姓名。可以添加多个，随时切换；不设置也能用，只是没有 AI 纪要，整句翻译改用免费翻译。" xml:space="preserve">
+    <value>회의록, 완성된 문장 번역, 발언자 이름 파악에 사용합니다. 여러 서비스를 추가해 전환할 수 있습니다. 설정하지 않아도 사용 가능하며, AI 회의록 없이 무료 번역으로 문장을 번역합니다.</value>
+  </data>
+  <data name="翻译源" xml:space="preserve">
+    <value>번역 엔진</value>
+  </data>
+  <data name="自动（推荐）" xml:space="preserve">
+    <value>자동(권장)</value>
+  </data>
+  <data name="腾讯交互翻译" xml:space="preserve">
+    <value>Tencent TranSmart</value>
+  </data>
+  <data name="火山翻译" xml:space="preserve">
+    <value>Volcano Translate</value>
+  </data>
+  <data name="Google 翻译" xml:space="preserve">
+    <value>Google 번역</value>
+  </data>
+  <data name="Yandex 翻译" xml:space="preserve">
+    <value>Yandex 번역</value>
+  </data>
+  <data name="必应翻译" xml:space="preserve">
+    <value>Bing 번역</value>
+  </data>
+  <data name="免费翻译" xml:space="preserve">
+    <value>무료 번역</value>
+  </data>
+  <data name="{0}暂时连不上，正在说的话先不翻译，整句译文由 {1} 提供" xml:space="preserve">
+    <value>{0}에 잠시 연결할 수 없습니다. 말하는 중인 문장은 번역하지 않고, 완성된 문장은 {1}에서 번역합니다</value>
+  </data>
+  <data name="{0}暂时连不上，字幕先只显示原文。可以在「设置 › 字幕」换一个翻译源" xml:space="preserve">
+    <value>{0}에 잠시 연결할 수 없어 자막에 원문만 표시합니다. ‘설정 › 자막’에서 다른 번역 엔진을 선택할 수 있습니다</value>
+  </data>
+  <data name="正在说的话用它即时翻译。免费翻译不用注册，选「自动」时哪个能连上用哪个；选「AI 大模型」更准但更耗额度，没接入时改用免费翻译。说完的整句，接入了大模型就由大模型翻译。" xml:space="preserve">
+    <value>말하는 중인 문장을 바로 번역합니다. 무료 번역은 가입이 필요 없고, ‘자동’은 응답하는 엔진을 사용합니다. ‘AI 모델’은 더 정확하지만 사용량이 늘며, 연결되지 않았으면 무료 번역을 사용합니다. 완성된 문장은 AI 모델이 연결되어 있으면 AI가 번역합니다.</value>
+  </data>
+  <data name="AI 大模型" xml:space="preserve">
+    <value>AI 모델</value>
   </data>
 </root>

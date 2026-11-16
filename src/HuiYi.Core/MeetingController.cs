@@ -348,7 +348,7 @@ public sealed class MeetingController
 
     private void TranslateDraft(string text, string lang, int epoch)
     {
-        if (!settings.TranslationOn || text.Length < 2 || translator.GoogleResting) return;
+        if (!settings.TranslationOn || text.Length < 2 || translator.MachineResting) return;
         var target = TargetFor(lang);
         if (Languages.SameLanguage(lang, target)) return;
         lock (gate)

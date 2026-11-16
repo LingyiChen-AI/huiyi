@@ -32,6 +32,9 @@ public sealed class AppSettings
     /// Translate the subtitles. Off by default: many meetings only need the words and the notes,
     /// and with it off nothing is sent to a translator.
     public bool TranslationOn { get; set; }
+    /// The free translator for the line being said (and whole lines without an AI service):
+    /// "auto" or an engine id from MachineTranslators.
+    public string MachineTranslator { get; set; } = MachineTranslators.Auto;
     /// Tell the other side's voices apart (发言人 1、发言人 2…). On by default.
     public bool SpeakerVoices { get; set; } = true;
     /// After a meeting, check who said what again over its whole recording (kept until then). On by default.

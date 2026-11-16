@@ -62,6 +62,9 @@ public sealed class MeetingController
     private string partial = "";
     private string partialLang = "";
     private string partialTranslation = "";
+    /// A line just finished whose own translation hasn't come yet: the subtitle keeps showing the
+    /// draft of it meanwhile, instead of dropping it for a second.
+    private readonly Dictionary<string, string> standIns = [];
     private int partialEpoch;
     private bool draftInFlight;
     private string lastDraftSent = "";
@@ -108,6 +111,7 @@ public sealed class MeetingController
             Array.Clear(lastThemId);
             lastShownId = null;
             micLines.Clear();
+            standIns.Clear();
             partial = partialTranslation = "";
         }
         speakers?.Reset();
@@ -395,8 +399,10 @@ public sealed class MeetingController
         var t = seg.Start;
         string lineId;
         bool joined;
+        string draft;
         lock (gate)
         {
+            draft = partialTranslation;
             partial = "";
             partialTranslation = "";
             lastDraftSent = "";
@@ -439,7 +445,16 @@ public sealed class MeetingController
                 if (ch == 1) micLines.Add(lineId);
             }
         }
-        lock (gate) lastShownId = lineId;
+        lock (gate)
+        {
+            lastShownId = lineId;
+            if (draft.Length > 0 && settings.TranslationOn)
+            {
+                // A piece joined on: the line's old translation plus the draft of the piece.
+                var before = joined ? store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lineId)?.Dst : null;
+                standIns[lineId] = before is { Length: > 0 } ? before + Languages.Joiner(target) + draft : draft;
+            }
+        }
         LineChanged?.Invoke(lineId);
         Render();
         TranslateLine(id, lineId);
@@ -498,6 +513,7 @@ public sealed class MeetingController
             // The line grew while this was out: its newer translation wins.
             if (line.Src != src) return;
             store.Mutate(sessionId, _ => line.Dst = outText);
+            lock (gate) standIns.Remove(lineId);
             LineChanged?.Invoke(lineId);
             Render();
         });
@@ -560,7 +576,9 @@ public sealed class MeetingController
         var srcJoin = Languages.Joiner(pl.Length > 0 ? pl : last?.SrcLang ?? "en");
         var source = string.Join(srcJoin, recent.Select(l => l.Src).Append(p).Where(x => x.Length > 0));
         var tgtJoin = Languages.Joiner(TargetFor(pl.Length > 0 ? pl : last?.SrcLang));
-        var translation = string.Join(tgtJoin, recent.Select(l => l.Dst ?? "").Append(pt).Where(x => x.Length > 0));
+        string translation;
+        lock (gate)
+            translation = string.Join(tgtJoin, recent.Select(l => standIns.GetValueOrDefault(l.Id) ?? l.Dst ?? "").Append(pt).Where(x => x.Length > 0));
         SubtitleChanged?.Invoke(new Subtitle(source, translation, p.Length > 0, last?.Id, p, pt));
     }
 

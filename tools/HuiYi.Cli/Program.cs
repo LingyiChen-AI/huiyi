@@ -50,10 +50,14 @@ switch (cmd)
     case "both":
     {
         var target = args.Length > 2 ? args[2] : "auto";
-        var settings = new AppSettings { Target = target };
+        // HUIYI_SUBS=1: translation on with the app's AI service, the file played at its own pace, and
+        // every subtitle the floating window would show printed with its time — for judging how the
+        // subtitle reads while the AI's translations come in late.
+        var subs = Environment.GetEnvironmentVariable("HUIYI_SUBS") == "1";
+        var settings = new AppSettings { Target = target, TranslationOn = subs };
         var tmp = Path.Combine(Path.GetTempPath(), "huiyi-cli-sessions");
         var store = new SessionStore(tmp);
-        var ai = new AiClient();
+        var ai = subs ? AppAi() : new AiClient();
         var translator = new TranslationService(ai);
         var notes = new NotesEngine(ai, store);
         using var rec = new Recognizer(models) { Fix = GlossaryFix() };
@@ -88,8 +92,17 @@ switch (cmd)
         }
         var w = Stopwatch.StartNew();
         string lastPartial = "";
+        string lastShown = "";
         meeting.SubtitleChanged += s =>
         {
+            if (subs)
+            {
+                var shown = $"{(s.Live ? "~" : " ")} {s.Translation}\n           {s.Source}";
+                if (shown == lastShown) return;
+                lastShown = shown;
+                Console.WriteLine($"{w.Elapsed.TotalSeconds,6:F1}s {shown}");
+                return;
+            }
             if (s.Live && s.Source != lastPartial)
             {
                 lastPartial = s.Source;
@@ -106,7 +119,7 @@ switch (cmd)
         WaveOutEvent? player = null;
         if (cmd == "listen")
         {
-            var fs = new FileSource(args[1], realTime: false);
+            var fs = new FileSource(args[1], realTime: subs);
             fs.Finished += () => done.TrySetResult();
             source = fs;
         }

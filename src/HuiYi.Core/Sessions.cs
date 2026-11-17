@@ -148,6 +148,13 @@ public sealed partial class SessionStore
 
     private void Load()
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        LoadAll();
+        Log.Debug($"store: {sessions.Count} meetings, {sessions.Sum(s => s.Lines.Count)} lines loaded in {watch.ElapsedMilliseconds} ms");
+    }
+
+    private void LoadAll()
+    {
         foreach (var dir in Directory.EnumerateDirectories(root))
         {
             try

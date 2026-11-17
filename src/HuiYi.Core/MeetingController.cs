@@ -23,7 +23,10 @@ public sealed class MeetingController
     public event Action<string, int, int>? Redone;
 
     /// Runs the after-meeting check (MeetingRedo with the app's models); null leaves records as heard.
-    public Func<float[], IReadOnlyList<TranscriptLine>, MeetingRedo.Plan?>? Redo { get; set; }
+    /// Its arguments: the recording read a stretch at a time, the lines, and a step callback.
+    public Func<Func<double, double, float[]>, IReadOnlyList<TranscriptLine>, Action<int, int>, MeetingRedo.Plan?>? Redo { get; set; }
+    /// One after-meeting check at a time: two meetings ending close together queue up.
+    private static readonly SemaphoreSlim RedoGate = new(1, 1);
     /// The glossary's AI check (off unless the user turns it on): corrections for a line just heard,
     /// or null. Runs in the background; the line is updated when it answers.
     public Func<string, Task<List<LineFix>?>>? CheckLine { get; set; }
@@ -212,8 +215,21 @@ public sealed class MeetingController
     {
         HashSet<string> mic;
         lock (finalGate) mic = [.. micLines];
-        for (var ch = 0; ch < paths.Length; ch++)
-            if (paths[ch] is { } path) RedoSpeakers(id, path, ch == 1 ? mic.Contains : l => !mic.Contains(l));
+        RedoGate.Wait();
+        var thread = Thread.CurrentThread;
+        var priority = thread.Priority;
+        try
+        {
+            // Background work: whatever the user does meanwhile comes first.
+            thread.Priority = ThreadPriority.BelowNormal;
+            for (var ch = 0; ch < paths.Length; ch++)
+                if (paths[ch] is { } path) RedoSpeakers(id, path, ch == 1 ? mic.Contains : l => !mic.Contains(l));
+        }
+        finally
+        {
+            thread.Priority = priority;
+            RedoGate.Release();
+        }
     }
 
     private void RedoSpeakers(string id, string path, Func<string, bool> ofChannel)
@@ -223,20 +239,28 @@ public sealed class MeetingController
             var snap = store.Snapshot(id);
             var lines = snap?.Lines.Where(l => ofChannel(l.Id)).ToList();
             if (lines == null || Redo == null || lines.Count(l => l.Speaker == "them") < 4) return;
-            float[] audio;
-            using (var reader = new NAudio.Wave.WaveFileReader(path))
-            {
-                var provider = reader.ToSampleProvider();
-                var all = new List<float>((int)(reader.SampleCount));
-                var buffer = new float[16000];
-                int n;
-                while ((n = provider.Read(buffer, 0, buffer.Length)) > 0) all.AddRange(buffer.AsSpan(0, n).ToArray());
-                audio = [.. all];
-            }
+            using var recording = new RecordingReader(path);
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            var plan = Redo(audio, lines);
-            Log.Debug($"redo: {audio.Length / (double)Recognizer.SampleRate:F0} s checked in {watch.ElapsedMilliseconds} ms, " +
-                      $"{plan?.Relabelled ?? 0} relabelled, {plan?.Split ?? 0} split");
+            var said = watch.Elapsed;
+            var paused = TimeSpan.Zero;
+            void Step(int done, int total)
+            {
+                // A new meeting is being heard: it needs the recognizer; carry on once it ends.
+                if (IsListening)
+                {
+                    var at = watch.Elapsed;
+                    Log.Debug($"redo: paused at {done}/{total} while a meeting is heard");
+                    while (IsListening) Thread.Sleep(1000);
+                    paused += watch.Elapsed - at;
+                }
+                if (watch.Elapsed - said < TimeSpan.FromSeconds(60)) return;
+                said = watch.Elapsed;
+                Log.Debug($"redo: {done}/{total} steps, {watch.Elapsed.TotalSeconds:F0} s");
+            }
+            var plan = Redo(recording.Slice, lines, Step);
+            Log.Debug($"redo: {recording.Seconds:F0} s checked in {watch.ElapsedMilliseconds} ms" +
+                      (paused > TimeSpan.Zero ? $" ({paused.TotalSeconds:F0} s of it paused)" : "") +
+                      $", {plan?.Relabelled ?? 0} relabelled, {plan?.Split ?? 0} split");
             if (plan == null || plan.Lines.Count == 0) return;
             var added = new List<string>();
             store.Mutate(id, s =>

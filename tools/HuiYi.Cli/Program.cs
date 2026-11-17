@@ -240,7 +240,7 @@ switch (cmd)
         listen.Turns = (s, heard) => new TurnFinder(prints.Embed, tagger.Nearest).Points(s, heard.SentenceEnds());
         var meeting = new MeetingController(settings, store, new TranslationService(ai), notes, listen, () => sys, tagger)
         {
-            Redo = (audio, lines) => MeetingRedo.Run(audio, lines, prints.Embed, rec.Recognize),
+            Redo = (slice, lines, step) => MeetingRedo.Run(slice, lines, prints.Embed, rec.Recognize, step),
         };
         var redone = new TaskCompletionSource<(int, int)>();
         meeting.Redone += (_, r, s) => redone.TrySetResult((r, s));
@@ -266,6 +266,8 @@ switch (cmd)
         var done = await Task.WhenAny(redone.Task, Task.Delay(TimeSpan.FromMinutes(10)));
         if (done != redone.Task) Console.WriteLine("\n(no change from the after-meeting check)");
         else Console.WriteLine($"\nafter-meeting check: {redone.Task.Result.Item1} relabelled, {redone.Task.Result.Item2} split, {w.Elapsed.TotalSeconds:F0} s");
+        var me = Process.GetCurrentProcess();
+        Console.WriteLine($"peak working set {me.PeakWorkingSet64 / 1048576} MB, peak private {me.PeakPagedMemorySize64 / 1048576} MB");
         await Task.Delay(500);
         Print("after the meeting");
         Console.WriteLine($"recording deleted: {!File.Exists(recording)}");

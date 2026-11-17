@@ -9,6 +9,47 @@ namespace HuiYi;
 /// lines still holding two people are cut (and recognized again), and each line gets the voice it
 /// sounds most like. (A standard offline diarization, pyannote + global clustering, was tried first:
 /// on a two-person Bilibili interview it put both people in one voice, so it isn't used.)
+/// A meeting's recording (16 kHz mono 16-bit WAV), read a stretch at a time. Seven hours of it are
+/// 1.6 GB as floats: loading it whole made the after-meeting check page the machine for hours.
+public sealed class RecordingReader : IDisposable
+{
+    private readonly NAudio.Wave.WaveFileReader reader;
+    private readonly object gate = new();
+
+    public RecordingReader(string path)
+    {
+        reader = new NAudio.Wave.WaveFileReader(path);
+        if (reader.WaveFormat.Encoding != NAudio.Wave.WaveFormatEncoding.Pcm || reader.WaveFormat.BitsPerSample != 16
+            || reader.WaveFormat.Channels != 1 || reader.WaveFormat.SampleRate != Recognizer.SampleRate)
+        {
+            reader.Dispose();
+            throw new InvalidDataException($"recording is {reader.WaveFormat}, not 16 kHz mono 16-bit");
+        }
+    }
+
+    public double Seconds => reader.SampleCount / (double)Recognizer.SampleRate;
+
+    /// The samples from `from` to `to` seconds (clipped to the recording).
+    public float[] Slice(double from, double to)
+    {
+        lock (gate)
+        {
+            var count = reader.SampleCount;
+            var a = Math.Clamp((long)(from * Recognizer.SampleRate), 0, count);
+            var b = Math.Clamp((long)(to * Recognizer.SampleRate), a, count);
+            var bytes = new byte[(b - a) * 2];
+            reader.Position = a * 2;
+            var read = 0;
+            while (read < bytes.Length && reader.Read(bytes, read, bytes.Length - read) is var n and > 0) read += n;
+            var samples = new float[read / 2];
+            for (var i = 0; i < samples.Length; i++) samples[i] = (short)(bytes[2 * i] | bytes[2 * i + 1] << 8) / 32768f;
+            return samples;
+        }
+    }
+
+    public void Dispose() => reader.Dispose();
+}
+
 public static class MeetingRedo
 {
     public sealed record Piece(double Start, double End, string Text, string Lang, int? Voice);
@@ -19,21 +60,31 @@ public static class MeetingRedo
     private const int Rate = Recognizer.SampleRate;
 
     public static Plan Run(float[] audio, IReadOnlyList<TranscriptLine> lines, Func<float[], float[]?> embed,
-        Func<float[], Recognized> recognize)
-    {
-        float[] Slice(double from, double to)
+        Func<float[], Recognized> recognize) =>
+        Run((from, to) =>
         {
             var a = Math.Clamp((int)(from * Rate), 0, audio.Length);
             var b = Math.Clamp((int)(to * Rate), a, audio.Length);
             return audio[a..b];
-        }
+        }, lines, embed, recognize);
+
+    /// `slice`: the recording between two times (seconds), read when needed, so a meeting of many
+    /// hours is never held in memory whole. `step`: called before each line of each pass with how far
+    /// it is (done, total); it may block, to make way for a meeting being heard.
+    public static Plan Run(Func<double, double, float[]> slice, IReadOnlyList<TranscriptLine> lines, Func<float[], float[]?> embed,
+        Func<float[], Recognized> recognize, Action<int, int>? step = null)
+    {
+        float[] Slice(double from, double to) => slice(from, to);
         var theirs = lines.Where(l => l.Speaker == "them" && l.End is { } e && e > l.T).ToList();
+        var total = theirs.Count * 2;
+        var done = 0;
 
         // 1. The meeting's voices, from every line in order (the live rule, now with all of it).
         var voices = new VoiceClusterer();
         var prints = new Dictionary<string, float[]?>();
         foreach (var l in theirs)
         {
+            step?.Invoke(done++, total);
             var p = embed(Slice(l.T, l.End!.Value));
             prints[l.Id] = p;
             if (p != null) voices.Label(p, l.End!.Value - l.T);
@@ -46,6 +97,7 @@ public static class MeetingRedo
         var parts = new Dictionary<string, List<(double Start, double End, string Text, string Lang, int? Cluster)>>();
         foreach (var l in theirs)
         {
+            step?.Invoke(done++, total);
             var start = l.T;
             var end = l.End!.Value;
             var clip = Slice(start, end);

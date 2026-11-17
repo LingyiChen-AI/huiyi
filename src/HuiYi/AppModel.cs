@@ -150,7 +150,7 @@ public sealed class AppModel
         meeting.StateChanged += () => Ui(() => StateChanged?.Invoke());
         meeting.Error += m => Ui(() => Toast?.Invoke(m));
         meeting.EndPending += p => Ui(() => EndPending?.Invoke(p));
-        meeting.Redo = (audio, lines) => Prints() is { } vp ? MeetingRedo.Run(audio, lines, vp.Embed, rec.Recognize) : null;
+        meeting.Redo = (slice, lines, step) => Prints() is { } vp ? MeetingRedo.Run(slice, lines, vp.Embed, rec.Recognize, step) : null;
         meeting.CheckLine = CheckLine;
         meeting.Redone += (id, relabelled, split) => Ui(() => Toast?.Invoke(
             L.F("已用整场录音重新校对了发言人：{0} 句有调整{1}，纪要会随之更新。", relabelled + split, (split > 0 ? $"（其中 {split} 句拆成了两个人）" : ""))));

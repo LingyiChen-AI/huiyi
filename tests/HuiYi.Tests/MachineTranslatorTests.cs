@@ -66,9 +66,21 @@ public class MachineTranslatorTests
     }
 
     [Fact]
-    public async Task TextHandedBackUntranslatedCountsAsAFailure()
+    public async Task TextThatReadsTheSameIsItsOwnTranslation()
     {
-        var t = new TranslationService(new AiClient()) { Catalog = [Fake("echo", text => text), Fake("b", _ => "你好")] };
+        // "OK", a name, a number: the same in both languages. No engine is rested for it.
+        var calls = new List<string>();
+        var t = new TranslationService(new AiClient()) { Catalog = [Fake("echo", text => text, calls), Fake("b", _ => "其他", calls)] };
+        Assert.Equal("OK", await t.Translate("OK", "en", "zh-CN", TranslationService.Kind.Draft));
+        Assert.Equal("Daniel", await t.Translate("Daniel", "en", "zh-CN", TranslationService.Kind.Draft));
+        Assert.Equal(["echo", "echo"], calls);
+        Assert.False(t.MachineResting);
+    }
+
+    [Fact]
+    public async Task AnEmptyAnswerCountsAsAFailure()
+    {
+        var t = new TranslationService(new AiClient()) { Catalog = [Fake("empty", _ => " "), Fake("b", _ => "你好")] };
         Assert.Equal("你好", await t.Translate("hello", "en", "zh-CN", TranslationService.Kind.Draft));
     }
 

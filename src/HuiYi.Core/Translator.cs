@@ -63,9 +63,10 @@ public sealed class TranslationService(AiClient ai)
             try
             {
                 var out2 = (await e.Run(forMachine, sl, tl, default)).Trim();
-                // An engine that can't take the language may hand the text back as it was.
-                if (out2.Length == 0 || (out2 == forMachine.Trim() && !Languages.SameLanguage(source, target)))
-                    throw new InvalidDataException($"{e.Id}: no translation");
+                // Text that reads the same in both languages ("OK", a name, a number) comes back as it
+                // was: that is its translation, not a failure. (Languages an engine can't take are
+                // kept from it by its codes.)
+                if (out2.Length == 0) throw new InvalidDataException($"{e.Id}: no translation");
                 if (kind != Kind.Draft) Log.Debug($"translate via={e.Id} kind={kind} {(int)(DateTime.Now - started).TotalMilliseconds} ms");
                 lock (resting) resting.Remove(e.Id);
                 limitedSaid = false;

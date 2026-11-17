@@ -356,8 +356,17 @@ public partial class App : Application
 
     private void ShowToast(string message)
     {
-        Log.Debug("toast shown");
-        tray?.ShowNotification(Brand.Name, message);
+        // Windows can refuse a notification (Focus Assist, notifications off, the shell busy): it is
+        // only a hint, so a refusal is logged and dropped rather than surfacing as an app error.
+        try
+        {
+            tray?.ShowNotification(Brand.Name, message);
+            Log.Debug("toast shown");
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            Log.Debug($"toast refused: {e.GetType().Name}");
+        }
     }
 
     private void OnEndPending(MeetingEndWatch.Pending? p)

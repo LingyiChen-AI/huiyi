@@ -35,14 +35,30 @@ public sealed class AiTests : IDisposable
         return port;
     }
 
+    /// How long the stand-in takes to answer, and how many requests it held at once at most.
+    private TimeSpan delay = TimeSpan.Zero;
+    private int open, mostOpen;
+
     private async Task Serve()
     {
         while (listener.IsListening)
         {
             HttpListenerContext ctx;
             try { ctx = await listener.GetContextAsync(); } catch { return; }
+            // Each request on its own, as a real service takes them.
+            _ = Task.Run(() => Answer(ctx));
+        }
+    }
+
+    private async Task Answer(HttpListenerContext ctx)
+    {
+        var now = Interlocked.Increment(ref open);
+        lock (seen) mostOpen = Math.Max(mostOpen, now);
+        try
+        {
             var text = await new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
             lock (seen) seen.Add((ctx.Request.Url!.AbsolutePath, ctx.Request.Headers["Authorization"], text.Length > 0 ? JsonNode.Parse(text) as JsonObject : null));
+            if (delay > TimeSpan.Zero) await Task.Delay(delay);
             var (status, body) = reply(ctx.Request.Url!.AbsolutePath);
             ctx.Response.StatusCode = status;
             var bytes = Encoding.UTF8.GetBytes(body);
@@ -50,6 +66,56 @@ public sealed class AiTests : IDisposable
             await ctx.Response.OutputStream.WriteAsync(bytes);
             ctx.Response.Close();
         }
+        catch { }
+        finally { Interlocked.Decrement(ref open); }
+    }
+
+    [Fact]
+    public async Task KeepsAtMostThreeRequestsOutAtOnce()
+    {
+        reply = _ => (200, Completion("ok"));
+        delay = TimeSpan.FromMilliseconds(1500);
+        var c = Client("custom");
+        var all = Enumerable.Range(0, 8).Select(_ => c.Chat("x", "Translate.", AiClient.Priority.Translate, timeout: TimeSpan.FromSeconds(20))).ToList();
+        Assert.All(await Task.WhenAll(all), r => Assert.Equal("ok", r));
+        Assert.Equal(8, seen.Count);
+        Assert.Equal(AiClient.MaxInFlight, mostOpen);
+        Assert.Equal(0, c.Queued);
+    }
+
+    [Fact]
+    public async Task SpeakBackDoesNotWaitBehindSlowNotes()
+    {
+        reply = path => (200, Completion("ok"));
+        delay = TimeSpan.FromMilliseconds(1500);
+        var c = Client("custom");
+        var notes = Enumerable.Range(0, AiClient.MaxInFlight)
+            .Select(_ => c.Chat("x", "Update the notes.", AiClient.Priority.Notes, timeout: TimeSpan.FromSeconds(20))).ToList();
+        await Task.Delay(300);
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Equal("ok", await c.Chat("x", "Translate.", AiClient.Priority.Speak, timeout: TimeSpan.FromSeconds(20)));
+        // Its own slot: answered in one round trip, not after the notes.
+        Assert.True(watch.ElapsedMilliseconds < 2500, $"{watch.ElapsedMilliseconds} ms");
+        await Task.WhenAll(notes);
+    }
+
+    [Fact]
+    public async Task ARequestGivenUpWhileQueuedLeavesTheQueue()
+    {
+        reply = _ => (200, Completion("ok"));
+        delay = TimeSpan.FromMilliseconds(2000);
+        var c = Client("custom");
+        var busy = Enumerable.Range(0, AiClient.MaxInFlight)
+            .Select(_ => c.Chat("x", "Translate.", AiClient.Priority.Translate, timeout: TimeSpan.FromSeconds(20))).ToList();
+        // All three out (starts are spaced a quarter second apart): the next one has to queue.
+        await Task.Delay(900);
+        Assert.Equal(0, c.Queued);
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => c.Chat("x", "Translate.", AiClient.Priority.Translate, ct: cts.Token));
+        Assert.Equal(0, c.Queued);
+        await Task.WhenAll(busy);
+        // The slots all came back: one more goes straight out.
+        Assert.Equal("ok", await c.Chat("x", "Translate.", AiClient.Priority.Translate, timeout: TimeSpan.FromSeconds(5)));
     }
 
     public void Dispose()

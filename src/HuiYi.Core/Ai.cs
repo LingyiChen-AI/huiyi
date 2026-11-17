@@ -206,8 +206,11 @@ public sealed class AiClient
         var delay = 1.0;
         for (var attempt = 1; attempt <= attempts; attempt++)
         {
+            var queued = DateTime.Now;
             await Acquire(priority, p.Info.Spacing, ct);
             var started = DateTime.Now;
+            if (started - queued > TimeSpan.FromSeconds(5))
+                Log.Debug($"ai: {priority} waited {(started - queued).TotalSeconds:F0} s for a free slot ({Queued} still queued)");
             try
             {
                 var root = await Post(p, "chat/completions", body, timeout ?? TimeSpan.FromSeconds(30), ct);
@@ -236,6 +239,7 @@ public sealed class AiClient
                 RateLimitedAt = DateTime.Now;
                 throw;
             }
+            finally { Release(); }
         }
         throw new AiException(AiFailure.RateLimited);
     }
@@ -254,6 +258,8 @@ public sealed class AiClient
     {
         if (Current is not { Info.HasMingVoices: true } p || AIKey.Read(p.Id) is not { } key) throw new AiException(AiFailure.NoKey);
         await Acquire(Priority.Speak, p.Info.Spacing, ct);
+        try
+        {
         var body = new JsonObject
         {
             ["model"] = "Ming-3.0-tts-0.5B", ["input"] = text, ["voice"] = voice,
@@ -284,6 +290,8 @@ public sealed class AiClient
             if (obj?["type"]?.GetValue<string>() == "speech.audio.done") break;
             if (obj?["audio"]?.GetValue<string>() is { } b64) yield return Convert.FromBase64String(b64);
         }
+        }
+        finally { Release(); }
     }
 
     private async Task<JsonNode> Post(AiProvider p, string path, JsonObject body, TimeSpan timeout, CancellationToken ct = default)
@@ -327,34 +335,70 @@ public sealed class AiClient
         }
     }
 
-    // Start gate: request starts spaced as the platform allows, the most urgent waiting one first.
+    // Start gate: request starts spaced as the platform allows, at most MaxInFlight out at once, the
+    // most urgent waiting one first. A local model answers one request at a time: sent everything at
+    // once it queues them itself, out of our sight, and the ones at the back time out.
+    public const int MaxInFlight = 3;
     private readonly object gate = new();
     private DateTime lastStart = DateTime.MinValue;
     private readonly List<(Priority P, long Seq, TaskCompletionSource Tcs)> waiting = [];
     private long seq;
     private bool pumping;
+    private int inFlight;
     private TimeSpan spacing = TimeSpan.FromSeconds(0.25);
+
+    /// Requests waiting for a free slot.
+    public int Queued
+    {
+        get { lock (gate) return waiting.Count; }
+    }
 
     private Task Acquire(Priority p, double seconds, CancellationToken ct)
     {
         lock (gate)
         {
             spacing = TimeSpan.FromSeconds(seconds);
-            if (waiting.Count == 0 && DateTime.Now - lastStart >= spacing)
+            if (waiting.Count == 0 && HasRoom(p) && DateTime.Now - lastStart >= spacing)
             {
                 lastStart = DateTime.Now;
+                inFlight++;
                 return Task.CompletedTask;
             }
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            waiting.Add((p, ++seq, tcs));
+            var entry = (p, ++seq, tcs);
+            waiting.Add(entry);
             Pump();
-            return tcs.Task.WaitAsync(ct);
+            // Given up while waiting: leave the queue (a slot handed to it meanwhile goes back).
+            ct.Register(() =>
+            {
+                lock (gate)
+                {
+                    if (waiting.Remove(entry)) tcs.TrySetCanceled(ct);
+                }
+            });
+            return tcs.Task;
+        }
+    }
+
+    /// Speak-back (someone waiting to talk) gets one slot more than the rest, so it never waits
+    /// behind a notes update that can take a minute and a half.
+    private bool HasRoom(Priority p) => inFlight < MaxInFlight + (p == Priority.Speak ? 1 : 0);
+
+    private (Priority P, long Seq, TaskCompletionSource Tcs) Next() => waiting.OrderBy(w => w.P).ThenBy(w => w.Seq).First();
+
+    /// A request is done (answered, failed or given up): its slot goes to the next one waiting.
+    private void Release()
+    {
+        lock (gate)
+        {
+            inFlight = Math.Max(0, inFlight - 1);
+            Pump();
         }
     }
 
     private void Pump()
     {
-        if (pumping || waiting.Count == 0) return;
+        if (pumping || waiting.Count == 0 || !HasRoom(Next().P)) return;
         pumping = true;
         var wait = spacing - (DateTime.Now - lastStart);
         if (wait < TimeSpan.Zero) wait = TimeSpan.Zero;
@@ -363,10 +407,11 @@ public sealed class AiClient
             lock (gate)
             {
                 pumping = false;
-                if (waiting.Count == 0) return;
-                var next = waiting.OrderBy(w => w.P).ThenBy(w => w.Seq).First();
+                if (waiting.Count == 0 || !HasRoom(Next().P)) return;
+                var next = Next();
                 waiting.Remove(next);
                 lastStart = DateTime.Now;
+                inFlight++;
                 next.Tcs.TrySetResult();
                 Pump();
             }

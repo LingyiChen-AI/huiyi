@@ -401,6 +401,8 @@ public sealed class NotesEngine
     private int inFlight;
     private string? pendingFinal;
     private DateTime lastAttempt = DateTime.MinValue;
+    /// Live updates failed in a row (reset by one that works).
+    private int failures;
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(45);
 
     public NotesEngine(AiClient ai, SessionStore store)
@@ -420,6 +422,7 @@ public sealed class NotesEngine
         Notes = store.Get(id)?.Notes ?? new MeetingNotes();
         Status = ai.HasKey ? State.Idle : State.NoKey;
         lastAttempt = DateTime.Now;
+        failures = 0;
         timer?.Dispose();
         timer = new Timer(_ => Tick(), null, 5000, 5000);
         Changed?.Invoke();
@@ -456,9 +459,13 @@ public sealed class NotesEngine
         if (id == null || Volatile.Read(ref inFlight) == 1) return;
         var s = store.Get(id);
         if (s == null || s.Lines.Count <= Notes.Covered) return;
-        // First notes as soon as there is something to say, then every 45 s.
-        var due = Notes.IsEmpty ? s.Lines.Count >= 3 || DateTime.Now - lastAttempt > TimeSpan.FromSeconds(20)
-                                : DateTime.Now - lastAttempt >= Interval;
+        // First notes as soon as there is something to say, then every 45 s. After failures (a slow
+        // or overloaded service timing out) wait longer each time, up to 5 minutes, so the service
+        // isn't kept busy with requests that will time out too.
+        var backoff = failures == 0 ? TimeSpan.Zero : TimeSpan.FromSeconds(Math.Min(300, Interval.TotalSeconds * Math.Pow(2, failures - 1)));
+        var due = (Notes.IsEmpty ? s.Lines.Count >= 3 || DateTime.Now - lastAttempt > TimeSpan.FromSeconds(20)
+                                 : DateTime.Now - lastAttempt >= Interval)
+                  && DateTime.Now - lastAttempt >= backoff;
         if (due) _ = Update(id, final: false);
     }
 
@@ -523,8 +530,10 @@ public sealed class NotesEngine
             {
                 Log.Debug("notes: no usable reply, kept the previous notes");
                 Status = State.Failed;
+                if (!final) failures++;
                 return;
             }
+            if (!final) failures = 0;
             NotesPrompt.CarryTimes(based, next);
             if (next.Title == null) next.Title = (id == ShownId ? Notes : session.Notes)?.Title;
             next.Covered = lines.Count;
@@ -544,11 +553,13 @@ public sealed class NotesEngine
                 AiFailure.NoKey => State.NoKey,
                 _ => State.Failed,
             };
-            Log.Debug($"notes: update failed {e.Failure}");
+            if (!final) failures++;
+            Log.Debug($"notes: update failed {e.Failure}" + (final ? "" : $" ({failures} in a row)"));
         }
         catch (Exception e)
         {
             Status = State.Failed;
+            if (!final) failures++;
             Log.Debug($"notes: update failed {e.GetType().Name}");
         }
         finally

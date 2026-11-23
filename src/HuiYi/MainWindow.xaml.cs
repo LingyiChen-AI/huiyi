@@ -22,13 +22,24 @@ public partial class MainWindow : Window
     private string appliedQuery = "";
     private string? appliedSession;
     private readonly System.Windows.Threading.DispatcherTimer searchTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
+    /// While a meeting runs the store changes several times a second (each line, each translation).
+    /// Redrawing the list and the details for each kept the window busy most of the time and every
+    /// click waited (issue #1): the list follows at most once a second, and not while minimised.
+    private readonly System.Windows.Threading.DispatcherTimer listTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private DateTime listShown;
+    private bool listPending;
+    /// What the notes on show were built from: unchanged, they aren't built again.
+    private string? notesKey;
+    private int glossaryRevision;
 
     public MainWindow(AppModel model)
     {
         this.model = model;
         InitializeComponent();
         searchTimer.Tick += (_, _) => { searchTimer.Stop(); RefreshList(); };
-        Closed += (_, _) => searchTimer.Stop();
+        listTimer.Tick += (_, _) => { listTimer.Stop(); RefreshList(); };
+        Closed += (_, _) => { searchTimer.Stop(); listTimer.Stop(); };
+        StateChanged += (_, _) => { if (WindowState != WindowState.Minimized && listPending) RefreshList(); };
         UiText.Set(this, "Title", () => L.F("{0} · 会议记录", L.T("会译")));
         Icon = Icons.Mark(64, false);
         Logo.Source = Icons.Mark(52, false);
@@ -39,10 +50,10 @@ public partial class MainWindow : Window
         Height = Math.Min(Height, area.Height * 0.92);
         LinesList.ItemsSource = lines;
         PropertyChangedEventManager.AddHandler(L.Instance, LanguageChanged, "Item[]");
-        model.Store.Changed += () => Dispatcher.BeginInvoke(RefreshList);
+        model.Store.Changed += () => Dispatcher.BeginInvoke(RequestList);
         model.NotesChanged += RefreshSelectedDetails;
         // 加入词库 buttons in the notes show what the glossary knows.
-        model.Glossary.Changed += () => Dispatcher.BeginInvoke(RefreshSelectedDetails);
+        model.Glossary.Changed += () => Dispatcher.BeginInvoke(() => { glossaryRevision++; RefreshSelectedDetails(); });
         Refresh();
     }
 
@@ -55,7 +66,22 @@ public partial class MainWindow : Window
         ListenBtn.Style = (Style)FindResource(model.IsListening ? "OnAirBtn" : "PrimaryBtn");
         LiveBtn.Visibility = model.IsListening ? Visibility.Visible : Visibility.Collapsed;
         TranslateOn.IsChecked = model.Settings.TranslationOn;
-        RefreshList();
+        RequestList();
+    }
+
+    /// The list and details again, soon: now if they were last drawn over a second ago, else once
+    /// that second is up; when the window is minimised, as it comes back.
+    private void RequestList()
+    {
+        listPending = true;
+        if (WindowState == WindowState.Minimized || listTimer.IsEnabled) return;
+        var wait = listShown + listTimer.Interval - DateTime.Now;
+        if (wait <= TimeSpan.Zero) RefreshList();
+        else
+        {
+            listTimer.Interval = wait;
+            listTimer.Start();
+        }
     }
 
     private void Live_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).ShowLive();
@@ -66,6 +92,10 @@ public partial class MainWindow : Window
 
     private void RefreshList()
     {
+        listTimer.Stop();
+        listTimer.Interval = TimeSpan.FromSeconds(1);
+        listPending = false;
+        listShown = DateTime.Now;
         var q = SearchBox.Text.Trim();
         SearchHint.Visibility = q.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         var rows = model.Store.All
@@ -77,10 +107,13 @@ public partial class MainWindow : Window
             .ToList();
         var keep = selected;
         refreshingList = true;
-        BuildMeetingTree(rows, q);
+        // Only counts and titles changed (a meeting running): those rows change in place. A new tree
+        // would build every row again and drop the scroll position.
+        if (!UpdateMeetingTree(rows, q)) BuildMeetingTree(rows, q);
         EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         RenderLibraryEmpty(q);
-        var row = rows.FirstOrDefault(r => r.Id == keep) ?? rows.FirstOrDefault();
+        var shown = treeGroups.SelectMany(g => g.Children).ToList();
+        var row = shown.FirstOrDefault(r => r.Id == keep) ?? shown.FirstOrDefault(r => r.Id == rows.FirstOrDefault()?.Id);
         if (row == null)
         {
             selected = null;
@@ -132,8 +165,15 @@ public partial class MainWindow : Window
         UiText.Set(NotesBtn, "Content", () => generating ? L.T("整理中…") : s.Notes is { IsEmpty: false } ? L.T("重新整理纪要") : L.T("生成纪要"));
         NotesBtn.IsEnabled = !generating && s.Id != model.LiveSessionId;
         UiText.Set(NotesBtn, "ToolTip", () => generating ? L.T("AI 正在通读整场会议…") : s.Notes?.UpdatedAt is { } at ? L.F("纪要更新于 {0:M月d日 HH:mm}", at.ToLocalTime()) : "");
+        var names = SpeakerLabels.Names(s);
+        var builtIn = model.TemplateFor(s).BuiltIn;
+        var key = string.Join("|", s.Id, L.Language, model.Ai.HasKey, glossaryRevision, builtIn,
+            string.Join(",", names.OrderBy(n => n.Key).Select(n => $"{n.Key}={n.Value}")),
+            s.Notes is { IsEmpty: false } ? System.Text.Json.JsonSerializer.Serialize(s.Notes) : "");
+        if (key == notesKey && NotesHost.Content != null) { FinishDetail(s, keepTab, switched); return; }
+        notesKey = key;
         NotesHost.Content = s.Notes is { IsEmpty: false } n
-            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: SpeakerLabels.Names(s), localizeHeadings: model.TemplateFor(s).BuiltIn,
+            ? NotesRenderer.Build(n, s.StartedAt, 14, cards: true, names: names, localizeHeadings: builtIn,
                 termExtra: LearnButton)
             : new Border
             {
@@ -146,6 +186,11 @@ public partial class MainWindow : Window
                 }, ("Text", () => model.Ai.HasKey ? L.T("这场会议还没有纪要，点右上角「生成纪要」。")
                                              : L.T("在「设置 › AI 服务」里接入一个大模型后可以生成纪要。完整的双语内容在「逐字稿」里。"))),
             };
+        FinishDetail(s, keepTab, switched);
+    }
+
+    private void FinishDetail(Session s, bool keepTab, bool switched)
+    {
         if (!keepTab && switched)
         {
             if (s.Notes is { IsEmpty: false }) TabNotes.IsChecked = true;

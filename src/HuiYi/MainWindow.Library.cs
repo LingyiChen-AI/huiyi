@@ -33,6 +33,35 @@ public partial class MainWindow
         SessionList.ItemsSource = treeGroups;
     }
 
+    /// The same groups holding the same meetings in the same order, under the same search: the rows on
+    /// show take the new titles and counts, and true. Otherwise false, for a new tree.
+    private bool UpdateMeetingTree(IReadOnlyList<SessionRow> rows, string query)
+    {
+        if (query != treeQuery || archiveScope != treeScope) return false;
+        var byGroup = rows.GroupBy(r => model.Store.GroupOf(r.Id) ?? "").ToDictionary(g => g.Key, g => g.ToList());
+        var groups = new List<SessionGroup> { new("", L.T("未分组")) };
+        groups.AddRange(model.Store.Groups);
+        if (groups.Count != treeGroups.Count) return false;
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var node = treeGroups[i];
+            var children = byGroup.GetValueOrDefault(groups[i].Id) ?? [];
+            if (node.Id != groups[i].Id || node.Title != groups[i].Name || node.Children.Count != children.Count) return false;
+            for (var j = 0; j < children.Count; j++)
+                if (node.Children[j].Id != children[j].Id || node.Children[j].Archived != children[j].Archived) return false;
+        }
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var children = byGroup.GetValueOrDefault(groups[i].Id) ?? [];
+            for (var j = 0; j < children.Count; j++)
+            {
+                treeGroups[i].Children[j].Title = children[j].Title;
+                treeGroups[i].Children[j].Meta = children[j].Meta;
+            }
+        }
+        return true;
+    }
+
     private bool MatchesArchiveScope(string id)
     {
         var archived = model.Store.IsArchived(id);

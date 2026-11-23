@@ -28,14 +28,18 @@ public abstract class LibraryNode : INotifyPropertyChanged
         }
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+    protected void Raise(string name) => PropertyChanged?.Invoke(this, new(name));
 }
 
 public sealed class SessionRow(string id, string title, string meta) : LibraryNode
 {
     public override bool IsGroup => false;
     public string Id { get; } = id;
-    public string Title { get; } = title;
-    public string Meta { get; } = meta;
+    private string title = title, meta = meta;
+    /// Changed in place while a meeting runs (its line count, its title from the notes), so the
+    /// list isn't rebuilt for every line.
+    public string Title { get => title; set { if (title == value) return; title = value; Raise(nameof(Title)); } }
+    public string Meta { get => meta; set { if (meta == value) return; meta = value; Raise(nameof(Meta)); } }
     public bool Archived { get; init; }
 }
 

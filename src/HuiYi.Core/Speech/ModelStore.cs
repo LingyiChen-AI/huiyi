@@ -8,7 +8,14 @@ namespace HuiYi.Speech;
 /// SHA-256 before use. Hugging Face first, then its mirror for networks that can't reach it.
 public sealed class ModelStore
 {
-    public sealed record ModelFile(string RelativePath, string[] Urls, long Size, string Sha256);
+    /// `Also`: the same model as published again upstream (re-exported, same weights), any of which
+    /// is accepted: the hosts serve only the latest, so pinning one alone fails every new install.
+    public sealed record ModelFile(string RelativePath, string[] Urls, long Size, string Sha256, params (long Size, string Sha256)[] Also)
+    {
+        public IEnumerable<(long Size, string Sha256)> Versions => Also.Prepend((Size, Sha256));
+        public bool Fits(long length) => Versions.Any(v => v.Size == length);
+        public bool Matches(long length, string sha256) => Versions.Any(v => v.Size == length && v.Sha256 == sha256);
+    }
 
     private const string SenseVoice = "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/";
 
@@ -31,7 +38,10 @@ public sealed class ModelStore
         new(SpeakerFile,
             [$"https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/{SpeakerFile}",
              $"https://hf-mirror.com/csukuangfj/speaker-embedding-models/resolve/main/{SpeakerFile}"],
-            28_281_138, "f682b514c05d947ee3fa91cd6ec6c5c7543479a128373fa29b1faedccd21fd11"),
+            28_281_139, "e6af4d4c444f3dab01d991bb9b7d5af98eb979e329f6c8880a19d5553561ed25",
+            // The November 2026 re-export changed only AveragePool's count_include_pad flag; its
+            // voiceprints equal the earlier file's (1.0000 on 120 clips), so voices kept from it still match.
+            (28_281_138, "f682b514c05d947ee3fa91cd6ec6c5c7543479a128373fa29b1faedccd21fd11")),
     ];
 
     private const string SpeakerFile = "3dspeaker_speech_campplus_sv_zh-cn_16k-common.onnx";
@@ -48,7 +58,7 @@ public sealed class ModelStore
     public long TotalBytes => Files.Sum(f => f.Size);
 
     /// Present with the right size; the hash is checked once after download and remembered.
-    public bool Ready => Files.All(f => new FileInfo(PathOf(f.RelativePath)) is { Exists: true } i && i.Length == f.Size
+    public bool Ready => Files.All(f => new FileInfo(PathOf(f.RelativePath)) is { Exists: true } i && f.Fits(i.Length)
                                         && File.Exists(PathOf(f.RelativePath) + ".ok"));
 
     /// Downloads what is missing. `progress` gets (bytes done, bytes total).
@@ -60,7 +70,7 @@ public sealed class ModelStore
         foreach (var f in Files)
         {
             var target = PathOf(f.RelativePath);
-            if (new FileInfo(target) is { Exists: true } info && info.Length == f.Size && File.Exists(target + ".ok"))
+            if (new FileInfo(target) is { Exists: true } info && f.Fits(info.Length) && File.Exists(target + ".ok"))
             {
                 doneBefore += f.Size;
                 progress?.Report((doneBefore, TotalBytes));
@@ -68,9 +78,10 @@ public sealed class ModelStore
             }
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             // A file already there (put by hand, or from before) only needs its hash checked.
-            if (File.Exists(target) && new FileInfo(target).Length == f.Size && await Sha256Of(target, ct) == f.Sha256)
+            if (File.Exists(target) && new FileInfo(target).Length is var have && f.Fits(have)
+                && await Sha256Of(target, ct) is var haveHash && f.Matches(have, haveHash))
             {
-                await File.WriteAllTextAsync(target + ".ok", f.Sha256, ct);
+                await File.WriteAllTextAsync(target + ".ok", haveHash, ct);
                 doneBefore += f.Size;
                 progress?.Report((doneBefore, TotalBytes));
                 continue;
@@ -98,9 +109,10 @@ public sealed class ModelStore
                         }
                     }
                     var hash = await Sha256Of(part, ct);
-                    if (hash != f.Sha256) throw new InvalidDataException($"checksum mismatch for {f.RelativePath}");
+                    var length = new FileInfo(part).Length;
+                    if (!f.Matches(length, hash)) throw new InvalidDataException($"checksum mismatch for {f.RelativePath}: {length} bytes, {hash}");
                     File.Move(part, target, true);
-                    await File.WriteAllTextAsync(target + ".ok", f.Sha256, ct);
+                    await File.WriteAllTextAsync(target + ".ok", hash, ct);
                     ok = true;
                     Log.Debug($"models: {f.RelativePath} downloaded from {new Uri(url).Host}");
                     break;

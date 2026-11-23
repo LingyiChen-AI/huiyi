@@ -86,6 +86,13 @@ public sealed class ListenEngine : IDisposable
         var both = audio as BothEnds;
         var list = new List<Channel> { new(0, both?.Pc ?? audio) };
         if (both?.Mic != null) list.Add(new Channel(1, both.Mic));
+        // A meeting ended mid-sentence left its channel holding the live line: a new meeting's
+        // channels are new, and that one would never let go (no subtitles in the second meeting).
+        lock (partialGate)
+        {
+            showing = null;
+            pcSaid = "";
+        }
         channels = list;
         var running = list.Count;
         var done = completion;
@@ -177,6 +184,7 @@ public sealed class ListenEngine : IDisposable
             if (c.Index == 0 && text.Length > 0) pcSaid = text;
             // The PC's words back through the microphone are not someone talking: they never hold the line.
             bool Talking(Channel o) => o.Partial.Length > 0 && !(o.Index == 1 && EchoCheck.IsEcho(o.Partial, pcSaid));
+            if (showing != null && !channels.Contains(showing)) showing = null;
             var was = showing;
             if (showing == null || !Talking(showing)) showing = Talking(c) ? c : channels.FirstOrDefault(Talking);
             if (showing == null) Partial?.Invoke("", "");

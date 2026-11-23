@@ -220,7 +220,7 @@ public partial class GlossaryWindow : Window
         RenderList();
     }
 
-    private void Save_Click(object sender, RoutedEventArgs e) => Save();
+    private void Save_Click(object sender, RoutedEventArgs e) => UiWatch.Time("glossary save", Save);
 
     private void New_Click(object sender, RoutedEventArgs e)
     {

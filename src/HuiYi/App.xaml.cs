@@ -77,6 +77,7 @@ public partial class App : Application
         Model.Subtitle += s => subtitles?.Show(s);
         CreateTray();
         Log.Debug("app: started");
+        if (!e.Args.Contains("--snapshot")) UiWatch.Start(Dispatcher);
 
         var background = e.Args.Contains("--background");
         // Developer switches, for checking the app without clicking: --listen, --show main|settings|setup,
@@ -325,9 +326,12 @@ public partial class App : Application
 
     public void OpenSettings()
     {
-        settingsWindow ??= new SettingsWindow(Model);
-        settingsWindow.Closed += (_, _) => settingsWindow = null;
-        Bring(settingsWindow);
+        UiWatch.Time("open settings", () =>
+        {
+            settingsWindow ??= new SettingsWindow(Model);
+            settingsWindow.Closed += (_, _) => settingsWindow = null;
+            Bring(settingsWindow);
+        });
     }
 
     public void OpenSetup()

@@ -389,37 +389,32 @@ public sealed class MeetingController
         if (!settings.TranslationOn || text.Length < 2 || translator.MachineResting) return;
         var target = TargetFor(lang);
         if (Languages.SameLanguage(lang, target)) return;
-        string keptSrc, keptDst, ended, going, nextSrc;
+        string keptSrc, keptDst, ended, nextSrc;
         lock (gate)
         {
             // One draft at a time, at most one a second: the free endpoint blocks eager clients.
             if (draftInFlight || text == lastDraftSent || DateTime.Now - lastDraftAt < TimeSpan.FromSeconds(1)) return;
             // Where the kept pieces end in the text now (its punctuation, a word or two, may have been
-            // redone). Lost entirely: translate afresh.
+            // redone). Lost: what is on screen stays, and the line's end fills in the rest.
             var at = frozenSrc.Length == 0 ? 0 : StableDraft.After(frozenSrc, text);
-            if (at < 0)
-            {
-                frozenSrc = frozenDst = "";
-                at = 0;
-            }
+            if (at < 0) return;
             keptSrc = frozenSrc;
             keptDst = frozenDst;
             var rest = text[at..];
             var cut = StableDraft.EndedUpTo(rest);
             ended = rest[..cut];
-            going = rest[cut..];
             nextSrc = text[..(at + cut)];
-            if (!rest.Any(char.IsLetterOrDigit)) return;
+            // Only pieces that have ended are translated: a translation of words still coming would be
+            // replaced by another a second later, and words once read must stay (the piece being said
+            // shows in the original until it ends).
+            if (!ended.Any(char.IsLetterOrDigit)) return;
             draftInFlight = true;
             lastDraftSent = text;
             lastDraftAt = DateTime.Now;
         }
         _ = Task.Run(async () =>
         {
-            // Sentences that just ended, then the one being said: shown together, in one change.
-            string? endedOut = ended.Any(char.IsLetterOrDigit) ? await translator.Translate(ended, lang, target, TranslationService.Kind.Draft) : "";
-            string? goingOut = endedOut != null && going.Any(char.IsLetterOrDigit)
-                ? await translator.Translate(going, lang, target, TranslationService.Kind.Draft) : "";
+            var endedOut = await translator.Translate(ended, lang, target, TranslationService.Kind.Draft);
             bool again;
             lock (gate)
             {
@@ -428,8 +423,8 @@ public sealed class MeetingController
                 {
                     frozenSrc = nextSrc;
                     frozenDst = StableDraft.Join(keptDst, endedOut, target);
-                    partialTranslation = StableDraft.Join(frozenDst, goingOut ?? "", target);
-                    partialTranslatedFrom = goingOut != null ? text : frozenSrc;
+                    partialTranslation = frozenDst;
+                    partialTranslatedFrom = frozenSrc;
                 }
                 // The line grew while this one was out: translate what is there now.
                 again = partial.Length > 0 && partial != lastDraftSent && epoch == partialEpoch;
@@ -517,7 +512,7 @@ public sealed class MeetingController
             var rest = draft.Length > 0 ? StableDraft.Rest(draftFrom, seg.Text) : null;
             // The sentence being said came out differently once finished: keep the sentences that had
             // ended, and translate the rest of the line after them.
-            if (rest == null && endedDst.Length > 0 && StableDraft.Rest(endedSrc, seg.Text) is { } afterEnded)
+            if (rest == null && endedDst.Length > 0 && (StableDraft.Rest(endedSrc, seg.Text) ?? StableDraft.RestLoosely(endedSrc, seg.Text)) is { } afterEnded)
             {
                 draft = endedDst;
                 rest = afterEnded;

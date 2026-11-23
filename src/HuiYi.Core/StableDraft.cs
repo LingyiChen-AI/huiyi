@@ -70,6 +70,25 @@ public static class StableDraft
         return rest.Any(char.IsLetterOrDigit) ? rest : "";
     }
 
+    /// The last resort when a line ends and its kept words can't be lined up: what follows the piece end
+    /// nearest to as many letters in as they had. A word may be dropped or said twice, but what was
+    /// read stays on screen.
+    public static string RestLoosely(string translatedFrom, string final)
+    {
+        var want = Letters(translatedFrom);
+        var best = -1;
+        var bestDrift = int.MaxValue;
+        for (var j = 0; j < final.Length; j++)
+        {
+            if (!Ends(final[j])) continue;
+            var drift = Math.Abs(Letters(final[..j]) - want);
+            if (drift < bestDrift) { bestDrift = drift; best = j + 1; }
+        }
+        if (best < 0) return "";
+        var rest = final[Skip(final, best)..];
+        return rest.Any(char.IsLetterOrDigit) ? rest : "";
+    }
+
     private static int Skip(string text, int at)
     {
         while (at < text.Length && (Ends(text[at]) || char.IsWhiteSpace(text[at]))) at++;

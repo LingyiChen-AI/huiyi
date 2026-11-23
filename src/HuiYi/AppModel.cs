@@ -183,13 +183,17 @@ public sealed class AppModel
 
     /// Developer switch (--feed): listen to this audio file instead of the PC, at real speed.
     public string? FeedFile { get; set; }
+    /// Developer switch (--feed-mic): the microphone channel from this file too (with --feed), e.g. the
+    /// video as a microphone hears it from the speakers.
+    public string? FeedMicFile { get; set; }
 
     public async Task<bool> StartListening()
     {
         if (IsListening) return true;
         if (!await EnsureEngines()) return false;
         IAudioSource source;
-        if (FeedFile != null) source = new FileSource(FeedFile);
+        if (FeedFile != null)
+            source = FeedMicFile != null ? new BothEnds(new FileSource(FeedFile), new FileSource(FeedMicFile)) : new FileSource(FeedFile);
         else
         {
             // Listening to the cable would hear only our own interpreted voice, never the meeting.

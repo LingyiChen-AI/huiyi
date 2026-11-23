@@ -85,6 +85,7 @@ public partial class App : Application
         string? Arg(string name) => Array.IndexOf(e.Args, name) is var i and >= 0 && i + 1 < e.Args.Length ? e.Args[i + 1] : null;
         var show = Arg("--show");
         Model.FeedFile = Arg("--feed");
+        Model.FeedMicFile = Arg("--feed-mic");
         if (Arg("--ui-language") is { } language) L.SetLanguage(language);
         L.Changed += RefreshLanguage;
         if (Arg("--snapshot") is { } shots)

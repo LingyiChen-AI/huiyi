@@ -93,8 +93,35 @@ switch (cmd)
         var w = Stopwatch.StartNew();
         string lastPartial = "";
         string lastShown = "";
+        // HUIYI_PANEL=1 (with HUIYI_SUBS): what the live panel shows, as JSON lines — each line's text
+        // and translation as listed, and the 正在说 box — for finding words on screen replaced by others.
+        var panel = Environment.GetEnvironmentVariable("HUIYI_PANEL") == "1";
+        string lastPanel = "";
+        MeetingController.Subtitle? lastSub = null;
+        void Panel()
+        {
+            if (meeting.SessionId is not { } sid || store.Snapshot(sid) is not { } snap) return;
+            var view = new
+            {
+                t = Math.Round(w.Elapsed.TotalSeconds, 1),
+                lines = snap.Lines.TakeLast(4).Select(l => new { id = l.Id, src = l.Src, dst = meeting.Shown(l.Id) ?? l.Dst ?? "" }),
+                live = new { src = lastSub?.Partial ?? "", dst = lastSub?.PartialTranslation ?? "" },
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(view, new System.Text.Json.JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            var key = json[(json.IndexOf(',') + 1)..];
+            if (key == lastPanel) return;
+            lastPanel = key;
+            Console.WriteLine(json);
+        }
+        if (panel) meeting.LineChanged += _ => { lock (store) Panel(); };
         meeting.SubtitleChanged += s =>
         {
+            if (panel)
+            {
+                lastSub = s;
+                lock (store) Panel();
+                return;
+            }
             if (subs)
             {
                 // The floating window's two lines, then (|) what the live panel's 正在说 shows.

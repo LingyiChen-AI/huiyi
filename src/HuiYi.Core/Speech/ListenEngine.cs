@@ -159,17 +159,28 @@ public sealed class ListenEngine : IDisposable
         foreach (var c in channels) c.Worker?.Join(10000);
     }
 
-    /// The live line: whichever channel is talking now; when one goes quiet, the other's shows.
+    /// The channel whose words the live line shows, and what the PC said last (its echo comes in on the
+    /// microphone a moment later, heard a little differently).
+    private Channel? showing;
+    private string pcSaid = "";
+
+    /// The live line: the channel that started talking keeps it until it goes quiet; then the other's
+    /// shows, unless it is only the PC's words coming back through the microphone. Each partial taking
+    /// the line as it came, the two versions of one sentence (speakers and their echo) took turns on
+    /// screen, a different sentence every moment.
     private void SetPartial(Channel c, string text, string lang)
     {
         lock (partialGate)
         {
             c.Partial = text;
             c.PartialLang = lang;
-            if (text.Length > 0) { Partial?.Invoke(text, lang); return; }
-            var other = channels.FirstOrDefault(o => o != c && o.Partial.Length > 0);
-            if (other != null) Partial?.Invoke(other.Partial, other.PartialLang);
-            else Partial?.Invoke("", "");
+            if (c.Index == 0 && text.Length > 0) pcSaid = text;
+            // The PC's words back through the microphone are not someone talking: they never hold the line.
+            bool Talking(Channel o) => o.Partial.Length > 0 && !(o.Index == 1 && EchoCheck.IsEcho(o.Partial, pcSaid));
+            var was = showing;
+            if (showing == null || !Talking(showing)) showing = Talking(c) ? c : channels.FirstOrDefault(Talking);
+            if (showing == null) Partial?.Invoke("", "");
+            else if (showing == c || showing != was) Partial?.Invoke(showing.Partial, showing.PartialLang);
         }
     }
 
@@ -258,6 +269,9 @@ public sealed class ListenEngine : IDisposable
                     if (speechStart < 0) speechStart = Math.Max(0, fed - (long)(0.6 * rate));
                     // Both ends talking at once share the recognizer: refresh half as often.
                     var every = channels.Count > 1 && channels.Any(o => o != c && o.Partial.Length > 0) ? PartialEvery * 2 : PartialEvery;
+                    // The microphone hearing only the PC's words from the speakers: its live line is
+                    // never shown, so it looks again seldom and leaves the recognizer to the PC's.
+                    if (c.Index == 1 && c.Partial.Length > 0 && EchoCheck.IsEcho(c.Partial, pcSaid)) every = PartialEvery * 5;
                     if (lastPartial.Elapsed >= every && fed - speechStart >= rate / 2)
                     {
                         lastPartial.Restart();

@@ -2233,4 +2233,13 @@
   <data name="AI 大模型" xml:space="preserve">
     <value>AI 大模型</value>
   </data>
+  <data name="开会时实时整理纪要" xml:space="preserve">
+    <value>開會時即時整理紀要</value>
+  </data>
+  <data name="打开时，开会期间大约每 45 秒请 AI 更新一次纪要。关掉可以省下大部分 token：会议结束后整理一次，也可以随时点「生成纪要」。" xml:space="preserve">
+    <value>開啟時，開會期間大約每 45 秒請 AI 更新一次紀要。關掉可以省下大部分 token：會議結束後整理一次，也可以隨時點「生成紀要」。</value>
+  </data>
+  <data name="开会时不实时整理纪要，会议结束后会整理一次（可以在「设置 › AI 服务」里打开）。" xml:space="preserve">
+    <value>開會時不即時整理紀要，會議結束後會整理一次（可以在「設置 › AI 服務」裡開啟）。</value>
+  </data>
 </root>

@@ -39,6 +39,8 @@ public sealed class AppSettings
     public bool SpeakerVoices { get; set; } = true;
     /// After a meeting, check who said what again over its whole recording (kept until then). On by default.
     public bool RedoSpeakers { get; set; } = true;
+    /// Notes updated every ~45 s while the meeting runs; off, written once when it ends (issue #3: tokens).
+    public bool LiveNotes { get; set; } = true;
     /// Correct recognized text against the glossary (its misheard spellings and sound-alikes). On by default.
     public bool GlossaryOn { get; set; } = true;
     /// When a line has words that sound close to a glossary term, ask the AI whether they were

@@ -394,6 +394,10 @@ public sealed class NotesEngine
     /// The template a meeting's notes follow: the one picked for it, else the default.
     public Func<Session, NoteTemplate> Template = _ => NoteTemplates.BuiltIn[0];
 
+    /// 开会时实时整理纪要: off, nothing goes to the AI while the meeting runs (the notes come once at
+    /// the end, or when asked for).
+    public Func<bool> Live = () => true;
+
     private readonly AiClient ai;
     private readonly SessionStore store;
     private string? sessionId;
@@ -456,7 +460,7 @@ public sealed class NotesEngine
         if (Status is State.NoKey or State.InvalidKey && ai.Usable) Status = State.Idle;
         if (Status == State.Idle && !ai.HasKey) { Status = State.NoKey; Changed?.Invoke(); }
         var id = sessionId;
-        if (id == null || Volatile.Read(ref inFlight) == 1) return;
+        if (id == null || Volatile.Read(ref inFlight) == 1 || !Live()) return;
         var s = store.Get(id);
         if (s == null || s.Lines.Count <= Notes.Covered) return;
         // First notes as soon as there is something to say, then every 45 s. After failures (a slow

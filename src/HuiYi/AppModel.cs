@@ -85,7 +85,7 @@ public sealed class AppModel
         Ai.Provider = Settings.ActiveProvider;
         Ai.Refresh();
         Translator = new TranslationService(Ai);
-        Notes = new NotesEngine(Ai, Store) { Template = TemplateFor, Terms = Glossary };
+        Notes = new NotesEngine(Ai, Store) { Template = TemplateFor, Terms = Glossary, Live = () => Settings.LiveNotes };
         Translator.Terms = Glossary;
         Translator.Machine = () => Settings.MachineTranslator;
         // Groups limited to some templates count only in those meetings: the one being heard now,

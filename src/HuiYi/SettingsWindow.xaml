@@ -172,6 +172,8 @@
                                 <ComboBox x:Name="NotesLangBox" DockPanel.Dock="Right" SelectionChanged="Changed"/>
                                 <TextBlock Text="{local:Loc Key='纪要用的语言'}" VerticalAlignment="Center"/>
                             </DockPanel>
+                            <CheckBox x:Name="LiveNotesOn" Style="{StaticResource SwitchRow}" Content="{local:Loc Key='开会时实时整理纪要'}" Margin="0,10,0,0" Checked="Changed" Unchecked="Changed"/>
+                            <TextBlock Style="{StaticResource Helper}" Text="{local:Loc Key='打开时，开会期间大约每 45 秒请 AI 更新一次纪要。关掉可以省下大部分 token：会议结束后整理一次，也可以随时点「生成纪要」。'}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

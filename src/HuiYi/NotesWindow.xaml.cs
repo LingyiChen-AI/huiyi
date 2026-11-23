@@ -290,8 +290,9 @@ public partial class NotesWindow : Window
             ? new System.Windows.Controls.TextBlock
             {
                 FontSize = 13, Foreground = Theme.NightMuted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
-                Text = model.Ai.HasKey ? L.T("聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。")
-                                         : L.T("在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。"),
+                Text = !model.Ai.HasKey ? L.T("在「设置 › AI 服务」里接入一个大模型，开会时就会自动整理纪要。")
+                    : model.Settings.LiveNotes ? L.T("聊上几句后，AI 会在这里整理纪要，之后大约每 45 秒刷新一次。")
+                    : L.T("开会时不实时整理纪要，会议结束后会整理一次（可以在「设置 › AI 服务」里打开）。"),
             }
             : NotesRenderer.Build(n.Notes, (n.ShownId is { } shown ? model.Store.Get(shown)?.StartedAt : null) ?? DateTime.Now,
                 names: n.ShownId is { } named && model.Store.Snapshot(named) is { } s ? SpeakerLabels.Names(s) : null,

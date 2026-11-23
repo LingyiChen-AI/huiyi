@@ -389,7 +389,7 @@ public sealed class MeetingController
         if (!settings.TranslationOn || text.Length < 2 || translator.MachineResting) return;
         var target = TargetFor(lang);
         if (Languages.SameLanguage(lang, target)) return;
-        string keptSrc, keptDst, ended, nextSrc;
+        string keptSrc, keptDst, ended, going, nextSrc;
         lock (gate)
         {
             // One draft at a time, at most one a second: the free endpoint blocks eager clients.
@@ -403,18 +403,21 @@ public sealed class MeetingController
             var rest = text[at..];
             var cut = StableDraft.EndedUpTo(rest);
             ended = rest[..cut];
+            going = rest[cut..];
             nextSrc = text[..(at + cut)];
-            // Only pieces that have ended are translated: a translation of words still coming would be
-            // replaced by another a second later, and words once read must stay (the piece being said
-            // shows in the original until it ends).
-            if (!ended.Any(char.IsLetterOrDigit)) return;
+            // Pieces that ended are translated once and kept; the piece being said is translated as it
+            // goes, so the translation keeps up with the speaker (only its own words may still change).
+            if (!rest.Any(char.IsLetterOrDigit)) return;
             draftInFlight = true;
             lastDraftSent = text;
             lastDraftAt = DateTime.Now;
         }
         _ = Task.Run(async () =>
         {
-            var endedOut = await translator.Translate(ended, lang, target, TranslationService.Kind.Draft);
+            // Pieces that just ended, then the one being said: shown together, in one change.
+            string? endedOut = ended.Any(char.IsLetterOrDigit) ? await translator.Translate(ended, lang, target, TranslationService.Kind.Draft) : "";
+            string? goingOut = endedOut != null && going.Any(char.IsLetterOrDigit)
+                ? await translator.Translate(going, lang, target, TranslationService.Kind.Draft) : "";
             bool again;
             lock (gate)
             {
@@ -423,8 +426,8 @@ public sealed class MeetingController
                 {
                     frozenSrc = nextSrc;
                     frozenDst = StableDraft.Join(keptDst, endedOut, target);
-                    partialTranslation = frozenDst;
-                    partialTranslatedFrom = frozenSrc;
+                    partialTranslation = StableDraft.Join(frozenDst, goingOut ?? "", target);
+                    partialTranslatedFrom = goingOut != null ? text : frozenSrc;
                 }
                 // The line grew while this one was out: translate what is there now.
                 again = partial.Length > 0 && partial != lastDraftSent && epoch == partialEpoch;

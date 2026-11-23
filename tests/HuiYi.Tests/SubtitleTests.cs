@@ -77,13 +77,23 @@ public class SubtitleTests
     }
 
     [Fact]
-    public void ADraftOfTheWholeLineIsKeptButNotADraftOfPartOfIt()
+    public void ASentenceHasEndedOnlyWhenMoreFollowsIt()
     {
-        // The recognizer settles the punctuation last: the words are what count.
-        Assert.True(MeetingController.SameWords("所以他就有得有失嗯当然他也", "所以他就有得有失。嗯，当然他也。"));
-        Assert.True(MeetingController.SameWords("so he said", "So, he said."));
-        // The draft was made while the line was still going: its translation lacks the end.
-        Assert.False(MeetingController.SameWords("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
-        Assert.False(MeetingController.SameWords("", ""));
+        // The recognizer ends every partial with a full stop.
+        Assert.Equal(0, StableDraft.EndedUpTo("其实在某种。"));
+        Assert.Equal("所以他就有得有失。".Length, StableDraft.EndedUpTo("所以他就有得有失。嗯，当然他也。"));
+        Assert.Equal("One. Two.".Length, StableDraft.EndedUpTo("One. Two. Three"));
+    }
+
+    [Fact]
+    public void WhatTheDraftLacksIsWhatComesAfterItsWords()
+    {
+        // The words count, punctuation aside: what is left gets translated and added on.
+        Assert.Equal("更丰富了。", StableDraft.Rest("这个地方呈现的它会", "这个地方呈现的，它会更丰富了。"));
+        Assert.Equal("", StableDraft.Rest("所以他就有得有失嗯当然他也", "所以他就有得有失。嗯，当然他也。"));
+        Assert.Equal("he said.", StableDraft.Rest("so", "So, he said."));
+        // Heard again differently: nothing to build on.
+        Assert.Null(StableDraft.Rest("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
+        Assert.Null(StableDraft.Rest("", "什么"));
     }
 }

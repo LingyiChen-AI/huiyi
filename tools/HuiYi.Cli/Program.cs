@@ -145,7 +145,15 @@ switch (cmd)
         };
         IAudioSource source;
         WaveOutEvent? player = null;
-        if (cmd == "listen")
+        if (cmd == "listen" && Environment.GetEnvironmentVariable("HUIYI_MICFILE") is { Length: > 0 } micFile)
+        {
+            // HUIYI_MICFILE=<audio>: the microphone channel from a file too (e.g. the PC's audio as a
+            // microphone hears it from the speakers), both at their own pace, nothing played aloud.
+            var pcFile = new FileSource(args[1], realTime: true);
+            pcFile.Finished += () => Task.Delay(2500).ContinueWith(_ => done.TrySetResult());
+            source = new BothEnds(pcFile, new FileSource(micFile, realTime: true));
+        }
+        else if (cmd == "listen")
         {
             var fs = new FileSource(args[1], realTime: subs);
             fs.Finished += () => done.TrySetResult();

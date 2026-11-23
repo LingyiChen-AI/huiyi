@@ -97,7 +97,8 @@ switch (cmd)
         {
             if (subs)
             {
-                var shown = $"{(s.Live ? "~" : " ")} {s.Translation}\n           {s.Source}";
+                // The floating window's two lines, then (|) what the live panel's 正在说 shows.
+                var shown = $"{(s.Live ? "~" : " ")} {s.Translation}\n           {s.Source}\n         | {s.Partial} || {s.PartialTranslation}";
                 if (shown == lastShown) return;
                 lastShown = shown;
                 Console.WriteLine($"{w.Elapsed.TotalSeconds,6:F1}s {shown}");

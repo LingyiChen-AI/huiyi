@@ -68,10 +68,11 @@ public partial class SettingsWindow : Window
             TranslateOn.IsChecked = model.Settings.TranslationOn;
             loading = was;
         };
-        Activated += (_, _) => { if (!installing) RenderCable(); RenderVoices(); RenderModels(); };
+        Activated += (_, _) => { _ = RefreshDevices(); RenderVoices(); RenderModels(); };
         RenderProviders();
         RenderKey();
         RenderCable();
+        _ = RefreshDevices();
         RenderVoices();
         RenderModels();
         loading = false;
@@ -502,27 +503,71 @@ public partial class SettingsWindow : Window
     }
 
 
+    // The microphones and the virtual cable as last read. Reading them asks Windows about every audio
+    // device, about a tenth of a second each on a plain PC and far longer with many devices; done on
+    // the UI thread at every activation (six reads), the window took a second or more to open (issue #1).
+    private List<(string Id, string Name)> mics = [];
+    private bool devicesKnown, cable, routed;
+    private bool devicesBusy, devicesAgain;
+
+    private async Task RefreshDevices()
+    {
+        if (devicesBusy)
+        {
+            devicesAgain = true;
+            return;
+        }
+        devicesBusy = true;
+        try
+        {
+            do
+            {
+                devicesAgain = false;
+                (mics, cable, routed) = await Task.Run(() =>
+                {
+                    var installed = VirtualCable.Installed;
+                    return (DefaultDevices.Mics(), installed, installed && model.Routing.Routed);
+                });
+                devicesKnown = true;
+            } while (devicesAgain);
+        }
+        catch (Exception e) { Log.Debug($"settings: devices {e.GetType().Name}"); }
+        finally { devicesBusy = false; }
+        if (!installing) RenderCable();
+        FillMics();
+    }
+
     private void FillMics()
     {
         var was = loading;
         loading = true;
-        Fill(ListenMicBox, [("", L.T("自动（系统麦克风）")), .. DefaultDevices.Mics().Select(m => (m.Id, m.Name))], model.Settings.ListenMicId ?? "");
-        Fill(MicBox, [("", L.T("自动（系统原来的麦克风）")), .. DefaultDevices.Mics().Select(m => (m.Id, m.Name))], model.Settings.SpeakMicId ?? "");
+        Fill(ListenMicBox, [("", L.T("自动（系统麦克风）")), .. mics], model.Settings.ListenMicId ?? "");
+        Fill(MicBox, [("", L.T("自动（系统原来的麦克风）")), .. mics], model.Settings.SpeakMicId ?? "");
         loading = was;
     }
 
     private void RenderCable()
     {
-        var ok = VirtualCable.Installed;
+        // Until the first read, nothing rather than a wrong "还没有虚拟麦克风".
+        CableRowVisible(devicesKnown);
+        if (!devicesKnown) return;
+        var ok = cable;
         UiText.Set(CableText, "Text", () => ok ? L.T("✓ 已安装 VB-CABLE 虚拟麦克风") : L.T("还没有虚拟麦克风"));
         UiText.Set(CableHelp, "Text", () => ok
-            ? model.Routing.Routed ? L.T("系统麦克风现在是 CABLE Output，播报会送进会议。") : L.T("同声传译打开后，播报会从 CABLE Output 送进会议。")
+            ? routed ? L.T("系统麦克风现在是 CABLE Output，播报会送进会议。") : L.T("同声传译打开后，播报会从 CABLE Output 送进会议。")
             : L.T("同声传译要靠它把译好的声音送进会议。点「一键安装」会从 VB-Audio 官网下载免费的 VB-CABLE，校验后打开它的安装程序，需要管理员权限。"));
         CableBtn.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
         CableBtn.IsEnabled = true;
         UiText.Set(CableBtn, "Content", () => L.T("一键安装"));
         RouteOn.IsEnabled = ok;
-        FillMics();
+    }
+
+    private void CableRowVisible(bool known)
+    {
+        var v = known ? Visibility.Visible : Visibility.Hidden;
+        CableText.Visibility = v;
+        CableHelp.Visibility = v;
+        if (!known) CableBtn.Visibility = Visibility.Collapsed;
     }
 
     private async void Cable_Click(object sender, RoutedEventArgs e)
@@ -532,7 +577,7 @@ public partial class SettingsWindow : Window
         UiText.Set(CableBtn, "Content", () => L.T("安装中…"));
         var message = await model.InstallCable(new Progress<string>(m => CableHelp.Text = m));
         installing = false;
-        RenderCable();
+        await RefreshDevices();
         if (message != null) CableHelp.Text = message;
     }
 

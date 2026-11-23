@@ -306,6 +306,21 @@ public partial class NotesWindow : Window
         });
     }
 
+    // Whether the virtual cable is there, as last read off the UI thread: reading it asks Windows about
+    // every audio device, and this redraws on every state change of the meeting.
+    private bool? cable;
+    private DateTime cableRead;
+
+    private void CheckCable()
+    {
+        if (DateTime.Now - cableRead < TimeSpan.FromSeconds(15)) return;
+        cableRead = DateTime.Now;
+        _ = Task.Run(() => VirtualCable.Installed).ContinueWith(t =>
+        {
+            if (t.IsCompletedSuccessfully && cable != t.Result) Dispatcher.BeginInvoke(() => { cable = t.Result; RenderSpeak(); });
+        });
+    }
+
     private void RenderSpeak()
     {
         var on = model.Settings.SpeakEnabled;
@@ -313,13 +328,14 @@ public partial class NotesWindow : Window
         if (!on) return;
         var key = model.Settings.SpeakKey == SpeakKey.RightAlt ? L.T("右 Alt") : L.T("右 Ctrl");
         var state = model.Speak?.Status ?? SpeakEngine.State.Idle;
+        CheckCable();
         SpeakDot.Fill = state == SpeakEngine.State.Idle ? Theme.NightMuted : Theme.Primary;
         UiText.Set(SpeakText, "Text", () => state switch
         {
             SpeakEngine.State.Recording => L.T("录音中 · 松开按键后翻译"),
             SpeakEngine.State.Working => L.T("正在翻译…"),
             SpeakEngine.State.Speaking => L.T("正在播报给对方"),
-            _ => !VirtualCable.Installed ? L.T("同声传译：需要先安装虚拟麦克风（设置 › 同声传译）")
+            _ => cable == false ? L.T("同声传译：需要先安装虚拟麦克风（设置 › 同声传译）")
                 : L.F("同声传译：按住 {0} 说，松开后译成{1}播报", key, L.T(Languages.ChineseName(model.Speak?.Target() ?? "en"))),
         });
     }

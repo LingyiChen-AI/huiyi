@@ -295,22 +295,33 @@ public sealed class AppModel
     /// Names a voice in a meeting; every view of its notes redraws with the name.
     public void RenameVoice(string sessionId, int voice, string name)
     {
-        Store.SetVoiceName(sessionId, voice, name);
-        NotesChanged?.Invoke();
+        UiWatch.Time("rename voice", () =>
+        {
+            Store.SetVoiceName(sessionId, voice, name);
+            NotesChanged?.Invoke();
+        });
     }
 
     public void SaveSettings()
     {
         Settings.Save();
-        ApplySpeakKey();
+        // Checking the system mic asks Windows about every audio device (half a second or more): only
+        // when 同声传译 or its routing changed, not for every switch flipped in settings (issue #1).
+        ApplySpeakKey(route: routedFor != (Settings.SpeakEnabled, Settings.SpeakRouteMic));
         StateChanged?.Invoke();
     }
 
+    private (bool On, bool Route)? routedFor;
+
     /// 同声传译 on or off: the push-to-talk key is watched, and the system mic switched, only while it is on.
-    public void ApplySpeakKey()
+    public void ApplySpeakKey(bool route = true)
     {
-        try { Routing.Apply(); }
-        catch (Exception e) { Log.Debug($"routing: {e.Message}"); }
+        if (route)
+        {
+            routedFor = (Settings.SpeakEnabled, Settings.SpeakRouteMic);
+            try { Routing.Apply(); }
+            catch (Exception e) { Log.Debug($"routing: {e.Message}"); }
+        }
         var key = Settings.SpeakKey == SpeakKey.RightAlt ? Native.VK_RMENU : Native.VK_RCONTROL;
         if (!Settings.SpeakEnabled)
         {

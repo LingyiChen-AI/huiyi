@@ -106,4 +106,19 @@ public class SubtitleTests
         // 他 became 它 with no piece end near: can't line up.
         Assert.Null(StableDraft.Rest("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
     }
+
+    [Fact]
+    public void ALongLiveLineIsCutForGoodOnlyAtAClauseEnd()
+    {
+        // 我们今天，先聊工作。然后 — each piece and when it starts (s).
+        var heard = new HuiYi.Speech.Recognized("我们今天，先聊工作。然后", "zh-CN",
+            ["我", "们", "今", "天", "，", "先", "聊", "工", "作", "。", "然", "后"],
+            [0.0f, 0.3f, 0.6f, 0.9f, 1.1f, 1.4f, 1.7f, 2.0f, 2.3f, 2.5f, 3.2f, 3.5f]);
+        // The last clause end before 3.3 s: after 。, where 然 starts.
+        Assert.Equal((10, 3.2), HuiYi.Speech.ListenEngine.KeepUpTo(heard, 3.3) is { } a ? (a.Chars, Math.Round(a.Seconds, 1)) : default);
+        // Before 3 s only the comma qualifies.
+        Assert.Equal((5, 1.4), HuiYi.Speech.ListenEngine.KeepUpTo(heard, 3.0) is { } b ? (b.Chars, Math.Round(b.Seconds, 1)) : default);
+        // No clause end yet: nothing to keep.
+        Assert.Null(HuiYi.Speech.ListenEngine.KeepUpTo(heard, 1.0));
+    }
 }

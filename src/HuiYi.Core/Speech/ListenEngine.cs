@@ -166,6 +166,45 @@ public sealed class ListenEngine : IDisposable
         foreach (var c in channels) c.Worker?.Join(10000);
     }
 
+    /// Text kept and text heard after it: a space between them unless they are written without one.
+    private static string Glue(string kept, string next) =>
+        kept.Length > 0 && kept[^1] < 128 && next.Length > 0 && !char.IsWhiteSpace(next[0]) ? kept + " " + next : kept + next;
+
+    private static bool ClauseEnd(char ch) => ch is '。' or '？' or '！' or '，' or '、' or '；' or '?' or '!' or '.' or ',' or ';';
+
+    /// Where the live line may be cut for good: just after the last clause end heard before `before`
+    /// seconds into the clip (the start of the word after it), and how much of the text that is.
+    /// Null when there is none.
+    internal static (int Chars, double Seconds)? KeepUpTo(Recognized r, double before)
+    {
+        if (r.Tokens == null || r.Times == null || r.Tokens.Length != r.Times.Length) return null;
+        (int Chars, double Seconds)? best = null;
+        var marks = 0;
+        for (var i = 0; i + 1 < r.Tokens.Length; i++)
+        {
+            var t = r.Tokens[i].Trim();
+            if (t.Length == 0 || !t.Any(ClauseEnd)) continue;
+            marks += t.Count(ClauseEnd);
+            var j = i + 1;
+            while (j < r.Tokens.Length && r.Tokens[j].Trim().All(ch => char.IsPunctuation(ch) || char.IsWhiteSpace(ch)))
+            {
+                marks += r.Tokens[j].Count(ClauseEnd);
+                j++;
+            }
+            if (j >= r.Tokens.Length || r.Times[j] > before) break;
+            // The same number of clause ends into the text (its glossary fixes keep the punctuation).
+            var seen = 0;
+            for (var k = 0; k < r.Text.Length; k++)
+                if (ClauseEnd(r.Text[k]) && ++seen == marks)
+                {
+                    best = (k + 1, r.Times[j]);
+                    break;
+                }
+            i = j - 1;
+        }
+        return best;
+    }
+
     /// The channel whose words the live line shows, and what the PC said last (its echo comes in on the
     /// microphone a moment later, heard a little differently).
     private Channel? showing;
@@ -225,6 +264,14 @@ public sealed class ListenEngine : IDisposable
         var lastPartial = Stopwatch.StartNew();
         var partialShown = false;
         string lastPartialText = "";
+        // The live line of a long stretch of talk: only its last PartialSeconds are decoded again each
+        // time. Sliding that window anywhere cut a word in two and the line read differently every
+        // time (another sentence on screen each second); it moves only to a clause end of what was
+        // heard last, and the words before it stay as they were.
+        long keptTo = -1;
+        var kept = "";
+        Recognized? lastHeard = null;
+        long lastFrom = 0;
 
         try
         {
@@ -254,6 +301,9 @@ public sealed class ListenEngine : IDisposable
                     speechStart = vad.IsSpeechDetected() ? start + samples.Length : -1;
                     runStart = speechStart;
                     lastPartialText = "";
+                    keptTo = -1;
+                    kept = "";
+                    lastHeard = null;
                     if (!said && partialShown) SetPartial(c, "", "");
                     partialShown = false;
                 }
@@ -267,6 +317,9 @@ public sealed class ListenEngine : IDisposable
                         consumed = runStart = fed;
                         speechStart = fed;
                         lastPartialText = "";
+                        keptTo = -1;
+                        kept = "";
+                        lastHeard = null;
                     }
                 }
                 else runStart = -1;
@@ -283,9 +336,27 @@ public sealed class ListenEngine : IDisposable
                     if (lastPartial.Elapsed >= every && fed - speechStart >= rate / 2)
                     {
                         lastPartial.Restart();
-                        var slice = Slice(history, Math.Max(speechStart, fed - PartialSeconds * rate), fed);
+                        var from = Math.Max(speechStart, keptTo);
+                        // A clause that ended two seconds ago is done: kept as it reads now, so the words
+                        // already read stop changing (decoded again, earlier words came out differently).
+                        if (lastHeard != null
+                            && KeepUpTo(lastHeard, (fed - 2 * rate - lastFrom) / (double)rate) is { } keep
+                            && lastFrom + (long)(keep.Seconds * rate) > from)
+                        {
+                            kept = HeardText.Clean(Glue(kept, lastHeard.Text[..keep.Chars]));
+                            keptTo = from = lastFrom + (long)(keep.Seconds * rate);
+                        }
+                        // No clause end to move to: slide as before.
+                        if (fed - from > (PartialSeconds + 3) * rate)
+                        {
+                            Log.Debug($"listen: [{c.Index}] live line slid: {(fed - from) / (double)rate:0.0} s since {(keptTo > 0 ? "a clause end" : "it began")}, tokens {(lastHeard?.Tokens?.Length ?? -1)}");
+                            from = fed - PartialSeconds * rate;
+                        }
+                        var slice = Slice(history, from, fed);
                         var r = recognizer.Recognize(slice);
-                        var text = HeardText.Clean(r.Text);
+                        lastHeard = r;
+                        lastFrom = from;
+                        var text = HeardText.Clean(Glue(kept, r.Text));
                         if (text.Length > 0 && text != lastPartialText)
                         {
                             lastPartialText = text;

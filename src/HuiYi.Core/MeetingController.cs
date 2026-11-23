@@ -512,7 +512,9 @@ public sealed class MeetingController
         {
             lastShownId = lineId;
             // What the draft lacks of the line, null when the recognizer heard it again differently.
-            var rest = draft.Length > 0 ? StableDraft.Rest(draftFrom, seg.Text) : null;
+            // (Lined up loosely as a last resort: a word may be dropped or said twice, but what was read
+            // stays on screen rather than turning into the line's own translation in other words.)
+            var rest = draft.Length > 0 && draftFrom.Length > 0 ? StableDraft.Rest(draftFrom, seg.Text) ?? StableDraft.RestLoosely(draftFrom, seg.Text) : null;
             // The sentence being said came out differently once finished: keep the sentences that had
             // ended, and translate the rest of the line after them.
             if (rest == null && endedDst.Length > 0 && (StableDraft.Rest(endedSrc, seg.Text) ?? StableDraft.RestLoosely(endedSrc, seg.Text)) is { } afterEnded)

@@ -65,9 +65,15 @@ public sealed class MeetingController
     private string partial = "";
     private string partialLang = "";
     private string partialTranslation = "";
+    /// The text partialTranslation was made from (the line goes on while it is out).
+    private string partialTranslatedFrom = "";
     /// A line just finished whose own translation hasn't come yet: the subtitle keeps showing the
     /// draft of it meanwhile, instead of dropping it for a second.
     private readonly Dictionary<string, string> standIns = [];
+    /// Lines whose draft was made from all of what they say: the subtitle keeps that draft. Their own
+    /// translation, a second later, goes into the record but not on screen: swapped in, the sentence
+    /// just read turned into other words saying the same thing.
+    private readonly HashSet<string> settled = [];
     private int partialEpoch;
     private bool draftInFlight;
     private string lastDraftSent = "";
@@ -115,7 +121,8 @@ public sealed class MeetingController
             lastShownId = null;
             micLines.Clear();
             standIns.Clear();
-            partial = partialTranslation = "";
+            settled.Clear();
+            partial = partialTranslation = partialTranslatedFrom = "";
         }
         speakers?.Reset();
         StartRecording(s.Id);
@@ -366,7 +373,7 @@ public sealed class MeetingController
         {
             partial = shown = HeardText.Stitch(partial, text);
             partialLang = lang;
-            if (text.Length == 0) partialTranslation = "";
+            if (text.Length == 0) partialTranslation = partialTranslatedFrom = "";
             epoch = partialEpoch;
         }
         if (text.Length > 0) endWatch?.Heard(DateTime.Now);
@@ -394,7 +401,11 @@ public sealed class MeetingController
             lock (gate)
             {
                 draftInFlight = false;
-                if (outText != null && epoch == partialEpoch && partial.Length > 0) partialTranslation = outText;
+                if (outText != null && epoch == partialEpoch && partial.Length > 0)
+                {
+                    partialTranslation = outText;
+                    partialTranslatedFrom = text;
+                }
                 // The line grew while this one was out: translate what is there now.
                 again = partial.Length > 0 && partial != lastDraftSent && epoch == partialEpoch;
             }
@@ -423,12 +434,13 @@ public sealed class MeetingController
         var t = seg.Start;
         string lineId;
         bool joined;
-        string draft;
+        string draft, draftFrom;
         lock (gate)
         {
             draft = partialTranslation;
+            draftFrom = partialTranslatedFrom;
             partial = "";
-            partialTranslation = "";
+            partialTranslation = partialTranslatedFrom = "";
             lastDraftSent = "";
             partialEpoch++;
             // A piece joins only the line before it on its own channel: the PC and the microphone
@@ -474,10 +486,15 @@ public sealed class MeetingController
             lastShownId = lineId;
             if (draft.Length > 0 && settings.TranslationOn)
             {
-                // A piece joined on: the line's old translation plus the draft of the piece.
-                var before = joined ? store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lineId)?.Dst : null;
+                // A piece joined on: the line's translation as on screen plus the draft of the piece.
+                // What the earlier part shows is final if it was settled or its own translation came.
+                var wasSettled = settled.Contains(lineId) || !standIns.ContainsKey(lineId);
+                var before = joined ? standIns.GetValueOrDefault(lineId) ?? store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lineId)?.Dst : null;
                 standIns[lineId] = before is { Length: > 0 } ? before + Languages.Joiner(target) + draft : draft;
+                if (SameWords(draftFrom, seg.Text) && (!joined || (wasSettled && before is { Length: > 0 }))) settled.Add(lineId);
+                else settled.Remove(lineId);
             }
+            else settled.Remove(lineId);
         }
         LineChanged?.Invoke(lineId);
         Render();
@@ -507,6 +524,8 @@ public sealed class MeetingController
                 }
             });
             if (!changed) return;
+            // Corrected words: the draft on screen says the old ones, the new translation must show.
+            lock (gate) settled.Remove(lineId);
             Log.Debug($"glossary: the AI check corrected {fixes.Count} word(s) in a line");
             LineChanged?.Invoke(lineId);
             Render();
@@ -521,9 +540,11 @@ public sealed class MeetingController
         if (line == null || !settings.TranslationOn) return;
         var src = line.Src;
         if (Languages.SameLanguage(line.SrcLang, line.DstLang)) return;
+        string? shown;
+        lock (gate) shown = standIns.GetValueOrDefault(lineId);
         _ = Task.Run(async () =>
         {
-            var outText = await translator.Translate(src, line.SrcLang, line.DstLang, TranslationService.Kind.Sentence);
+            var outText = await translator.Translate(src, line.SrcLang, line.DstLang, TranslationService.Kind.Sentence, shown);
             if (outText == null)
             {
                 // No translator answered: try again later so the record ends up bilingual.
@@ -537,9 +558,14 @@ public sealed class MeetingController
             // The line grew while this was out: its newer translation wins.
             if (line.Src != src) return;
             store.Mutate(sessionId, _ => line.Dst = outText);
-            lock (gate) standIns.Remove(lineId);
+            bool kept;
+            lock (gate)
+            {
+                kept = settled.Contains(lineId);
+                if (!kept) standIns.Remove(lineId);
+            }
             LineChanged?.Invoke(lineId);
-            Render();
+            if (!kept) Render();
         });
     }
 
@@ -604,6 +630,14 @@ public sealed class MeetingController
         lock (gate)
             translation = string.Join(tgtJoin, recent.Select(l => standIns.GetValueOrDefault(l.Id) ?? l.Dst ?? "").Append(pt).Where(x => x.Length > 0));
         SubtitleChanged?.Invoke(new Subtitle(source, translation, p.Length > 0, last?.Id, p, pt));
+    }
+
+    /// The same words, punctuation and spacing aside: a draft made from this text translates all of it.
+    internal static bool SameWords(string a, string b)
+    {
+        static string Words(string x) => new(x.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+        var w = Words(b);
+        return w.Length > 0 && Words(a) == w;
     }
 
     /// The lines still on screen: the one last shown and up to two heard just before it, back to

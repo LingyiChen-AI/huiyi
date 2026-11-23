@@ -75,4 +75,15 @@ public class SubtitleTests
         Assert.Equal(["a", "b"], MeetingController.Recent(lines, "b").Select(l => l.Id));
         Assert.Empty(MeetingController.Recent(lines, "gone"));
     }
+
+    [Fact]
+    public void ADraftOfTheWholeLineIsKeptButNotADraftOfPartOfIt()
+    {
+        // The recognizer settles the punctuation last: the words are what count.
+        Assert.True(MeetingController.SameWords("所以他就有得有失嗯当然他也", "所以他就有得有失。嗯，当然他也。"));
+        Assert.True(MeetingController.SameWords("so he said", "So, he said."));
+        // The draft was made while the line was still going: its translation lacks the end.
+        Assert.False(MeetingController.SameWords("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
+        Assert.False(MeetingController.SameWords("", ""));
+    }
 }

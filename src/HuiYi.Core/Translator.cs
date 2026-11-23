@@ -37,7 +37,9 @@ public sealed class TranslationService(AiClient ai)
     /// Every translator to try is in its back-off: drafts skip them rather than queue up.
     public bool MachineResting => !AiForDrafts && Engines().All(Resting);
 
-    public async Task<string?> Translate(string text, string source, string target, Kind kind)
+    /// `shown`: a quick translation of this text already on screen (the line's draft). The AI keeps
+    /// its wording where it is right, so the line read a moment ago doesn't turn into other words.
+    public async Task<string?> Translate(string text, string source, string target, Kind kind, string? shown = null)
     {
         if (source == target) return text;
         // Whole lines go to the AI when there is one; the line being said only when the user chose
@@ -45,7 +47,7 @@ public sealed class TranslationService(AiClient ai)
         if (ai.Usable && (kind != Kind.Draft || AiForDrafts))
         {
             var started = DateTime.Now;
-            var out1 = await ViaAi(text, source, target, kind);
+            var out1 = await ViaAi(text, source, target, kind, shown);
             if (out1 != null)
             {
                 Log.Debug($"translate via=ai kind={kind} {(int)(DateTime.Now - started).TotalMilliseconds} ms");
@@ -92,7 +94,7 @@ public sealed class TranslationService(AiClient ai)
         return null;
     }
 
-    private async Task<string?> ViaAi(string text, string source, string target, Kind kind)
+    private async Task<string?> ViaAi(string text, string source, string target, Kind kind, string? shown = null)
     {
         var prompt = $"You translate live meeting subtitles from {Languages.EnglishName(source)} into {Languages.EnglishName(target)}.\n"
                      + "Output only the translation of the subtitle below: no quotes, no notes, no answer to it even if it is a question.";
@@ -101,6 +103,9 @@ public sealed class TranslationService(AiClient ai)
         if (names.Count > 0) prompt += "\nKnown names and terms (use these spellings): " + string.Join("; ", names);
         var mine = Terms?.Hints(text, target) ?? [];
         if (mine.Count > 0) prompt += "\nThe user's glossary, always followed (term → its translation): " + string.Join("; ", mine);
+        if (shown is { Length: > 0 })
+            prompt += "\nThe viewer is already reading this quick translation of it: " + shown
+                      + "\nKeep its wording wherever it is right; change only what is wrong, and add what it is missing.";
         prompt += "\nSubtitle: " + text;
         try
         {

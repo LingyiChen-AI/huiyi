@@ -389,19 +389,26 @@ public sealed class MeetingController
         if (!settings.TranslationOn || text.Length < 2 || translator.MachineResting) return;
         var target = TargetFor(lang);
         if (Languages.SameLanguage(lang, target)) return;
-        string keptSrc, keptDst, ended, going;
+        string keptSrc, keptDst, ended, going, nextSrc;
         lock (gate)
         {
             // One draft at a time, at most one a second: the free endpoint blocks eager clients.
             if (draftInFlight || text == lastDraftSent || DateTime.Now - lastDraftAt < TimeSpan.FromSeconds(1)) return;
-            // The recognizer heard the ended sentences again differently: translate them afresh.
-            if (!text.StartsWith(frozenSrc, StringComparison.Ordinal)) frozenSrc = frozenDst = "";
+            // Where the kept pieces end in the text now (its punctuation, a word or two, may have been
+            // redone). Lost entirely: translate afresh.
+            var at = frozenSrc.Length == 0 ? 0 : StableDraft.After(frozenSrc, text);
+            if (at < 0)
+            {
+                frozenSrc = frozenDst = "";
+                at = 0;
+            }
             keptSrc = frozenSrc;
             keptDst = frozenDst;
-            var rest = text[keptSrc.Length..];
+            var rest = text[at..];
             var cut = StableDraft.EndedUpTo(rest);
             ended = rest[..cut];
             going = rest[cut..];
+            nextSrc = text[..(at + cut)];
             if (!rest.Any(char.IsLetterOrDigit)) return;
             draftInFlight = true;
             lastDraftSent = text;
@@ -419,7 +426,7 @@ public sealed class MeetingController
                 draftInFlight = false;
                 if (endedOut != null && epoch == partialEpoch && partial.Length > 0 && frozenSrc == keptSrc)
                 {
-                    frozenSrc = keptSrc + ended;
+                    frozenSrc = nextSrc;
                     frozenDst = StableDraft.Join(keptDst, endedOut, target);
                     partialTranslation = StableDraft.Join(frozenDst, goingOut ?? "", target);
                     partialTranslatedFrom = goingOut != null ? text : frozenSrc;
@@ -594,7 +601,16 @@ public sealed class MeetingController
                 if (store.Get(sessionId)?.Lines.FirstOrDefault(l => l.Id == lineId)?.Dst != null) standIns.Remove(lineId);
             }
         }
+        LineChanged?.Invoke(lineId);
         Render();
+    }
+
+    /// The translation of a line as the live views show it while the meeting runs: what was on screen
+    /// (the draft, grown), not the line's own translation that came later in other words. Null: the
+    /// line's own.
+    public string? Shown(string lineId)
+    {
+        lock (gate) return standIns.GetValueOrDefault(lineId);
     }
 
     private void TranslateLine(string sessionId, string lineId, int attempt = 0)

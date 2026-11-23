@@ -1,42 +1,79 @@
 namespace HuiYi;
 
-/// The floating subtitle's translation only grows: words once read are not swapped for others. The
-/// recognizer puts a full stop after every partial, so a sentence counts as ended only when more
-/// follows it.
+/// The subtitle's translation only grows: words once read are not swapped for others. People talk in
+/// long runs joined by commas, so a clause after a comma counts as a piece too. The recognizer puts a
+/// full stop after every partial, so a piece has ended only when more follows it; and it keeps
+/// redoing the punctuation (and now and then a word) of what came before, so the text is lined up by
+/// its words, not character by character.
 public static class StableDraft
 {
-    private static bool Ends(char c) => c is '。' or '！' or '？' or '；' or '.' or '!' or '?' or ';';
+    /// A piece ended must have at least this many letters: shorter ones translate badly on their own.
+    public const int MinPiece = 6;
+    /// The recognizer may redo a word of what was kept (大局 → 大吉大利); lining up at a piece end further
+    /// off than this many letters would drop words or say them twice, so it starts afresh instead.
+    public const int MaxDrift = 2;
 
-    /// Where the ended sentences of `text` stop (just after the last end with words after it); 0 when
-    /// the whole of it is still the sentence being said.
+    private static bool Ends(char c) => c is '。' or '！' or '？' or '；' or '，' or '、' or '.' or '!' or '?' or ';' or ',';
+
+    public static int Letters(string text) => text.Count(char.IsLetterOrDigit);
+
+    /// Where the ended pieces of `text` stop (just after the last end with words after it, holding at
+    /// least MinPiece letters); 0 when all of it is still being said.
     public static int EndedUpTo(string text)
     {
         var lastWord = -1;
         for (var i = text.Length - 1; i >= 0; i--)
             if (char.IsLetterOrDigit(text[i])) { lastWord = i; break; }
         for (var i = lastWord - 1; i >= 0; i--)
-            if (Ends(text[i])) return i + 1;
+            if (Ends(text[i]))
+                return Letters(text[..i]) >= MinPiece ? i + 1 : 0;
         return 0;
     }
 
-    /// What `final` says after the words of `translatedFrom` (punctuation and spacing aside): "" when
-    /// nothing, null when `final` doesn't begin with them (the recognizer heard those words again
-    /// differently).
-    public static string? Rest(string translatedFrom, string final)
+    /// Where `text` goes on after the words of `before`: right after them when they are all there,
+    /// punctuation aside; else (a word heard again differently) at the piece end nearest to where they
+    /// would end, if it is close. -1 when it can't be lined up.
+    public static int After(string before, string text)
     {
-        var want = new string(translatedFrom.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
-        if (want.Length == 0) return null;
+        var want = new string(before.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+        if (want.Length == 0) return -1;
         var matched = 0;
         var i = 0;
-        for (; i < final.Length && matched < want.Length; i++)
+        var same = true;
+        for (; i < text.Length && matched < want.Length; i++)
         {
-            if (!char.IsLetterOrDigit(final[i])) continue;
-            if (char.ToLowerInvariant(final[i]) != want[matched]) return null;
+            if (!char.IsLetterOrDigit(text[i])) continue;
+            if (char.ToLowerInvariant(text[i]) != want[matched]) same = false;
             matched++;
         }
-        if (matched < want.Length) return null;
-        var rest = final[i..].TrimStart(' ', '，', ',', '。', '.', '、', '！', '!', '？', '?', '；', ';');
+        if (matched < want.Length) return -1;
+        if (same) return Skip(text, i);
+        // Nearest piece end to where the kept words would stop.
+        var best = -1;
+        var bestDrift = int.MaxValue;
+        for (var j = 0; j < text.Length; j++)
+        {
+            if (!Ends(text[j])) continue;
+            var drift = Math.Abs(Letters(text[..j]) - want.Length);
+            if (drift < bestDrift) { bestDrift = drift; best = j + 1; }
+        }
+        return best >= 0 && bestDrift <= MaxDrift ? Skip(text, best) : -1;
+    }
+
+    /// What `final` says after the words of `translatedFrom`: "" when nothing, null when it can't be
+    /// lined up.
+    public static string? Rest(string translatedFrom, string final)
+    {
+        var at = After(translatedFrom, final);
+        if (at < 0) return null;
+        var rest = final[at..];
         return rest.Any(char.IsLetterOrDigit) ? rest : "";
+    }
+
+    private static int Skip(string text, int at)
+    {
+        while (at < text.Length && (Ends(text[at]) || char.IsWhiteSpace(text[at]))) at++;
+        return at;
     }
 
     public static string Join(string before, string next, string target) =>

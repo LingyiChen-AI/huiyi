@@ -174,7 +174,7 @@ public partial class NotesWindow : Window
     public void Preview(string id, bool notesTab)
     {
         sessionId = id;
-        if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
+        if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn, model.Meeting is { } m ? m.Shown : null);
         EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         model.Notes.Show(id);
         RenderNotes();
@@ -249,7 +249,7 @@ public partial class NotesWindow : Window
         SpeakerNameWindow.Ask(at, number, current, name =>
         {
             model.RenameVoice(id, voice, name);
-            if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
+            if (model.Store.Snapshot(id) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn, model.Meeting is { } m ? m.Shown : null);
         });
     }
 
@@ -257,7 +257,7 @@ public partial class NotesWindow : Window
     {
         if (sessionId == null) return;
         var atBottom = LinesScroll.VerticalOffset >= LinesScroll.ScrollableHeight - 30;
-        if (model.Store.Snapshot(sessionId) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn);
+        if (model.Store.Snapshot(sessionId) is { } s) LineVM.Sync(lines, s, model.Settings.TranslationOn, model.Meeting is { } m ? m.Shown : null);
         EmptyHint.Visibility = lines.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         if (atBottom) LinesScroll.ScrollToEnd();
     }

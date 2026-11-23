@@ -77,12 +77,15 @@ public class SubtitleTests
     }
 
     [Fact]
-    public void ASentenceHasEndedOnlyWhenMoreFollowsIt()
+    public void APieceHasEndedOnlyWhenMoreFollowsIt()
     {
         // The recognizer ends every partial with a full stop.
         Assert.Equal(0, StableDraft.EndedUpTo("其实在某种。"));
-        Assert.Equal("所以他就有得有失。".Length, StableDraft.EndedUpTo("所以他就有得有失。嗯，当然他也。"));
-        Assert.Equal("One. Two.".Length, StableDraft.EndedUpTo("One. Two. Three"));
+        // People talk in runs joined by commas: a clause is a piece too.
+        Assert.Equal("接着加练个胸吧，今天力量训练滑滑水，".Length, StableDraft.EndedUpTo("接着加练个胸吧，今天力量训练滑滑水，主要做有氧。"));
+        Assert.Equal("One more. Two more.".Length, StableDraft.EndedUpTo("One more. Two more. Three"));
+        // Too short to translate on its own: wait for more.
+        Assert.Equal(0, StableDraft.EndedUpTo("嗯，当然他也。"));
     }
 
     [Fact]
@@ -91,9 +94,16 @@ public class SubtitleTests
         // The words count, punctuation aside: what is left gets translated and added on.
         Assert.Equal("更丰富了。", StableDraft.Rest("这个地方呈现的它会", "这个地方呈现的，它会更丰富了。"));
         Assert.Equal("", StableDraft.Rest("所以他就有得有失嗯当然他也", "所以他就有得有失。嗯，当然他也。"));
-        Assert.Equal("he said.", StableDraft.Rest("so", "So, he said."));
-        // Heard again differently: nothing to build on.
-        Assert.Null(StableDraft.Rest("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
+        Assert.Equal("he said.", StableDraft.Rest("so,", "So, he said."));
         Assert.Null(StableDraft.Rest("", "什么"));
+    }
+
+    [Fact]
+    public void AWordHeardAgainDifferentlyLinesUpAtTheNearestPieceEnd()
+    {
+        // 大局 became 大吉大利 inside what was kept: carry on after that piece, not from the start.
+        Assert.Equal("最近训练。", StableDraft.Rest("等会儿爬坡玩两把大局，", "等会儿爬坡玩两把大吉大利，最近训练。"));
+        // 他 became 它 with no piece end near: can't line up.
+        Assert.Null(StableDraft.Rest("这个地方呈现的他会", "这个地方呈现的它会更丰富了。"));
     }
 }

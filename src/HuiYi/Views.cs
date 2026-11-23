@@ -63,11 +63,11 @@ public sealed class LineVM : INotifyPropertyChanged
         fixes = l.Fixes?.ToList();
     }
 
-    public void Update(TranscriptLine l, string label, int? number, bool showDst = true, bool hasName = false)
+    public void Update(TranscriptLine l, string label, int? number, bool showDst = true, bool hasName = false, string? shownDst = null)
     {
         Src = l.Src;
         if (!SameFixes(fixes, l.Fixes)) Fixes = l.Fixes?.ToList();
-        Dst = showDst ? l.Dst : null;
+        Dst = showDst ? shownDst ?? l.Dst : null;
         // Speaker names and transcript text are user content. Only generated labels follow the UI.
         HasName = hasName;
         Who = IsMe ? L.T("我") : hasName ? label : number is { } speaker
@@ -92,7 +92,8 @@ public sealed class LineVM : INotifyPropertyChanged
     /// Brings `list` in step with a meeting (adds new lines, updates changed ones and every speaker
     /// label: a voice gets its number only after a few lines, and then its earlier lines show it too).
     /// `showDst`: false hides translations (the live panel with translation switched off).
-    public static void Sync(ObservableCollection<LineVM> list, Session s, bool showDst = true)
+    /// `shown`: the live panel's translations as on screen (see MeetingController.Shown).
+    public static void Sync(ObservableCollection<LineVM> list, Session s, bool showDst = true, Func<string, string?>? shown = null)
     {
         var numbers = SpeakerLabels.Numbers(s.Lines);
         var names = SpeakerLabels.Names(s);
@@ -105,7 +106,7 @@ public sealed class LineVM : INotifyPropertyChanged
                 list.Add(vm);
             }
             var number = numbers.TryGetValue(l.Id, out var n) ? n : (int?)null;
-            vm.Update(l, SpeakerLabels.Who(l, numbers, names), number, showDst, number is { } speaker && names.ContainsKey(speaker));
+            vm.Update(l, SpeakerLabels.Who(l, numbers, names), number, showDst, number is { } speaker && names.ContainsKey(speaker), shown?.Invoke(l.Id));
         }
     }
 }

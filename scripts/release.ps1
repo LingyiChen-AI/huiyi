@@ -3,7 +3,10 @@
 # Sets the version, runs the tests, commits, tags v<version> and pushes. The tag triggers
 # .github/workflows/release.yml, which builds the installer and publishes the GitHub release that
 # installed copies update from.
-param([Parameter(Mandatory = $true)][string]$Version)
+# The release notes are written first, in release-notes\v<version>.md (what people get, one line each;
+# the format is in release-notes\README.md). -AutoNotes releases without them: the notes then come from
+# the feat: / fix: commit subjects.
+param([Parameter(Mandatory = $true)][string]$Version, [switch]$AutoNotes)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
@@ -12,6 +15,9 @@ if (-not $dotnet) { $dotnet = "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe" }
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "version must look like 1.2.3" }
 if (git -C $root status --porcelain) { throw "commit or stash your changes first" }
 if (git -C $root tag -l "v$Version") { throw "v$Version already exists" }
+if (-not $AutoNotes -and -not (Test-Path "$root\release-notes\v$Version.md")) {
+    throw "write release-notes\v$Version.md first (see release-notes\README.md), or pass -AutoNotes"
+}
 
 $csproj = "$root\src\HuiYi\HuiYi.csproj"
 $text = [IO.File]::ReadAllText($csproj)

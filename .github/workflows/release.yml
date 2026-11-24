@@ -1,6 +1,7 @@
 # Pushing a tag like v0.2.0 builds and publishes that version: tests, a self-contained publish, the
 # installer (HuiYi-Setup.exe), the portable zip, and the update package and feed that installed
-# copies check, all on the GitHub release, with notes from the feat: / fix: commits since the last tag.
+# copies check, all on the GitHub release, with the notes in release-notes/<tag>.md (else the feat: /
+# fix: commits since the last tag).
 name: release
 
 on:
@@ -45,23 +46,39 @@ jobs:
       - name: Install vpk
         run: dotnet tool install -g vpk --version 1.2.161
 
-      # What changed since the previous tag, from the feat: / fix: commit subjects. It goes into the
-      # update package too: the 发现新版本 box shows it.
+      # What changed: release-notes/<tag>.md, written before tagging (what people get, one line each,
+      # with links), else the feat: / fix: commit subjects since the previous tag. notes.md is the
+      # GitHub page: those notes, the downloads, and every commit folded away. notes-app.md goes into
+      # the update package for the 发现新版本 box: the same lines without links or the commit list.
       - name: Release notes
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
           $prev = git describe --tags --abbrev=0 "$tag^" 2>$null
           $range = if ($prev) { "$prev..$tag" } else { $tag }
-          $subjects = git log $range --no-merges --format=%s
-          $feat = $subjects | Where-Object { $_ -match '^feat(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^feat(\(.+\))?: ', '') }
-          $fix = $subjects | Where-Object { $_ -match '^fix(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^fix(\(.+\))?: ', '') }
-          $notes = @("## 下载", "", "- **HuiYi-Setup.exe**：安装包，可以选安装位置，之后会自动更新", "- **HuiYi.App-win-Portable.zip**：免安装版，解压即用，也会自动更新", "")
-          if ($feat) { $notes += @("## 新功能", "") + $feat + "" }
-          if ($fix) { $notes += @("## 修复", "") + $fix + "" }
-          if ($prev) { $notes += "完整改动：$env:REPO_URL/compare/$prev...$tag" }
-          $notes -join "`n" | Out-File -Encoding utf8 notes.md
+          $curated = "release-notes/$tag.md"
+          if (Test-Path $curated) {
+            $body = (Get-Content $curated -Raw -Encoding utf8).Trim() -split "`r?`n"
+          } else {
+            $subjects = git log $range --no-merges --format=%s
+            $feat = $subjects | Where-Object { $_ -match '^feat(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^feat(\(.+\))?: ', '') }
+            $fix = $subjects | Where-Object { $_ -match '^fix(\(.+\))?: ' } | ForEach-Object { "- " + ($_ -replace '^fix(\(.+\))?: ', '') }
+            $body = @()
+            if ($feat) { $body += @("## 新功能", "") + $feat + "" }
+            if ($fix) { $body += @("## 修复", "") + $fix }
+          }
+          $downloads = @("## 下载", "", "- **HuiYi-Setup.exe**：安装包，可以选安装位置，之后会自动更新", "- **HuiYi.App-win-Portable.zip**：免安装版，解压即用，也会自动更新")
+          $commits = git log $range --no-merges --format="* %s ([%h]($env:REPO_URL/commit/%H))"
+          $page = $body + @("") + $downloads + @("", "---", "", "## 完整改动", "", "<details>", "<summary>查看全部提交</summary>", "") + $commits + @("", "</details>", "")
+          if ($prev) { $page += "完整对比：$env:REPO_URL/compare/$prev...$tag" }
+          $page -join "`n" | Out-File -Encoding utf8 notes.md
+          # The app shows the "- " lines of the notes: links read as text there, so they go.
+          $app = $body | ForEach-Object {
+            $_ -replace '\s*\[[^\]]+\]\([^)]+\)(\s*·\s*\[[^\]]+\]\([^)]+\))*\s*$', '' -replace '\[([^\]]+)\]\([^)]+\)', '$1'
+          }
+          $app -join "`n" | Out-File -Encoding utf8 notes-app.md
           Get-Content notes.md
+          Get-Content notes-app.md
 
       - name: Pack
         shell: pwsh
@@ -70,7 +87,7 @@ jobs:
           # vpk runs for deltas can't open non-ASCII paths. Updates download the full package instead.
           vpk pack --packId HuiYi.App --packVersion $env:VERSION --packDir publish --mainExe HuiYi.exe `
             --packTitle "会译" --packAuthors "HuiYi" --icon assets/HuiYi.ico --delta none `
-            --runtime win-x64 --releaseNotes notes.md --outputDir releases
+            --runtime win-x64 --releaseNotes notes-app.md --outputDir releases
           # The installer people download: lets them pick the folder, then runs the Setup.exe above.
           dotnet build installer/HuiYi.Setup.csproj -c Release -p:Version=$env:VERSION `
             -p:VelopackSetup="$PWD/releases/HuiYi.App-win-Setup.exe" -o installer-out

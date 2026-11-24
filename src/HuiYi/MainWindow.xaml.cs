@@ -17,7 +17,15 @@ public partial class MainWindow : Window
     private string? selected;
     private bool refreshingList;
     private int searchRevision;
-    private readonly List<(SelectableText Box, System.Windows.Documents.TextRange Range, bool Notes)> searchMatches = [];
+    /// A search hit: in the notes, a range of one of their text boxes; in the transcript (whose lines are
+    /// only made while in view), the line, which of its two texts, and which hit in that text.
+    private sealed record SearchMatch(SelectableText? Box, System.Windows.Documents.TextRange? Range, int Line = -1, bool InDst = false, int Nth = 0)
+    {
+        public bool Notes => Box != null;
+    }
+    private readonly List<SearchMatch> searchMatches = [];
+    /// What the transcript's lines highlight as they come into view.
+    private string highlighted = "";
     private int searchIndex = -1;
     private string appliedQuery = "";
     private string? appliedSession;
@@ -120,7 +128,7 @@ public partial class MainWindow : Window
             lines.Clear();
             refreshingList = false;
             searchRevision++;
-            foreach (var box in searchMatches.Select(m => m.Box).Distinct()) box.Highlight("");
+            ClearHighlights();
             searchMatches.Clear();
             SearchNavigation.Visibility = Visibility.Collapsed;
             Detail.Visibility = Visibility.Collapsed;
@@ -140,7 +148,7 @@ public partial class MainWindow : Window
 
     private void Session_Selected(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
-        if (!refreshingList && e.NewValue is SessionRow r) ShowDetail(r.Id, keepTab: false);
+        if (!refreshingList && e.NewValue is SessionRow r) UiWatch.Time("open meeting", () => ShowDetail(r.Id, keepTab: false));
     }
 
     private void ShowDetail(string id, bool keepTab)
@@ -257,7 +265,7 @@ public partial class MainWindow : Window
             var previousIndex = searchIndex;
             if (query.Length == 0)
             {
-                foreach (var box in searchMatches.Select(m => m.Box).Distinct()) box.Highlight("");
+                ClearHighlights();
                 searchMatches.Clear();
                 searchIndex = -1;
                 appliedQuery = query;
@@ -267,15 +275,22 @@ public partial class MainWindow : Window
             }
             searchMatches.Clear();
             searchIndex = -1;
-            // Generate transcript containers even when the notes tab is currently displayed.
-            var previous = LinesScroll.Visibility;
-            LinesScroll.Visibility = Visibility.Visible;
-            LinesScroll.UpdateLayout();
             foreach (var box in SelectableText.Descendants(NotesHost))
-                foreach (var range in box.Highlight(query)) searchMatches.Add((box, range, true));
-            foreach (var box in SelectableText.Descendants(LinesList))
-                foreach (var range in box.Highlight(query)) searchMatches.Add((box, range, false));
-            LinesScroll.Visibility = previous;
+                foreach (var range in box.Highlight(query)) searchMatches.Add(new SearchMatch(box, range));
+            // The transcript is searched in its lines' text, not in boxes: most of them aren't made.
+            for (var i = 0; i < lines.Count; i++)
+            {
+                AddHits(i, lines[i].Src, false);
+                if (lines[i].DstVisibility == Visibility.Visible) AddHits(i, lines[i].Dst ?? "", true);
+            }
+            void AddHits(int line, string text, bool dst)
+            {
+                var n = 0;
+                for (var at = text.IndexOf(query, StringComparison.OrdinalIgnoreCase); at >= 0; at = text.IndexOf(query, at + query.Length, StringComparison.OrdinalIgnoreCase))
+                    searchMatches.Add(new SearchMatch(null, null, line, dst, n++));
+            }
+            highlighted = query;
+            foreach (var box in SelectableText.Descendants(LinesList)) box.Highlight(query);
             appliedQuery = query;
             appliedSession = selected;
             SearchNavigation.Visibility = Visibility.Visible;
@@ -295,14 +310,55 @@ public partial class MainWindow : Window
         var match = searchMatches[searchIndex];
         ShowTab(match.Notes);
         UpdateLayout();
-        var rect = match.Range.Start.GetCharacterRect(System.Windows.Documents.LogicalDirection.Forward);
-        if (rect.IsEmpty) match.Box.BringIntoView();
-        else match.Box.BringIntoView(rect);
+        var (box, range) = match.Notes ? (match.Box, match.Range) : LineHit(match);
+        if (box != null)
+        {
+            var rect = range?.Start.GetCharacterRect(System.Windows.Documents.LogicalDirection.Forward) ?? Rect.Empty;
+            if (rect.IsEmpty) box.BringIntoView();
+            else box.BringIntoView(rect);
+        }
         SearchCount.Text = $"{searchIndex + 1} / {searchMatches.Count}";
     }
 
-    private void PreviousMatch_Click(object sender, RoutedEventArgs e) => MoveSearch(-1);
-    private void NextMatch_Click(object sender, RoutedEventArgs e) => MoveSearch(1);
+    /// A transcript hit's box and range: its line is brought into view first, which makes it.
+    private (SelectableText? Box, System.Windows.Documents.TextRange? Range) LineHit(SearchMatch match)
+    {
+        if (match.Line < 0 || match.Line >= lines.Count) return (null, null);
+        if (FindChild<VirtualizingStackPanel>(LinesList) is { } panel) panel.BringIndexIntoViewPublic(match.Line);
+        LinesList.UpdateLayout();
+        if (LinesList.ItemContainerGenerator.ContainerFromIndex(match.Line) is not DependencyObject item) return (null, null);
+        var boxes = SelectableText.Descendants(item).ToList();
+        var box = match.InDst ? boxes.ElementAtOrDefault(1) : boxes.FirstOrDefault();
+        var ranges = box?.Highlight(highlighted);
+        return (box, ranges?.ElementAtOrDefault(match.Nth));
+    }
+
+    private static T? FindChild<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T found) return found;
+            if (FindChild<T>(child) is { } deeper) return deeper;
+        }
+        return null;
+    }
+
+    /// A transcript line coming into view takes the search's highlight.
+    private void LineBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (highlighted.Length > 0 && sender is SelectableText box) box.Highlight(highlighted);
+    }
+
+    private void ClearHighlights()
+    {
+        highlighted = "";
+        foreach (var box in searchMatches.Where(m => m.Box != null).Select(m => m.Box!).Distinct()) box.Highlight("");
+        foreach (var box in SelectableText.Descendants(LinesList)) box.Highlight("");
+    }
+
+    private void PreviousMatch_Click(object sender, RoutedEventArgs e) => UiWatch.Time("search move", () => MoveSearch(-1));
+    private void NextMatch_Click(object sender, RoutedEventArgs e) => UiWatch.Time("search move", () => MoveSearch(1));
 
     private void Search_KeyDown(object sender, KeyEventArgs e)
     {

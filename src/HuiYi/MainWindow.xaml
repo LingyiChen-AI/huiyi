@@ -226,11 +226,25 @@
                         <ContentControl x:Name="NotesHost" Margin="0,0,6,0"/>
                     </ScrollViewer>
                     <Border x:Name="LinesScroll" Style="{StaticResource Panel}" Padding="0" Margin="0" Visibility="Collapsed">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16">
-                            <ItemsControl x:Name="LinesList">
+                            <!-- Only the lines in view are made: a long meeting has thousands, each with two
+                                 selectable text boxes, and making them all held the window for seconds. -->
+                            <ItemsControl x:Name="LinesList" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Standard"
+                                          VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True">
+                                <ItemsControl.Template>
+                                    <ControlTemplate TargetType="ItemsControl">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True" Focusable="False" Padding="0,16">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </ControlTemplate>
+                                </ItemsControl.Template>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,0,0,14">
+                                        <Grid Margin="20,0,20,14">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="92"/>
                                                 <ColumnDefinition Width="*"/>
@@ -241,14 +255,14 @@
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
                                                 <local:SelectableText Text="{Binding Src}" Marks="{Binding Fixes}" FontSize="14"
-                                                                      ContextMenuOpening="Src_ContextMenuOpening"/>
-                                                <local:SelectableText Text="{Binding Dst}" Visibility="{Binding DstVisibility}" Foreground="#646B80" FontSize="13" Margin="0,3,0,0"/>
+                                                                      ContextMenuOpening="Src_ContextMenuOpening" Loaded="LineBox_Loaded"/>
+                                                <local:SelectableText Text="{Binding Dst}" Visibility="{Binding DstVisibility}" Foreground="#646B80" FontSize="13" Margin="0,3,0,0"
+                                                                      Loaded="LineBox_Loaded"/>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </ScrollViewer>
                     </Border>
                     </Grid>
                 </DockPanel>

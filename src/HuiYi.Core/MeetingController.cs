@@ -514,10 +514,14 @@ public sealed class MeetingController
             // What the draft lacks of the line, null when the recognizer heard it again differently.
             // (Lined up loosely as a last resort: a word may be dropped or said twice, but what was read
             // stays on screen rather than turning into the line's own translation in other words.)
-            var rest = draft.Length > 0 && draftFrom.Length > 0 ? StableDraft.Rest(draftFrom, seg.Text) ?? StableDraft.RestLoosely(draftFrom, seg.Text) : null;
+            // A draft of more than the line (a long line ended early at a sentence or clause end, the
+            // words after it going on as the next line) would say those words twice: only a draft
+            // within the line stands in for it.
+            bool Within(string from) => from.Length > 0 && StableDraft.Letters(from) <= StableDraft.Letters(seg.Text) + StableDraft.MaxDrift;
+            var rest = draft.Length > 0 && Within(draftFrom) ? StableDraft.Rest(draftFrom, seg.Text) ?? StableDraft.RestLoosely(draftFrom, seg.Text) : null;
             // The sentence being said came out differently once finished: keep the sentences that had
             // ended, and translate the rest of the line after them.
-            if (rest == null && endedDst.Length > 0 && (StableDraft.Rest(endedSrc, seg.Text) ?? StableDraft.RestLoosely(endedSrc, seg.Text)) is { } afterEnded)
+            if (rest == null && endedDst.Length > 0 && Within(endedSrc) && (StableDraft.Rest(endedSrc, seg.Text) ?? StableDraft.RestLoosely(endedSrc, seg.Text)) is { } afterEnded)
             {
                 draft = endedDst;
                 rest = afterEnded;
@@ -539,7 +543,7 @@ public sealed class MeetingController
             else
             {
                 // No draft to keep: the line's own translation shows when it comes.
-                if (draft.Length > 0 && settings.TranslationOn)
+                if (draft.Length > 0 && settings.TranslationOn && Within(draftFrom))
                 {
                     var before = joined ? standIns.GetValueOrDefault(lineId) ?? store.Get(id)?.Lines.FirstOrDefault(l => l.Id == lineId)?.Dst : null;
                     standIns[lineId] = StableDraft.Join(before ?? "", draft, target);

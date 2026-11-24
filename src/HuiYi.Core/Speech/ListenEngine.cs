@@ -171,13 +171,20 @@ public sealed class ListenEngine : IDisposable
         kept.Length > 0 && kept[^1] < 128 && next.Length > 0 && !char.IsWhiteSpace(next[0]) ? kept + " " + next : kept + next;
 
     private static bool ClauseEnd(char ch) => ch is '。' or '？' or '！' or '，' or '、' or '；' or '?' or '!' or '.' or ',' or ';';
+    private static bool SentenceEnd(char ch) => ch is '。' or '？' or '！' or '?' or '!' or '.';
+
+    /// A line being said this long is ended at its last sentence end (else clause end), as Cicada does:
+    /// the live line stays a sentence or so, and only that much can still change on screen.
+    internal static bool LongLine(string text) =>
+        HeardText.IsCjk(text) ? text.Count(char.IsLetterOrDigit) >= 24 : text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 10;
 
     /// Where the live line may be cut for good: just after the last clause end heard before `before`
     /// seconds into the clip (the start of the word after it), and how much of the text that is.
     /// Null when there is none.
-    internal static (int Chars, double Seconds)? KeepUpTo(Recognized r, double before)
+    internal static (int Chars, double Seconds)? KeepUpTo(Recognized r, double before, bool sentences = false)
     {
         if (r.Tokens == null || r.Times == null || r.Tokens.Length != r.Times.Length) return null;
+        Func<char, bool> ClauseEnd = sentences ? SentenceEnd : ListenEngine.ClauseEnd;
         (int Chars, double Seconds)? best = null;
         var marks = 0;
         for (var i = 0; i + 1 < r.Tokens.Length; i++)
@@ -220,7 +227,14 @@ public sealed class ListenEngine : IDisposable
         {
             c.Partial = text;
             c.PartialLang = lang;
-            if (c.Index == 0 && text.Length > 0) pcSaid = text;
+            // What the PC said lately, not only its line now: the microphone hears the speakers a moment
+            // late, still on words the PC's line has already handed to the transcript.
+            if (c.Index == 0 && text.Length > 0)
+            {
+                pcSaid = pcSaid.EndsWith(text, StringComparison.Ordinal) ? pcSaid : pcSaid + " " + text;
+                // A sentence or two: longer, my own words would share enough letters with it to pass for echo.
+                if (pcSaid.Length > 150) pcSaid = pcSaid[^150..];
+            }
             // The PC's words back through the microphone are not someone talking: they never hold the line.
             bool Talking(Channel o) => o.Partial.Length > 0 && !(o.Index == 1 && EchoCheck.IsEcho(o.Partial, pcSaid));
             if (showing != null && !channels.Contains(showing)) showing = null;
@@ -357,6 +371,31 @@ public sealed class ListenEngine : IDisposable
                         lastHeard = r;
                         lastFrom = from;
                         var text = HeardText.Clean(Glue(kept, r.Text));
+                        // Long enough: the line ends at its last sentence (else clause) end heard half a
+                        // second ago or more, and goes to the transcript; the live line keeps what follows.
+                        var heardFor = (fed - rate / 2 - from) / (double)rate;
+                        var sentence = true;
+                        var ending = LongLine(text) ? KeepUpTo(r, heardFor, sentences: true) : null;
+                        if (ending == null && LongLine(text))
+                        {
+                            ending = KeepUpTo(r, heardFor);
+                            sentence = false;
+                        }
+                        if (ending is { } end && from + (long)(end.Seconds * rate) - speechStart >= rate)
+                        {
+                            var cutAt = from + (long)(end.Seconds * rate);
+                            var rest = HeardText.Clean(r.Text[end.Chars..]);
+                            Finish(c, Slice(history, speechStart, cutAt), speechStart, cut: !sentence);
+                            consumed = Math.Max(consumed, cutAt);
+                            runStart = speechStart = cutAt;
+                            keptTo = -1;
+                            kept = "";
+                            lastHeard = null;
+                            lastPartialText = rest;
+                            partialShown = rest.Length > 0;
+                            SetPartial(c, rest, rest.Length > 0 ? r.Lang : "");
+                            continue;
+                        }
                         if (text.Length > 0 && text != lastPartialText)
                         {
                             lastPartialText = text;

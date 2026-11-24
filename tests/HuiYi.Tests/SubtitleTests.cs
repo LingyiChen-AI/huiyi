@@ -120,5 +120,18 @@ public class SubtitleTests
         Assert.Equal((5, 1.4), HuiYi.Speech.ListenEngine.KeepUpTo(heard, 3.0) is { } b ? (b.Chars, Math.Round(b.Seconds, 1)) : default);
         // No clause end yet: nothing to keep.
         Assert.Null(HuiYi.Speech.ListenEngine.KeepUpTo(heard, 1.0));
+        // Ending the line there: a sentence end first, only then a comma.
+        Assert.Equal(10, HuiYi.Speech.ListenEngine.KeepUpTo(heard, 3.3, sentences: true)?.Chars);
+        Assert.Null(HuiYi.Speech.ListenEngine.KeepUpTo(heard, 3.0, sentences: true));
+    }
+
+    [Fact]
+    public void ALineBeingSaidEndsOnceItIsASentenceLong()
+    {
+        // As Cicada: 24 Chinese characters, or 10 English words.
+        Assert.False(HuiYi.Speech.ListenEngine.LongLine("我们今天先聊工作，然后再说招聘的事情。"));
+        Assert.True(HuiYi.Speech.ListenEngine.LongLine("我们今天先聊工作，然后再说招聘的事情，最后看看预算够不够。"));
+        Assert.False(HuiYi.Speech.ListenEngine.LongLine("We talked about the plan for next week."));
+        Assert.True(HuiYi.Speech.ListenEngine.LongLine("We talked about the plan for next week and then about the budget."));
     }
 }

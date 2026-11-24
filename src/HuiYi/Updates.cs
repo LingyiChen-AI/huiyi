@@ -129,8 +129,9 @@ public sealed class Updates
         }
     }
 
-    /// The "- …" lines of the notes, leaving out the download section.
-    private static List<string> Bullets(string? markdown)
+    /// The "- …" lines of the notes, leaving out the download section and what follows "---" (the
+    /// release page's full commit list); the links at a line's end go, other links keep their text.
+    internal static List<string> Bullets(string? markdown)
     {
         var outp = new List<string>();
         if (string.IsNullOrWhiteSpace(markdown)) return outp;
@@ -138,8 +139,15 @@ public sealed class Updates
         foreach (var raw in markdown.Split('\n'))
         {
             var line = raw.Trim();
+            if (line == "---") break;
             if (line.StartsWith("#")) section = line.TrimStart('#').Trim();
-            else if (line.StartsWith("- ") && section != "下载") outp.Add(line[2..].Replace("**", ""));
+            else if (line.StartsWith("- ") && section != "下载")
+            {
+                var text = System.Text.RegularExpressions.Regex.Replace(line[2..],
+                    @"\s*\[[^\]]+\]\([^)]+\)(\s*·\s*\[[^\]]+\]\([^)]+\))*\s*$", "");
+                text = System.Text.RegularExpressions.Regex.Replace(text, @"\[([^\]]+)\]\([^)]+\)", "$1");
+                outp.Add(text.Replace("**", ""));
+            }
         }
         return outp;
     }

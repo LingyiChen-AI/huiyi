@@ -133,11 +133,24 @@ public sealed class AiTests : IDisposable
         return c;
     }
 
-    private static string Completion(string content) =>
+    private static string Completion(string content, string finish = "stop") =>
         new JsonObject { ["choices"] = new JsonArray(new JsonObject
         {
-            ["message"] = new JsonObject { ["content"] = content }, ["finish_reason"] = "stop",
+            ["message"] = new JsonObject { ["content"] = content }, ["finish_reason"] = finish,
         }) }.ToJsonString();
+
+    [Fact]
+    public async Task AJsonReplyCutOffAtItsLimitIsNotUsed()
+    {
+        // Cut off, the rest of the notes is missing: asked for again rather than mended (issue #4).
+        reply = _ => (200, Completion("{\"summary\":\"half", "length"));
+        var c = Client("deepseek");
+        var e = await Assert.ThrowsAsync<AiException>(() => c.Chat("x", "Notes.", AiClient.Priority.Translate, json: true));
+        Assert.Equal(AiFailure.Parse, e.Failure);
+        // Plain text cut off still comes back: a long translation is better than none.
+        reply = _ => (200, Completion("half a sentence", "length"));
+        Assert.Equal("half a sentence", await c.Chat("x", "Translate.", AiClient.Priority.Translate));
+    }
 
     [Theory]
     [InlineData("ark", "thinking")]

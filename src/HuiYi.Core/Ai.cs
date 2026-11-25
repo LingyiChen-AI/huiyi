@@ -218,6 +218,12 @@ public sealed class AiClient
                 var text = choice?["message"]?["content"]?.GetValue<string>() ?? throw new AiException(AiFailure.Parse);
                 var finish = choice?["finish_reason"]?.GetValue<string>();
                 var trimmed = StripThinking(text).Trim();
+                // JSON cut off at the token limit: whatever is missing cannot be mended, only asked for again.
+                if (json && finish == "length")
+                {
+                    Log.Debug($"ai: {priority} JSON reply cut off at {maxTokens} tokens ({trimmed.Length} chars)");
+                    throw new AiException(AiFailure.Parse);
+                }
                 if (p.Info.ChecksHijack && (finish == null || HijackPrefixes.Any(trimmed.StartsWith)))
                 {
                     Log.Debug($"ai: {priority} search-style reply dropped");

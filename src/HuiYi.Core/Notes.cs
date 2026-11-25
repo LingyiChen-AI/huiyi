@@ -235,10 +235,10 @@ public static class NotesPrompt
         var a = raw.IndexOf('{');
         var b = raw.LastIndexOf('}');
         if (a < 0 || b <= a) return null;
-        JsonObject? root;
-        try { root = JsonNode.Parse(raw[a..(b + 1)]) as JsonObject; }
-        catch { return null; }
+        // A bracket out of place is put right here rather than asking again (issue #4).
+        var root = JsonMend.Object(raw[a..(b + 1)], out var mended);
         if (root == null) return null;
+        if (mended != null) Log.Debug($"notes: reply JSON mended ({mended}, {raw.Length} chars)");
 
         static string Str(JsonNode? v) => v is JsonValue jv && jv.TryGetValue<string>(out var s) ? s.Trim() : "";
         static double? Num(JsonNode? v)

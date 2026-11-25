@@ -15,6 +15,7 @@ Third-party components, downloaded or referenced, not bundled in source:
 - 3D-Speaker CAM++ speaker model (zh-cn, 16k common), Apache-2.0, via sherpa-onnx model releases
 - NAudio, MIT
 - H.NotifyIcon, MIT
+- JsonRepairSharp (C# port of josdejong/jsonrepair), MIT, Copyright (c) 2023 Thijs Elenbaas
 - VB-Audio Virtual Cable: installed by the user from vb-audio.com, never redistributed
 
 Bundled data:

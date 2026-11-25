@@ -513,8 +513,10 @@ public sealed class NotesEngine
             if (prompt == null || prompt.Length > NotesBatch.MaxPromptChars)
             {
                 next = await NotesBatch.Generate(lines, lang, names, template, session.StartedAt,
+                    // Room for the whole reply: 4500 characters of Chinese JSON run past 2000 tokens, and a
+                    // reply cut off there is no JSON at all (every part failed, issue #4).
                     p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}. Keep the entire JSON under 4500 characters.",
-                        AiClient.Priority.Notes, json: true, maxTokens: 2000, timeout: TimeSpan.FromSeconds(90)),
+                        AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)),
                     finalChat: p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}.",
                         AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)));
             }

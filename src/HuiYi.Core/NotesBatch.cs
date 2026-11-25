@@ -65,6 +65,9 @@ internal static class NotesBatch
                     var raw = await (root ? finalChat ?? chat : chat)(prompt);
                     var parsed = NotesPrompt.Parse(raw, times, lines[0].T, template);
                     if ((root || raw.Length <= MaxResultChars) && parsed != null && NotesPrompt.Written(parsed, language)) return raw;
+                    // Why, without the content: a reply cut off, too long, or in another language.
+                    Log.Debug($"notes: {(root ? "final" : "part")} reply not used ({raw.Length} chars, " +
+                              $"{(parsed == null ? "not notes JSON" : !NotesPrompt.Written(parsed, language) ? "not in " + language : "too long")}, attempt {attempt + 1})");
                 }
                 catch (AiException e) when (attempt == 0 && e.Failure is AiFailure.Timeout or AiFailure.Network or AiFailure.Parse) { }
                 if (attempt == 0) await Task.Delay(250);

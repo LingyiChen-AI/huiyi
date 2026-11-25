@@ -504,6 +504,9 @@ static string Tail(string s) => s.Length > 60 ? "…" + s[^60..] : s;
 static AiClient AppAi()
 {
     var settings = AppSettings.Load();
+    // HUIYI_MODEL=<model>: the app's service with another of its models (not saved), for trying the
+    // model someone reports with.
+    if (Environment.GetEnvironmentVariable("HUIYI_MODEL") is { Length: > 0 } model && settings.ActiveProvider() is { } p) p.Model = model;
     var ai = new AiClient { Provider = () => settings.ActiveProvider() };
     ai.Refresh();
     return ai;

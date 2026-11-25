@@ -7,6 +7,9 @@ internal static class NotesBatch
 {
     internal const int MaxPromptChars = 24000;
     private const int MaxResultChars = 6000;
+    /// Tries per request. DeepSeek (deepseek-flash) now and then writes a long reply with a bracket
+    /// out of place: one part in about fifteen in tests, right again when asked anew (issue #4).
+    private const int Attempts = 3;
     private const string Output = "\nKeep the entire JSON under 4500 characters (hard limit 6000), including all keys. Use short phrases and fewer items as needed, retaining every template section and original evidence ids.\n";
     private const string Merge = "\nOrdered partial notes (JSON), earliest first. Merge these into full meeting notes. Preserve original L evidence ids and seconds from the original meeting start, never rebase times. Preserve decisions, owners, deadlines and every template section.\n";
 
@@ -57,11 +60,13 @@ internal static class NotesBatch
         async Task<string> Request(string prompt, bool root)
         {
             if (prompt.Length > MaxPromptChars) throw new AiException(AiFailure.Parse);
-            for (var attempt = 0; attempt < 2; attempt++)
+            for (var attempt = 0; attempt < Attempts; attempt++)
             {
+                // Another part failed for good: the notes cannot be made, stop asking.
+                if (Volatile.Read(ref failed) != 0) throw new AiException(AiFailure.Parse);
+                var last = attempt == Attempts - 1;
                 try
                 {
-                    if (Volatile.Read(ref failed) != 0) throw new AiException(AiFailure.Parse);
                     var raw = await (root ? finalChat ?? chat : chat)(prompt);
                     var parsed = NotesPrompt.Parse(raw, times, lines[0].T, template);
                     if ((root || raw.Length <= MaxResultChars) && parsed != null && NotesPrompt.Written(parsed, language)) return raw;
@@ -69,8 +74,8 @@ internal static class NotesBatch
                     Log.Debug($"notes: {(root ? "final" : "part")} reply not used ({raw.Length} chars, " +
                               $"{(parsed == null ? "not notes JSON" : !NotesPrompt.Written(parsed, language) ? "not in " + language : "too long")}, attempt {attempt + 1})");
                 }
-                catch (AiException e) when (attempt == 0 && e.Failure is AiFailure.Timeout or AiFailure.Network or AiFailure.Parse) { }
-                if (attempt == 0) await Task.Delay(250);
+                catch (AiException e) when (!last && e.Failure is AiFailure.Timeout or AiFailure.Network or AiFailure.Parse) { }
+                if (!last) await Task.Delay(250);
             }
             throw new AiException(AiFailure.Parse);
         }

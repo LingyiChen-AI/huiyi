@@ -213,7 +213,8 @@ public class NotesBatchTests
                 if (Interlocked.Increment(ref firstCalls) == 2) release.TrySetResult();
                 return "invalid";
             }));
-        Assert.Equal(3, calls);
+        // The failing part's three tries and the other part's one: its retry is never sent.
+        Assert.Equal(4, calls);
     }
 
 }

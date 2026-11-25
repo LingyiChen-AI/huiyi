@@ -310,8 +310,9 @@ public sealed class NotesBatchIntegrationTests : IDisposable
         Assert.True(starts.Count >= 5);
         for (var i = 1; i < starts.Count; i++)
             Assert.True((starts[i] - starts[i - 1]).TotalMilliseconds >= 180);
-        Assert.Equal(6000, tokenLimits[^1]);
-        Assert.All(tokenLimits.Take(tokenLimits.Count - 1), n => Assert.Equal(2000, n));
+        // Every part has room for its whole reply: at 2000 tokens a 4500-character Chinese reply was
+        // cut off mid-JSON and every part failed (issue #4). The prompt still asks for 4500 characters.
+        Assert.All(tokenLimits, n => Assert.Equal(6000, n));
         Assert.All(prompts.Take(prompts.Count - 1), p => Assert.Contains("under 4500 characters", p));
     }
 

@@ -146,6 +146,71 @@ public class SpeakerTests
         Assert.Empty(SpeakerLabels.Names(turned));
     }
 
+    /// Voice 9 is 发言人1, voice 4 发言人2, voice 7 发言人3.
+    private static Session ThreeVoices()
+    {
+        var lines = Enumerable.Range(0, 5).Select(i => Line(i, 9))
+            .Concat(Enumerable.Range(5, 4).Select(i => Line(i, 4)))
+            .Concat(Enumerable.Range(9, 3).Select(i => Line(i, 7))).ToList();
+        return new Session { Id = "s", Title = "t", StartedAt = DateTime.UtcNow, Lines = lines };
+    }
+
+    [Fact]
+    public void NamingASecondVoiceAlikeFindsTheFirst()
+    {
+        // Issue #5: one person heard as two voices, both called Roland, in two colours.
+        var s = ThreeVoices();
+        s.VoiceNames = new() { ["9"] = "Roland" };
+        Assert.Equal(9, SpeakerLabels.NamedAlike(s, 4, " roland "));
+        Assert.Null(SpeakerLabels.NamedAlike(s, 9, "Roland"));
+        Assert.Null(SpeakerLabels.NamedAlike(s, 4, "George"));
+        Assert.Null(SpeakerLabels.NamedAlike(s, 4, ""));
+        // The AI's guess counts as the name a voice goes by.
+        s.VoiceGuesses = new() { ["7"] = new VoiceGuess("George", "00:09 “x”") };
+        Assert.Equal(7, SpeakerLabels.NamedAlike(s, 4, "George"));
+    }
+
+    [Fact]
+    public void MergedVoicesShowAsOnePersonAndTheNotesKeepTheirPeople()
+    {
+        var s = ThreeVoices();
+        s.VoiceNames = new() { ["9"] = "Roland", ["4"] = "Roland" };
+        s.Notes = new MeetingNotes { Summary = "发言人3 负责上线，发言人2 提问，发言人1 主持" };
+        SpeakerLabels.MergeVoice(s, 4, 9);
+        Assert.All(s.Lines.Take(9), l => Assert.Equal(9, l.Voice));
+        Assert.Equal(new Dictionary<int, int> { [9] = 1, [7] = 2 }, SpeakerLabels.VoiceNumbers(s.Lines));
+        Assert.Equal(new Dictionary<int, string> { [1] = "Roland" }, SpeakerLabels.Names(s));
+        // 发言人3 (voice 7) is 发言人2 now; 发言人2 (voice 4) is Roland's, 发言人1.
+        Assert.Equal("发言人2 负责上线，发言人1 提问，发言人1 主持", s.Notes.Summary);
+    }
+
+    [Fact]
+    public void TheAiNeverNamesTwoVoicesAlike()
+    {
+        var s = ThreeVoices();
+        SpeakerNameGuess.Put(s, 4, new VoiceGuess("Roland", "a"));
+        // A later guess gives the name to a voice with more lines: it moves there.
+        SpeakerNameGuess.Put(s, 9, new VoiceGuess("Roland", "b"));
+        Assert.Equal(["9"], s.VoiceGuesses!.Keys);
+        // To one with fewer lines: the name stays put.
+        SpeakerNameGuess.Put(s, 7, new VoiceGuess("Roland", "c"));
+        Assert.Equal(["9"], s.VoiceGuesses.Keys);
+        // A name the user gave is never taken, even by a voice with more lines.
+        s.VoiceNames = new() { ["7"] = "George" };
+        SpeakerNameGuess.Put(s, 9, new VoiceGuess("George", "d"));
+        Assert.Equal("Roland", s.VoiceGuesses["9"].Name);
+    }
+
+    [Fact]
+    public void AMeetingSavedWithTwinGuessesShowsTheNameOnce()
+    {
+        var s = ThreeVoices();
+        s.VoiceGuesses = new() { ["4"] = new VoiceGuess("Roland", "a"), ["9"] = new VoiceGuess("Roland", "b") };
+        Assert.Equal(new Dictionary<int, string> { [1] = "Roland" }, SpeakerLabels.Names(s));
+        s.VoiceNames = new() { ["7"] = "Roland" };
+        Assert.Equal(new Dictionary<int, string> { [3] = "Roland" }, SpeakerLabels.Names(s));
+    }
+
     [Fact]
     public void NameGuessPromptAndParse()
     {

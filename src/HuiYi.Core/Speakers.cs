@@ -473,6 +473,7 @@ public static class SpeakerLabels
     {
         var outp = new Dictionary<int, string>();
         if (s.VoiceNames == null && s.VoiceGuesses == null) return outp;
+        var guessed = new Dictionary<int, (string Name, int Lines)>();
         foreach (var (v, n) in VoiceNumbers(s.Lines))
         {
             if (s.VoiceNames?.TryGetValue(v.ToString(), out var mine) == true)
@@ -481,9 +482,13 @@ public static class SpeakerLabels
             }
             else if (s.VoiceGuesses?.TryGetValue(v.ToString(), out var g) == true)
             {
-                outp[n] = g.Name;
+                guessed[n] = (g.Name, s.Lines.Count(l => l.Speaker == "them" && l.Voice == v));
             }
         }
+        // The AI's guesses never name two voices alike (meetings saved before it was kept from doing
+        // so): the voice with more lines keeps the name, and a name the user gave is never doubled.
+        foreach (var (n, g) in guessed.OrderByDescending(kv => kv.Value.Lines).ThenBy(kv => kv.Key))
+            if (!outp.Values.Any(x => string.Equals(x.Trim(), g.Name.Trim(), StringComparison.CurrentCultureIgnoreCase))) outp[n] = g.Name;
         return outp;
     }
 
@@ -540,6 +545,48 @@ public static class SpeakerLabels
         return c;
     }
 
+    /// The name a voice goes by: the user's, else the AI's guess; null when it has none.
+    public static string? NameOf(Session s, int voice)
+    {
+        if (s.VoiceNames?.TryGetValue(voice.ToString(), out var mine) == true) return mine.Length > 0 ? mine : null;
+        return s.VoiceGuesses?.TryGetValue(voice.ToString(), out var g) == true ? g.Name : null;
+    }
+
+    /// Another voice on show that already goes by `name`: the user giving a second voice the same
+    /// name says they are one person. Null when there is none.
+    public static int? NamedAlike(Session s, int voice, string name)
+    {
+        name = name.Trim();
+        if (name.Length == 0) return null;
+        foreach (var v in VoiceNumbers(s.Lines).OrderBy(kv => kv.Value).Select(kv => kv.Key))
+            if (v != voice && string.Equals(NameOf(s, v)?.Trim(), name, StringComparison.CurrentCultureIgnoreCase)) return v;
+        return null;
+    }
+
+    /// Two voices are one person: `from`'s lines move to `into`, with its name if `into` has none.
+    /// Speaker numbers are counted again (a later voice may move up one), so the notes, written with
+    /// the numbers of the moment ("发言人3"), are renumbered to keep naming the same people.
+    public static void MergeVoice(Session s, int from, int into)
+    {
+        if (from == into) return;
+        var before = VoiceNumbers(s.Lines);
+        foreach (var l in s.Lines)
+            if (l.Speaker == "them" && l.Voice == from) l.Voice = into;
+        static void Move<T>(Dictionary<string, T>? d, int from, int into)
+        {
+            if (d == null || !d.Remove(from.ToString(), out var v)) return;
+            d.TryAdd(into.ToString(), v);
+        }
+        Move(s.VoiceNames, from, into);
+        Move(s.VoiceGuesses, from, into);
+        if (s.Notes == null) return;
+        var after = VoiceNumbers(s.Lines);
+        var renumber = new Dictionary<int, string>();
+        foreach (var (v, n) in before)
+            if (after.TryGetValue(v == from ? into : v, out var now) && now != n) renumber[n] = $"发言人{now}";
+        if (renumber.Count > 0) s.Notes = WithNames(s.Notes, renumber);
+    }
+
     /// What a line shows as its speaker: 我, a speaker's name or number, or 发言人 while the voice has no number yet.
     public static string Who(TranscriptLine l, IReadOnlyDictionary<string, int> numbers, IReadOnlyDictionary<int, string> names) =>
         l.Speaker == "me" ? "我" : numbers.TryGetValue(l.Id, out var n) ? Label(n, names) : "发言人";
@@ -582,6 +629,22 @@ public static class SpeakerNameGuess
         "the evidence being the line with the name; an empty list if none. Check each name's spelling before replying.";
 
     public static Dictionary<int, VoiceGuess> Parse(string reply, Session s) => Read(reply, s).Found;
+
+    /// A guess kept in the meeting. Two voices never share a name the AI gave (one person in two
+    /// colours, both called the same, issue #5): a name another voice already goes by stays with the
+    /// one with more lines, and a name the user gave is never taken. Whether two voices are one
+    /// person is the user's to say (by naming them alike): a wrong merge could not be undone.
+    public static void Put(Session s, int voice, VoiceGuess guess)
+    {
+        s.VoiceGuesses ??= new();
+        if (SpeakerLabels.NamedAlike(s, voice, guess.Name) is { } other)
+        {
+            int Count(int v) => s.Lines.Count(l => l.Speaker == "them" && l.Voice == v);
+            if (s.VoiceNames?.ContainsKey(other.ToString()) == true || Count(other) >= Count(voice)) return;
+            s.VoiceGuesses.Remove(other.ToString());
+        }
+        s.VoiceGuesses[voice.ToString()] = guess;
+    }
 
     /// Voice id → guess. A name with no line of that voice near its evidence is refuted; a name given
     /// to two voices goes to the one with more lines.
@@ -665,7 +728,7 @@ public sealed class SpeakerNamer(AiClient ai, SessionStore store)
                     x.VoiceGuesses ??= new();
                     foreach (var (v, name) in refuted)
                         if (x.VoiceGuesses.TryGetValue(v.ToString(), out var g) && g.Name == name) x.VoiceGuesses.Remove(v.ToString());
-                    foreach (var (v, g) in found) x.VoiceGuesses[v.ToString()] = g;
+                    foreach (var (v, g) in found) SpeakerNameGuess.Put(x, v, g);
                 });
                 Log.Debug($"speakers: {found.Count} names guessed");
             }

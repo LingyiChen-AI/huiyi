@@ -301,7 +301,14 @@ public sealed class AppModel
     {
         UiWatch.Time("rename voice", () =>
         {
+            // The name another speaker already goes by: the same person heard as two voices (issue #5).
+            var twin = Store.Snapshot(sessionId) is { } s ? SpeakerLabels.NamedAlike(s, voice, name) : null;
             Store.SetVoiceName(sessionId, voice, name);
+            if (twin is { } into)
+            {
+                if (Meeting != null) Meeting.MergeVoices(sessionId, voice, into);
+                else Store.Mutate(sessionId, x => SpeakerLabels.MergeVoice(x, voice, into));
+            }
             NotesChanged?.Invoke();
         });
     }

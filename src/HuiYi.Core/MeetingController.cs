@@ -657,18 +657,18 @@ public sealed class MeetingController
     private void Relabel(int from, int into)
     {
         if (SessionId is not { } id) return;
-        store.Mutate(id, s =>
-        {
-            foreach (var l in s.Lines)
-                if (l.Speaker == "them" && l.Voice == from) l.Voice = into;
-            static void Move<T>(Dictionary<string, T>? d, int from, int into)
-            {
-                if (d == null || !d.Remove(from.ToString(), out var v)) return;
-                d.TryAdd(into.ToString(), v);
-            }
-            Move(s.VoiceNames, from, into);
-            Move(s.VoiceGuesses, from, into);
-        });
+        store.Mutate(id, s => SpeakerLabels.MergeVoice(s, from, into));
+        LineChanged?.Invoke("");
+    }
+
+    /// The user said two voices are one person (gave them the same name). In the meeting being
+    /// heard, what they say next goes to that one voice too.
+    public void MergeVoices(string id, int from, int into)
+    {
+        if (from == into) return;
+        if (id == SessionId) speakers?.Merge(from, into);
+        store.Mutate(id, s => SpeakerLabels.MergeVoice(s, from, into));
+        Log.Debug($"speakers: voice {from} merged into {into} (same name)");
         LineChanged?.Invoke("");
     }
 

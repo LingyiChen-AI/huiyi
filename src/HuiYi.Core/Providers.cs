@@ -59,8 +59,11 @@ public sealed record ProviderPreset(
             ["qwen-flash", "qwen-plus", "qwen3.7-plus", "qwen3.8-max"],
             "https://bailian.console.aliyun.com/",
             () => new JsonObject { ["enable_thinking"] = false }),
-        new("deepseek", "DeepSeek", "https://api.deepseek.com/v1", ["deepseek-chat"],
-            "https://platform.deepseek.com/api_keys"),
+        // deepseek-flash thinks unless told not to, and its thinking counts against the reply's
+        // length: a part of the notes came back empty (issue #4). deepseek-chat is the old name of
+        // deepseek-flash without thinking, kept for settings that still name it.
+        new("deepseek", "DeepSeek", "https://api.deepseek.com/v1", ["deepseek-flash", "deepseek-v4-pro", "deepseek-chat"],
+            "https://platform.deepseek.com/api_keys", ThinkingOff),
         new("ark", "火山方舟（豆包）", "https://ark.cn-beijing.volces.com/api/v3",
             ["doubao-seed-2-1-lite-260915", "doubao-seed-2-1-turbo-260628", "doubao-seed-2-1-pro-260628"],
             "https://console.volcengine.com/ark", ThinkingOff,

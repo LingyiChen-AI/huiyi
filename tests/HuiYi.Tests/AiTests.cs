@@ -144,7 +144,7 @@ public sealed class AiTests : IDisposable
     [InlineData("zhipu", "thinking")]
     [InlineData("ling", "thinking")]
     [InlineData("bailian", "enable_thinking")]
-    [InlineData("deepseek", null)]
+    [InlineData("deepseek", "thinking")]
     [InlineData("ucloud", null)]
     [InlineData("custom", null)]
     public async Task SendsOnlyThePlatformsOwnThinkingSwitch(string preset, string? param)

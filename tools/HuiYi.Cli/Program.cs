@@ -241,6 +241,27 @@ switch (cmd)
                               + (l.Dst != null ? $"\n          {l.Dst}" : ""));
         Console.WriteLine($"speakers on show: {SpeakerLabels.ShownCount(snap.Lines)}");
         if (aiChecks > 0) Console.WriteLine($"AI checks: {aiChecks}");
+        // HUIYI_DUMP=<file.json>: every line of the other side with its times, live voice and voiceprint,
+        // for trying ways to group a whole meeting's voices offline.
+        if (Environment.GetEnvironmentVariable("HUIYI_DUMP") is { Length: > 0 } dumpPath && cmd == "listen")
+        {
+            var whole = ReadAll(args[1]);
+            var rows = new System.Text.Json.Nodes.JsonArray();
+            foreach (var l in snap.Lines.Where(l => l.Speaker == "them" && l.End is { } e && e > l.T))
+            {
+                var a = Math.Clamp((int)(l.T * 16000), 0, whole.Length);
+                var b = Math.Clamp((int)(l.End!.Value * 16000), a, whole.Length);
+                var emb = prints.Embed(whole[a..b]);
+                rows.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["t"] = l.T, ["end"] = l.End, ["voice"] = l.Voice, ["src"] = l.Src,
+                    ["substantive"] = SpeakerLabels.Substantive(l.Src),
+                    ["emb"] = emb == null ? null : new System.Text.Json.Nodes.JsonArray(emb.Select(x => (System.Text.Json.Nodes.JsonNode?)x).ToArray()),
+                });
+            }
+            File.WriteAllText(dumpPath, rows.ToJsonString());
+            Console.WriteLine($"dumped {rows.Count} lines to {dumpPath}");
+        }
         // HUIYI_REDO=1: the after-meeting check over the whole file, line by line beside the live voice.
         if (Environment.GetEnvironmentVariable("HUIYI_REDO") == "1" && cmd == "listen")
         {
@@ -254,6 +275,17 @@ switch (cmd)
                 Console.WriteLine($"{TranscriptExport.Clock(l.T)} live {l.Voice?.ToString() ?? "-"}  {l.Src}");
                 foreach (var p in ps) Console.WriteLine($"        -> {p.Voice?.ToString() ?? "-"}  {p.Text}");
             }
+            // The transcript as the check leaves it, as the app applies it.
+            var after = snap.Lines.SelectMany(l => plan.Lines.TryGetValue(l.Id, out var ps)
+                ? ps.Select((p, k) => new TranscriptLine { Id = l.Id + "." + k, T = p.Start, End = p.End, Speaker = l.Speaker, Src = p.Text, SrcLang = p.Lang, Voice = p.Voice })
+                : [l]).ToList();
+            Console.WriteLine($"speakers on show after the check: {SpeakerLabels.ShownCount(after)}");
+            if (Environment.GetEnvironmentVariable("HUIYI_REDO_DUMP") is { Length: > 0 } redoDump)
+                File.WriteAllText(redoDump, new System.Text.Json.Nodes.JsonArray(after.Where(l => l.Speaker == "them" && l.End is { } e && e > l.T)
+                    .Select(l => (System.Text.Json.Nodes.JsonNode?)new System.Text.Json.Nodes.JsonObject
+                    {
+                        ["t"] = l.T, ["end"] = l.End, ["voice"] = l.Voice, ["src"] = l.Src, ["substantive"] = SpeakerLabels.Substantive(l.Src),
+                    }).ToArray()).ToJsonString());
         }
         meeting.Stop();
         player?.Dispose();

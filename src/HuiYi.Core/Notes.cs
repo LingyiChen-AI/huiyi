@@ -380,6 +380,9 @@ public sealed class NotesEngine
 {
     public enum State { Idle, Updating, NoKey, InvalidKey, RateLimited, Failed }
 
+    /// With no token limit a long reply takes longer to write: DeepSeek took 15 s for 3300 tokens.
+    private static readonly TimeSpan NotesTimeout = TimeSpan.FromSeconds(180);
+
     public MeetingNotes Notes { get; private set; } = new();
     public State Status { get; private set; } = State.Idle;
     public string? ShownId { get; private set; }
@@ -513,19 +516,19 @@ public sealed class NotesEngine
             if (prompt == null || prompt.Length > NotesBatch.MaxPromptChars)
             {
                 next = await NotesBatch.Generate(lines, lang, names, template, session.StartedAt,
-                    // Room for the whole reply: 4500 characters of Chinese JSON run past 2000 tokens, and a
-                    // reply cut off there is no JSON at all (every part failed, issue #4).
+                    // No token limit: notes are used however long they come. A limit cut long replies off
+                    // mid-JSON, and a cut-off reply is no notes at all (issue #4).
                     p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}. Keep the entire JSON under 4500 characters.",
-                        AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)),
+                        AiClient.Priority.Notes, json: true, maxTokens: null, timeout: NotesTimeout),
                     finalChat: p => ai.Chat(p + glossary, $"Update the notes. Write them in {lang}.",
-                        AiClient.Priority.Notes, json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90)));
+                        AiClient.Priority.Notes, json: true, maxTokens: null, timeout: NotesTimeout));
             }
             else
             {
                 for (var attempt = 1; attempt <= (final ? 2 : 1); attempt++)
                 {
                     var raw = await ai.Chat(prompt, $"Update the notes. Write them in {lang}.", AiClient.Priority.Notes,
-                        json: true, maxTokens: 6000, timeout: TimeSpan.FromSeconds(90));
+                        json: true, maxTokens: null, timeout: NotesTimeout);
                     var parsed = NotesPrompt.Parse(raw, lines.Select(l => l.T).ToList(), lines.FirstOrDefault()?.T ?? 0, template);
                     if (parsed == null) break;
                     if (NotesPrompt.Written(parsed, lang)) { next = parsed; break; }

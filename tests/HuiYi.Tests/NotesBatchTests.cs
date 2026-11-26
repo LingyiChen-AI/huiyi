@@ -174,24 +174,28 @@ public class NotesBatchTests
     }
 
     [Fact]
-    public async Task RootCanReturnLongerNotesWhileIntermediateRepliesRetryWithinBudget()
+    public async Task PartNotesLongerThanAskedAreUsedAsTheyCame()
     {
+        // Issue #4: DeepSeek wrote every part's notes 6600–7500 characters long; refused, the whole
+        // notes failed. Now each is used at once, and the merge takes both however long they are.
         var attempts = new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
         var rootCalls = 0;
         var result = await NotesBatch.Generate([new() { Src = string.Concat(Enumerable.Range(0, 12000).Select(i => $"{i:D5}")) }], "English", null,
             NoteTemplates.BuiltIn[0], DateTime.UtcNow, prompt =>
             {
-                var attempt = attempts.AddOrUpdate(prompt, 1, (_, count) => count + 1);
-                return Task.FromResult("{\"summary\":\"" + new string('x', attempt == 1 ? 7000 : 500) + prompt.GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"}");
+                if (!prompt.Contains("Ordered partial notes (JSON)")) Assert.True(prompt.Length <= NotesBatch.MaxPromptChars);
+                attempts.AddOrUpdate(prompt, 1, (_, count) => count + 1);
+                return Task.FromResult("{\"summary\":\"" + new string('x', 12500) + prompt.GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"}");
             }, finalChat: prompt =>
             {
                 rootCalls++;
-                Assert.True(prompt.Length <= NotesBatch.MaxPromptChars);
+                Assert.True(prompt.Length > NotesBatch.MaxPromptChars);
+                Assert.Equal(2, prompt.Split(new string('x', 12500)).Length - 1);
                 return Task.FromResult("{\"summary\":\"" + new string('x', 16000) + "\"}");
             });
         Assert.Equal(16000, result.Summary.Length);
         Assert.Equal(1, rootCalls);
-        Assert.All(attempts.Values, count => Assert.Equal(2, count));
+        Assert.All(attempts.Values, count => Assert.Equal(1, count));
     }
 
     [Fact]
@@ -232,7 +236,7 @@ public sealed class NotesBatchIntegrationTests : IDisposable
     private readonly List<string> prompts = [];
     private Func<string, string> reply = _ => "{\"summary\":\"Meeting summary\"}";
     private readonly List<DateTime> starts = [];
-    private readonly List<int> tokenLimits = [];
+    private readonly List<int?> tokenLimits = [];
     private int active;
     private int peak;
     private int responseDelay;
@@ -273,7 +277,7 @@ public sealed class NotesBatchIntegrationTests : IDisposable
         {
             prompts.Add(prompt);
             starts.Add(DateTime.UtcNow);
-            tokenLimits.Add(body["max_tokens"]!.GetValue<int>());
+            tokenLimits.Add(body["max_tokens"]?.GetValue<int>());
             peak = Math.Max(peak, current);
         }
         await Task.Delay(responseDelay);
@@ -311,9 +315,9 @@ public sealed class NotesBatchIntegrationTests : IDisposable
         Assert.True(starts.Count >= 5);
         for (var i = 1; i < starts.Count; i++)
             Assert.True((starts[i] - starts[i - 1]).TotalMilliseconds >= 180);
-        // Every part has room for its whole reply: at 2000 tokens a 4500-character Chinese reply was
-        // cut off mid-JSON and every part failed (issue #4). The prompt still asks for 4500 characters.
-        Assert.All(tokenLimits, n => Assert.Equal(6000, n));
+        // No token limit on notes: at 2000 tokens a 4500-character Chinese reply was cut off mid-JSON
+        // and every part failed (issue #4). The prompt still asks for 4500 characters.
+        Assert.All(tokenLimits, n => Assert.Null(n));
         Assert.All(prompts.Take(prompts.Count - 1), p => Assert.Contains("under 4500 characters", p));
     }
 

@@ -5,12 +5,16 @@ namespace HuiYi;
 /// Bounded map/reduce over original evidence ids. Nothing is persisted until the root succeeds.
 internal static class NotesBatch
 {
+    /// The transcript's share of a request is bounded by this; merge requests are not (see `Request`).
     internal const int MaxPromptChars = 24000;
+    /// The room kept for two parts' notes beside the transcript. Only asked of the AI, never enforced:
+    /// a longer reply is used as it is (issue #4: DeepSeek wrote 6600–7500 characters every time,
+    /// and refusing them failed the whole notes). No token limit is sent either.
     private const int MaxResultChars = 6000;
     /// Tries per request. DeepSeek (deepseek-flash) now and then writes a long reply with a bracket
     /// out of place: one part in about fifteen in tests, right again when asked anew (issue #4).
     private const int Attempts = 3;
-    private const string Output = "\nKeep the entire JSON under 4500 characters (hard limit 6000), including all keys. Use short phrases and fewer items as needed, retaining every template section and original evidence ids.\n";
+    private const string Output = "\nKeep the entire JSON under 4500 characters, including all keys. Use short phrases and fewer items as needed, retaining every template section and original evidence ids.\n";
     private const string Merge = "\nOrdered partial notes (JSON), earliest first. Merge these into full meeting notes. Preserve original L evidence ids and seconds from the original meeting start, never rebase times. Preserve decisions, owners, deadlines and every template section.\n";
 
     internal static async Task<MeetingNotes> Generate(IReadOnlyList<TranscriptLine> lines, string language,
@@ -57,9 +61,10 @@ internal static class NotesBatch
         if (buffer.Length > 0) chunks.Add(buffer.ToString(0, buffer.Length - 1));
         var times = lines.Select(l => l.T).ToList();
         var failed = 0;
-        async Task<string> Request(string prompt, bool root)
+        async Task<string> Request(string prompt, bool root, bool merge)
         {
-            if (prompt.Length > MaxPromptChars) throw new AiException(AiFailure.Parse);
+            // A merge holds two parts' notes, as long as they came.
+            if (!merge && prompt.Length > MaxPromptChars) throw new AiException(AiFailure.Parse);
             for (var attempt = 0; attempt < Attempts; attempt++)
             {
                 // Another part failed for good: the notes cannot be made, stop asking.
@@ -69,10 +74,14 @@ internal static class NotesBatch
                 {
                     var raw = await (root ? finalChat ?? chat : chat)(prompt);
                     var parsed = NotesPrompt.Parse(raw, times, lines[0].T, template);
-                    if ((root || raw.Length <= MaxResultChars) && parsed != null && NotesPrompt.Written(parsed, language)) return raw;
-                    // Why, without the content: a reply cut off, too long, or in another language.
+                    if (parsed != null && NotesPrompt.Written(parsed, language))
+                    {
+                        if (!root && raw.Length > MaxResultChars) Log.Debug($"notes: part reply longer than asked ({raw.Length} chars), used");
+                        return raw;
+                    }
+                    // Why, without the content: not notes JSON, or in another language.
                     Log.Debug($"notes: {(root ? "final" : "part")} reply not used ({raw.Length} chars, " +
-                              $"{(parsed == null ? "not notes JSON" : !NotesPrompt.Written(parsed, language) ? "not in " + language : "too long")}, attempt {attempt + 1})");
+                              $"{(parsed == null ? "not notes JSON" : "not in " + language)}, attempt {attempt + 1})");
                 }
                 catch (AiException e) when (!last && e.Failure is AiFailure.Timeout or AiFailure.Network or AiFailure.Parse) { }
                 if (!last) await Task.Delay(250);
@@ -91,7 +100,7 @@ internal static class NotesBatch
                 {
                     var prompt = NotesPrompt.Build(new MeetingNotes(), lines, 0, language, true, names, template, start,
                         merge ? Merge + inputs[i] : inputs[i]);
-                    try { results[i] = await Request(root ? prompt : prompt + Output, root); }
+                    try { results[i] = await Request(root ? prompt : prompt + Output, root, merge); }
                     catch
                     {
                         Volatile.Write(ref failed, 1);

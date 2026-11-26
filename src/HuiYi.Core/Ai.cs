@@ -173,16 +173,17 @@ public sealed class AiClient
 
     private static Uri BaseOf(AiProvider p) => new(p.Info.NormalizeBaseUrl(p.BaseUrl) + "/");
 
-    private static JsonObject Body(AiProvider p, JsonArray messages, int maxTokens, bool json = false, double temperature = 0.2)
+    private static JsonObject Body(AiProvider p, JsonArray messages, int? maxTokens, bool json = false, double temperature = 0.2)
     {
         var body = new JsonObject
         {
             ["model"] = p.Model,
             ["messages"] = messages,
-            ["max_tokens"] = maxTokens,
             ["temperature"] = temperature,
             ["stream"] = false,
         };
+        // Null: no limit sent, the reply as long as the model writes it (the platform's own cap applies).
+        if (maxTokens is { } limit) body["max_tokens"] = limit;
         // Only the parameters this platform knows: others reject what they don't.
         if (p.Info.Extras?.Invoke() is { } extras)
             foreach (var (k, v) in extras) body[k] = v?.DeepClone();
@@ -195,7 +196,7 @@ public sealed class AiClient
     /// fall back to another translator.
     /// `temperature`: 0 for a judgement that should not change from one call to the next.
     public async Task<string> Chat(string content, string instruction, Priority priority, bool json = false,
-        int maxTokens = 1024, TimeSpan? timeout = null, CancellationToken ct = default, double temperature = 0.2)
+        int? maxTokens = 1024, TimeSpan? timeout = null, CancellationToken ct = default, double temperature = 0.2)
     {
         if (Current is not { } p || !HasKey) throw new AiException(AiFailure.NoKey);
         if (State == KeyState.Invalid) throw new AiException(AiFailure.InvalidKey);
@@ -221,7 +222,7 @@ public sealed class AiClient
                 // JSON cut off at the token limit: whatever is missing cannot be mended, only asked for again.
                 if (json && finish == "length")
                 {
-                    Log.Debug($"ai: {priority} JSON reply cut off at {maxTokens} tokens ({trimmed.Length} chars)");
+                    Log.Debug($"ai: {priority} JSON reply cut off at {(maxTokens is { } m ? m + " tokens" : "the platform's limit")} ({trimmed.Length} chars)");
                     throw new AiException(AiFailure.Parse);
                 }
                 if (p.Info.ChecksHijack && (finish == null || HijackPrefixes.Any(trimmed.StartsWith)))

@@ -17,6 +17,9 @@ using NAudio.Wave;
 //   huiyi-cli micusers                     meeting apps using a mic now
 Console.OutputEncoding = Encoding.UTF8;
 Log.Echo = l => Console.Error.WriteLine("  · " + l);
+// HUIYI_DATA=<dir>: settings and keys from there instead of the app's own (models stay shared), e.g.
+// to point the AI service at a test server.
+if (Environment.GetEnvironmentVariable("HUIYI_DATA") is { Length: > 0 } dataDir) Paths.Roaming = dataDir;
 var cmd = args.FirstOrDefault() ?? "help";
 var models = new ModelStore();
 string[] sys = Windows.System.UserProfile.GlobalizationPreferences.Languages.ToArray();
@@ -54,11 +57,16 @@ switch (cmd)
         // every subtitle the floating window would show printed with its time — for judging how the
         // subtitle reads while the AI's translations come in late.
         var subs = Environment.GetEnvironmentVariable("HUIYI_SUBS") == "1";
-        var settings = new AppSettings { Target = target, TranslationOn = subs };
+        // HUIYI_MACHINE=<engine id> or "ai": the translator for the line being said, as 翻译源 picks it.
+        var settings = new AppSettings
+        {
+            Target = target, TranslationOn = subs,
+            MachineTranslator = Environment.GetEnvironmentVariable("HUIYI_MACHINE") is { Length: > 0 } dm ? dm : MachineTranslators.Auto,
+        };
         var tmp = Path.Combine(Path.GetTempPath(), "huiyi-cli-sessions");
         var store = new SessionStore(tmp);
         var ai = subs ? AppAi() : new AiClient();
-        var translator = new TranslationService(ai);
+        var translator = new TranslationService(ai) { Machine = () => settings.MachineTranslator };
         var notes = new NotesEngine(ai, store);
         using var rec = new Recognizer(models) { Fix = GlossaryFix() };
         var listen = new ListenEngine(rec, models);
@@ -238,7 +246,8 @@ switch (cmd)
         foreach (var l in snap.Lines)
             Console.WriteLine($"{TranscriptExport.Clock(l.T)} {SpeakerLabels.Who(l, numbers, names),-6} (voice {l.Voice?.ToString() ?? "-"}) {l.Src}"
                               + (l.Fixes is { Count: > 0 } f ? "   [词库: " + string.Join(", ", f.Select(x => $"{x.From}→{x.To}")) + "]" : "")
-                              + (l.Dst != null ? $"\n          {l.Dst}" : ""));
+                              + (l.Dst != null ? $"\n          {l.Dst}" : "")
+                              + (meeting.Shown(l.Id) is { } shownNow && shownNow != l.Dst ? $"\n   panel: {shownNow}" : ""));
         Console.WriteLine($"speakers on show: {SpeakerLabels.ShownCount(snap.Lines)}");
         if (aiChecks > 0) Console.WriteLine($"AI checks: {aiChecks}");
         // HUIYI_DUMP=<file.json>: every line of the other side with its times, live voice and voiceprint,

@@ -87,9 +87,9 @@ public sealed class AppSettings
             if (System.IO.File.Exists(File))
                 return JsonSerializer.Deserialize<AppSettings>(System.IO.File.ReadAllText(File), Json.Options) ?? new();
         }
-        catch
+        catch (Exception e)
         {
-            Log.Debug("settings: unreadable, using defaults");
+            Log.Debug($"settings: unreadable ({e.GetType().Name}), using defaults");
         }
         return new();
     }
@@ -101,9 +101,9 @@ public sealed class AppSettings
             Directory.CreateDirectory(Paths.Roaming);
             System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this, Json.Options));
         }
-        catch
+        catch (Exception e)
         {
-            Log.Debug("settings: save failed");
+            Log.Debug($"settings: save failed ({e.GetType().Name})");
         }
     }
 }

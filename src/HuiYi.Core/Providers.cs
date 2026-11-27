@@ -13,6 +13,9 @@ public sealed class AiProvider
     public string BaseUrl { get; set; } = "";
     public string Model { get; set; } = "";
 
+    // Worked out from Preset, never saved: its request extras are a function, and writing one threw,
+    // so settings.json kept its old content and new services were gone after a restart (issue #7).
+    [System.Text.Json.Serialization.JsonIgnore]
     public ProviderPreset Info => ProviderPreset.Find(Preset);
 }
 

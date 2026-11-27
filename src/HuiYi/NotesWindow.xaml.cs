@@ -46,8 +46,10 @@ public partial class NotesWindow : Window
         model.SpeakChanged += RenderSpeak;
         model.StateChanged += RenderSpeak;
         model.StateChanged += RenderTranslate;
+        model.StateChanged += RenderMic;
         clock.Tick += (_, _) => Tick();
         RenderTranslate();
+        RenderMic();
     }
 
     private void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -66,6 +68,24 @@ public partial class NotesWindow : Window
     }
 
     private void Translate_Click(object sender, RoutedEventArgs e) => model.SetTranslation(TranslateSwitch.IsChecked == true);
+
+    /// The microphone button: a mic, or a crossed-out one in red while it is closed.
+    private void RenderMic()
+    {
+        var on = model.Settings.ListenMic;
+        MicIcon.Text = on ? "" : "";
+        MicBtn.Foreground = on ? Theme.NightMuted : MicOffBrush;
+        UiText.Set(MicBtn, "ToolTip", () => on
+            ? L.T("麦克风开着：点一下闭麦，只听电脑里的声音")
+            : L.T("麦克风已关闭：点一下开启，同时收听你和会议室里的声音"));
+        if (ReadyPanel.Visibility == Visibility.Visible) RenderFrom();
+    }
+
+    private static readonly System.Windows.Media.Brush MicOffBrush = Frozen(0xFF, 0x6B, 0x78);
+
+    private void Mic_Click(object sender, RoutedEventArgs e) => model.SetMic(!model.Settings.ListenMic);
+
+    private void Mode_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).SetDisplay(DisplayMode.Subtitles);
 
     public void ApplyCapturable()
     {
@@ -119,6 +139,7 @@ public partial class NotesWindow : Window
         clock.Stop();
         StopBtn.Visibility = Visibility.Collapsed;
         StartBtn.Visibility = Visibility.Collapsed;
+        ModeBtn.Visibility = Visibility.Collapsed;
         EndBanner.Visibility = Visibility.Collapsed;
         Show();
         if (first) PlaceTopRight();
@@ -162,6 +183,7 @@ public partial class NotesWindow : Window
         StateText.Foreground = OnAirText;
         OnAirPill.Background = OnAirFill;
         StopBtn.Visibility = Visibility.Visible;
+        ModeBtn.Visibility = Visibility.Visible;
         clock.Start();
         RenderNotes();
         RenderSpeak();
@@ -181,6 +203,7 @@ public partial class NotesWindow : Window
         TabNotes.IsChecked = notesTab;
         TabLines.IsChecked = !notesTab;
         ClockText.Text = "12:34";
+        ModeBtn.Visibility = Visibility.Visible;
     }
 
     /// Developer snapshot: the 对方看不到 mark, as when hidden from captures.
@@ -210,6 +233,7 @@ public partial class NotesWindow : Window
         StateText.Foreground = Theme.NightMuted;
         OnAirPill.Background = Theme.NightRaised;
         StopBtn.Visibility = Visibility.Collapsed;
+        ModeBtn.Visibility = Visibility.Collapsed;
         StartBtn.Visibility = Visibility.Visible;
         LivePanel.Visibility = Visibility.Collapsed;
         EndBanner.Visibility = Visibility.Collapsed;

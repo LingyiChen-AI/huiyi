@@ -272,6 +272,16 @@ public partial class App : Application
         }
     }
 
+    /// The switch on the panel and the subtitles: the other view, now and for the next meetings.
+    public void SetDisplay(DisplayMode mode)
+    {
+        if (Model.Settings.Display == mode) return;
+        Model.Settings.Display = mode;
+        Model.Settings.Save();
+        Log.Debug($"display: {mode}");
+        if (Model.IsListening) ShowLive();
+    }
+
     /// The display mode changed in settings while listening.
     public void SwitchDisplay()
     {

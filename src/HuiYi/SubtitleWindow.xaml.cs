@@ -31,8 +31,34 @@ public partial class SubtitleWindow : Window
             quiet.Stop();
             Idle();
         };
+        model.StateChanged += RenderMic;
+        RenderMic();
         Idle();
     }
+
+    /// The microphone button, as on the panel: a crossed-out mic in red while it is closed.
+    private void RenderMic()
+    {
+        var on = model.Settings.ListenMic;
+        MicIcon.Text = on ? "" : "";
+        MicBtn.Foreground = on ? Theme.NightMuted : MicOffBrush;
+        UiText.Set(MicBtn, "ToolTip", () => on
+            ? L.T("麦克风开着：点一下闭麦，只听电脑里的声音")
+            : L.T("麦克风已关闭：点一下开启，同时收听你和会议室里的声音"));
+    }
+
+    private static readonly System.Windows.Media.Brush MicOffBrush = MakeFrozen(0xFF, 0x6B, 0x78);
+
+    private static System.Windows.Media.Brush MakeFrozen(byte r, byte g, byte b)
+    {
+        var x = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(r, g, b));
+        x.Freeze();
+        return x;
+    }
+
+    private void Mic_Click(object sender, RoutedEventArgs e) => model.SetMic(!model.Settings.ListenMic);
+
+    private void Panel_Click(object sender, RoutedEventArgs e) => ((App)Application.Current).SetDisplay(DisplayMode.Notes);
 
     private void Idle()
     {

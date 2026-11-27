@@ -201,12 +201,28 @@ public sealed class AppModel
             // Both ends of the meeting, each recognized on its own: the far side in the video and me
             // in the room can talk at once. While I hold the interpreting key my words become a 我
             // line of their own, so the microphone is muted for them here.
-            var mic = Settings.ListenMic && DefaultDevices.Mics().Count > 0 ? new MicSource(ListenMicId) : null;
+            // The microphone can be closed and opened again from the panel or the subtitles mid-meeting;
+            // while closed the device is let go and the channel hears silence, on the same clock.
+            micSwitch = DefaultDevices.Mics().Count > 0 ? new SwitchableSource(() => new MicSource(ListenMicId), Settings.ListenMic) : null;
+            var mic = micSwitch != null ? new SteadySource(micSwitch) : null;
             source = new BothEnds(new SteadySource(new LoopbackSource()), mic, () => Speak?.Status == SpeakEngine.State.Recording);
         }
         Meeting!.Start(source);
         StateChanged?.Invoke();
         return true;
+    }
+
+    private SwitchableSource? micSwitch;
+
+    /// The microphone button (panel and subtitles): heard or not, now and for the next meetings.
+    public void SetMic(bool on)
+    {
+        if (Settings.ListenMic == on) return;
+        Settings.ListenMic = on;
+        Settings.Save();
+        if (micSwitch != null) micSwitch.On = on;
+        Log.Debug($"listen: microphone {(on ? "on" : "off")}");
+        StateChanged?.Invoke();
     }
 
     /// The room's microphone: the one chosen, else my real one (never the cable, which is the
@@ -316,6 +332,7 @@ public sealed class AppModel
     public void SaveSettings()
     {
         Settings.Save();
+        if (micSwitch != null) micSwitch.On = Settings.ListenMic;
         // Checking the system mic asks Windows about every audio device (half a second or more): only
         // when 同声传译 or its routing changed, not for every switch flipped in settings (issue #1).
         ApplySpeakKey(route: routedFor != (Settings.SpeakEnabled, Settings.SpeakRouteMic));

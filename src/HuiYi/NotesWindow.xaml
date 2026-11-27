@@ -58,6 +58,18 @@
                     </Border>
                 </StackPanel>
                 <StackPanel x:Name="HeaderRight" Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+                    <!-- My microphone on or off, mid-meeting too; off, only the PC's sound is heard. -->
+                    <Button x:Name="MicBtn" Style="{StaticResource NightIconBtn}" Click="Mic_Click" Margin="0,0,2,0">
+                        <TextBlock x:Name="MicIcon" Text="&#xE720;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"/>
+                    </Button>
+                    <!-- Over to the floating subtitles at the bottom of the screen. -->
+                    <Button x:Name="ModeBtn" Style="{StaticResource NightIconBtn}" Click="Mode_Click" Margin="0,0,6,0" Visibility="Collapsed"
+                            ToolTip="{local:Loc Key='切换成屏幕底部的悬浮字幕'}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xED1E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="{local:Loc Key='字幕'}" Margin="5,0,0,1" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="StartBtn" Content="{local:Loc Key='开始新会议'}" Style="{StaticResource PrimaryBtn}" Padding="10,3" Visibility="Collapsed" Click="Start_Click"/>
                     <Button x:Name="StopBtn" Content="{local:Loc Key='结束会议'}" Style="{StaticResource NightBtn}" Click="Stop_Click"/>
                     <Button Content="{local:Loc Key='收起'}" Style="{StaticResource NightBtn}" Background="Transparent" BorderBrush="Transparent"

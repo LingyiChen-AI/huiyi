@@ -217,6 +217,33 @@
             <Setter Property="Padding" Value="10,3"/>
         </Style>
 
+        <!-- A small icon (and optional word) on the dark panels: the mic and view switches. -->
+        <Style x:Key="NightIconBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource NightMuted}"/>
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="5" Padding="6,4" MinWidth="26">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#2C3148"/>
+                                <Setter Property="Foreground" Value="{StaticResource NightText}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#353B55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Segmented control: radio buttons drawn as joined pills -->
         <Style x:Key="Seg" TargetType="RadioButton">
             <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>

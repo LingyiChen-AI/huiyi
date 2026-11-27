@@ -2242,4 +2242,19 @@
   <data name="开会时不实时整理纪要，会议结束后会整理一次（可以在「设置 › AI 服务」里打开）。" xml:space="preserve">
     <value>開會時不即時整理紀要，會議結束後會整理一次（可以在「設置 › AI 服務」裡開啟）。</value>
   </data>
+  <data name="面板" xml:space="preserve">
+    <value>面板</value>
+  </data>
+  <data name="切换成屏幕底部的悬浮字幕" xml:space="preserve">
+    <value>切換成螢幕底部的懸浮字幕</value>
+  </data>
+  <data name="切换成实时面板：逐字稿和纪要" xml:space="preserve">
+    <value>切換成即時面板：逐字稿和紀要</value>
+  </data>
+  <data name="麦克风开着：点一下闭麦，只听电脑里的声音" xml:space="preserve">
+    <value>麥克風開著：點一下閉麥，只聽電腦裡的聲音</value>
+  </data>
+  <data name="麦克风已关闭：点一下开启，同时收听你和会议室里的声音" xml:space="preserve">
+    <value>麥克風已關閉：點一下開啟，同時收聽你和會議室裡的聲音</value>
+  </data>
 </root>

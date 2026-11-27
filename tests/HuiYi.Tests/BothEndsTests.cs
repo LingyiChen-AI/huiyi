@@ -106,4 +106,50 @@ public class BothEndsTests
         Assert.Same(mic, both.Mic);
         Assert.True(both.MuteMic!());
     }
+
+    // ── SwitchableSource: the microphone button ──
+
+    [Fact]
+    public void AClosedMicrophoneLetsTheDeviceGoAndTheChannelKeepsTime()
+    {
+        var now = 0.0;
+        var opened = new List<Fake>();
+        var mic = new SwitchableSource(() => { var f = new Fake(); opened.Add(f); return f; }, on: true);
+        var steady = new SteadySource(mic, () => now);
+        var got = new List<float>();
+        steady.Samples += x => got.AddRange(x);
+        steady.Start();
+        Assert.Single(opened);
+        now = 0.1;
+        opened[0].Send(Enumerable.Repeat(0.5f, 1600).ToArray());
+
+        mic.On = false;                          // closed: the device is let go, its words no longer arrive
+        opened[0].Send(Enumerable.Repeat(0.9f, 1600).ToArray());
+        now = 2.0;
+        steady.Tick();
+        Assert.DoesNotContain(0.9f, got);
+        Assert.All(got.Skip(1600), v => Assert.Equal(0f, v));
+
+        mic.On = true;                           // opened again: a new device, at its time on the clock
+        Assert.Equal(2, opened.Count);
+        now = 3.0;
+        opened[1].Send(Enumerable.Repeat(0.7f, 1600).ToArray());
+        Assert.Equal(3 * 16000, got.Count);
+        Assert.Equal(0.7f, got[^1]);
+    }
+
+    [Fact]
+    public void AMicrophoneClosedFromTheStartIsNeverOpened()
+    {
+        var opens = 0;
+        var mic = new SwitchableSource(() => { opens++; return new Fake(); }, on: false);
+        mic.Start();
+        Assert.Equal(0, opens);
+        mic.On = true;
+        Assert.Equal(1, opens);
+        mic.Stop();
+        mic.On = false;
+        mic.On = true;                           // after the meeting nothing opens it
+        Assert.Equal(1, opens);
+    }
 }

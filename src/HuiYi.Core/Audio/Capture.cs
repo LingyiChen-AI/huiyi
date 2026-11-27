@@ -251,6 +251,74 @@ public sealed class BothEnds(IAudioSource pc, IAudioSource? mic, Func<bool>? mut
     public void Dispose() { Pc.Dispose(); Mic?.Dispose(); }
 }
 
+/// A source that can be closed and opened again mid-meeting (the microphone button on the panel and
+/// the subtitles). Closed, the device itself is let go, so Windows shows no microphone in use; put it
+/// under a `SteadySource` and the gap is heard as silence, keeping the channel on the wall clock.
+public sealed class SwitchableSource(Func<IAudioSource> open, bool on) : IAudioSource
+{
+    public event Action<float[]>? Samples;
+    public event Action<string>? Failed;
+    private readonly object gate = new();
+    private IAudioSource? inner;
+    private bool started;
+
+    public bool On
+    {
+        get { lock (gate) return on; }
+        set
+        {
+            lock (gate)
+            {
+                if (on == value) return;
+                on = value;
+                if (started) { if (on) Open(); else Close(); }
+            }
+        }
+    }
+
+    public void Start()
+    {
+        lock (gate)
+        {
+            started = true;
+            if (on) Open();
+        }
+    }
+
+    public void Stop()
+    {
+        lock (gate)
+        {
+            started = false;
+            Close();
+        }
+    }
+
+    public void Dispose() => Stop();
+
+    private void Open()
+    {
+        if (inner != null) return;
+        inner = open();
+        inner.Samples += Forward;
+        inner.Failed += Fail;
+        inner.Start();
+    }
+
+    private void Close()
+    {
+        if (inner is not { } i) return;
+        inner = null;
+        i.Samples -= Forward;
+        i.Failed -= Fail;
+        try { i.Stop(); } catch { }
+        try { i.Dispose(); } catch { }
+    }
+
+    private void Forward(float[] chunk) => Samples?.Invoke(chunk);
+    private void Fail(string message) => Failed?.Invoke(message);
+}
+
 /// Keeps a source on the wall clock: WASAPI loopback sends nothing while nothing plays, so its
 /// sample count would fall behind the microphone's (and a sentence cut off by a pause would never
 /// see the quiet that ends it). Silence fills any gap longer than `Slack`, on arrival and from a

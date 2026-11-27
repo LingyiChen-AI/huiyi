@@ -2242,4 +2242,19 @@ Choose another location, such as D:\Apps\HuiYi.</value>
   <data name="开会时不实时整理纪要，会议结束后会整理一次（可以在「设置 › AI 服务」里打开）。" xml:space="preserve">
     <value>Notes aren't written during the meeting; they are written once it ends (turn this on in Settings › AI services).</value>
   </data>
+  <data name="面板" xml:space="preserve">
+    <value>Panel</value>
+  </data>
+  <data name="切换成屏幕底部的悬浮字幕" xml:space="preserve">
+    <value>Switch to floating subtitles at the bottom of the screen</value>
+  </data>
+  <data name="切换成实时面板：逐字稿和纪要" xml:space="preserve">
+    <value>Switch to the live panel: transcript and notes</value>
+  </data>
+  <data name="麦克风开着：点一下闭麦，只听电脑里的声音" xml:space="preserve">
+    <value>Microphone on: click to mute it and hear only the PC's sound</value>
+  </data>
+  <data name="麦克风已关闭：点一下开启，同时收听你和会议室里的声音" xml:space="preserve">
+    <value>Microphone off: click to turn it on and hear you and the room too</value>
+  </data>
 </root>

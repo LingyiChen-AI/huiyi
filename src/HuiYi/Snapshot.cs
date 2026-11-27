@@ -98,6 +98,16 @@ public static class Snapshot
         sheet.Arrange(new Rect(sheet.DesiredSize));
         sheet.UpdateLayout();
         SaveElement(sheet, folder, "notes-weekly", sheet.Background);
+        // The same notes as the live panel draws them (dark, narrow): owners and deadlines under each to-do.
+        var night = new System.Windows.Controls.Border
+        {
+            Width = 380, Padding = new Thickness(14), Background = new SolidColorBrush(Color.FromRgb(0x1B, 0x1E, 0x2B)),
+            Child = NotesRenderer.Build(weekly, notesStart, 14),
+        };
+        night.Measure(new Size(380, double.PositiveInfinity));
+        night.Arrange(new Rect(night.DesiredSize));
+        night.UpdateLayout();
+        SaveElement(night, folder, "panel-notes-full", night.Background);
 
         var panel = new NotesWindow(model);
         if (latest != null)
@@ -106,6 +116,10 @@ public static class Snapshot
             Save(panel, folder, "panel-lines", keepOpen: true);
             panel.Preview(latest.Id, notesTab: true);
             Save(panel, folder, "panel-notes", keepOpen: true);
+            // The microphone closed from the panel: a red crossed-out mic.
+            model.SetMic(false);
+            Save(panel, folder, "panel-mic-off", keepOpen: true);
+            model.SetMic(true);
             // Ended, hidden from captures: the longest header (已结束 · 正在整理纪要, 对方看不到, 开始新会议).
             panel.OnStopped();
             panel.PreviewShared();
@@ -144,6 +158,9 @@ public static class Snapshot
         subs.Show(new MeetingController.Subtitle("超时的问题定位到了，是网关的配置不对。",
             "We found the timeout: the gateway was misconfigured.", false));
         Save(subs, folder, "subtitle", keepOpen: true);
+        model.SetMic(false);
+        Save(subs, folder, "subtitle-mic-off", keepOpen: true);
+        model.SetMic(true);
         // A long stream, as in a monologue: each box keeps its two lines and shows the end.
         subs.Show(new MeetingController.Subtitle(
             "那篇文章对我启发特别大。这一切之所以能够发生，就是因为我不知道为什么我在。去年到今年，我个人完成了某种神奇的改变。我不知道为什么发生了什么，可能就是一个时间到这一步了。对，量变完成了质变了。我从一个",

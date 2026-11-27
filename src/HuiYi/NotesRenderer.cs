@@ -209,20 +209,21 @@ public static class NotesRenderer
             fe.Margin = new Thickness(0, (k.Size * 1.6 - fe.Height) / 2, 0, 0);
         }
         g.Children.Add(mark);
-        var line = Para(k, text, k.Size, k.Ink);
-        if (owner != null)
+        UIElement body = Para(k, text, k.Size, k.Ink);
+        // Who and by when sit on their own row under the item: set inside the text they rode below
+        // its baseline and, in the narrow live panel, wrapped onto a line of their own.
+        if (owner != null || due != null)
         {
-            line.Inlines.Add(new Run("  "));
-            line.Inlines.Add(new InlineUIContainer(Chip(k, owner, OwnerBrush(owner, k), k.ChipBack, small: true)) { BaselineAlignment = BaselineAlignment.Center });
+            var meta = new WrapPanel { Margin = new Thickness(0, 3, 0, 1) };
+            if (owner != null) meta.Children.Add(Tag(k, owner, OwnerBrush(owner, k)));
+            if (due != null) meta.Children.Add(Tag(k, L.T("截止 ") + due, Theme.Warn));
+            var stack = new StackPanel();
+            stack.Children.Add(body);
+            stack.Children.Add(meta);
+            body = stack;
         }
-        if (due != null)
-        {
-            line.Inlines.Add(new Run(" "));
-            line.Inlines.Add(new InlineUIContainer(Chip(k, L.T("截止 ") + due, Theme.Warn, k.Cards ? Frozen(0xFB, 0xF0, 0xE2) : Frozen(0x3A, 0x2F, 0x22), small: true))
-                { BaselineAlignment = BaselineAlignment.Center });
-        }
-        Grid.SetColumn(line, 1);
-        g.Children.Add(line);
+        Grid.SetColumn(body, 1);
+        g.Children.Add(body);
         if (t is { } time)
         {
             var when = UiText.Bind(new TextBlock
@@ -281,6 +282,19 @@ public static class NotesRenderer
         Margin = small ? new Thickness(0) : new Thickness(0, 0, 6, 0),
         Child = new TextBlock { Text = text, FontSize = small ? 11 : 12, Foreground = fore, FontWeight = FontWeights.SemiBold },
     };
+
+    /// A small tag in its own colour on a faint wash of it: an item's owner or deadline.
+    private static Border Tag(Look k, string text, Brush fore)
+    {
+        var c = fore is SolidColorBrush sc ? sc.Color : Colors.Gray;
+        var wash = new SolidColorBrush(Color.FromArgb(k.Cards ? (byte)0x1F : (byte)0x2E, c.R, c.G, c.B));
+        wash.Freeze();
+        return new Border
+        {
+            Background = wash, CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 1, 6, 2), Margin = new Thickness(0, 0, 6, 0),
+            Child = new TextBlock { Text = text, FontSize = 11.5, Foreground = fore, FontWeight = FontWeights.SemiBold },
+        };
+    }
 
     private static FrameworkElement Dot(Look k) => new Ellipse
     {

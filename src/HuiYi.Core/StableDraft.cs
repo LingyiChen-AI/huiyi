@@ -70,10 +70,15 @@ public static class StableDraft
         return rest.Any(char.IsLetterOrDigit) ? rest : "";
     }
 
+    /// How far (in letters, a short word) a piece end may be from where the kept words would stop, for
+    /// the last resort to line up there. More, and a draft lacking a word ("degrees") passed for whole.
+    public const int MaxLooseDrift = 4;
+
     /// The last resort when a line ends and its kept words can't be lined up: what follows the piece end
     /// nearest to as many letters in as they had. A word may be dropped or said twice, but what was
-    /// read stays on screen.
-    public static string RestLoosely(string translatedFrom, string final)
+    /// read stays on screen. Null when no piece end is that close: a draft of half the line (a slow AI
+    /// answered while the speaker went on) would otherwise pass for all of it and stay (issue #8).
+    public static string? RestLoosely(string translatedFrom, string final)
     {
         var want = Letters(translatedFrom);
         var best = -1;
@@ -84,7 +89,7 @@ public static class StableDraft
             var drift = Math.Abs(Letters(final[..j]) - want);
             if (drift < bestDrift) { bestDrift = drift; best = j + 1; }
         }
-        if (best < 0) return "";
+        if (best < 0 || bestDrift > MaxLooseDrift) return null;
         var rest = final[Skip(final, best)..];
         return rest.Any(char.IsLetterOrDigit) ? rest : "";
     }

@@ -108,6 +108,20 @@ public class SubtitleTests
     }
 
     [Fact]
+    public void LooselyTheDraftLinesUpOnlyAtAPieceEndAboutAWordAway()
+    {
+        // A word or so off a piece end: carry on after it, what was read stays.
+        Assert.Equal("最近训练。", StableDraft.RestLoosely("等会儿爬坡玩两把大局呀", "等会儿爬坡玩两把大吉大利，最近训练。"));
+        // Issue #8: a slow AI's draft was of the line's first half heard differently, and the only piece
+        // end is the line's own: it said nothing was missing, and the half translation stayed for good.
+        Assert.Null(StableDraft.RestLoosely("The PVC can also entirely run in landmarkll.",
+            "The PVC can also entirely run in land mode or even be fed simply via a USB stick."));
+        Assert.Null(StableDraft.RestLoosely("It's the same one used on all of the other 256 by 20.",
+            "It's the same one used on all of their other 256 by 256 millimeter machines."));
+        Assert.Null(StableDraft.RestLoosely("The bed only goes up to 100.", "The bed only goes up to 110 degrees."));
+    }
+
+    [Fact]
     public void ALongLiveLineIsCutForGoodOnlyAtAClauseEnd()
     {
         // 我们今天，先聊工作。然后 — each piece and when it starts (s).
